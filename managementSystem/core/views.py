@@ -176,6 +176,24 @@ def user_toggle_status_view(request, pk):
     messages.success(request, "User enabled." if user.is_active else "User disabled.")
     return redirect('users')
 
+def user_change_role_view(request, pk):
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+
+    profile = get_object_or_404(UserProfile.objects.select_related('user'), pk=pk)
+    new_role = request.POST.get('role')
+    valid_roles = dict(UserProfile.ROLE_CHOICES)
+
+    if new_role not in valid_roles:
+        messages.error(request, "Invalid role selected.")
+        return redirect('users')
+
+    profile.role = new_role
+    profile.save(update_fields=['role'])
+
+    messages.success(request, f"Role updated to {valid_roles[new_role]}.")
+    return redirect('users')
+
 def reports_generate_view(request):
     return render(request, "reports/generate.html")
 

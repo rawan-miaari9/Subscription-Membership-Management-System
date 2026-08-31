@@ -118,7 +118,17 @@
 </div>
 </div>
 </td>
-<td class="p-4 font-data-md">{{ profile.get_role_display|default:"—" }}</td>
+<td class="p-4 font-data-md">
+<form method="post" action="{% url 'user-change-role' profile.id %}" onchange="this.submit()">
+{% csrf_token %}
+<select name="role" class="bg-transparent border border-transparent hover:border-[#334155] focus:border-[#F59E0B] rounded-sm font-data-md text-on-surface text-[13px] px-1 py-0.5 -ml-1 outline-none cursor-pointer transition-colors">
+{% if not profile.role %}<option value="" disabled selected>—</option>{% endif %}
+<option value="admin" {% if profile.role == "admin" %}selected{% endif %}>Admin</option>
+<option value="accountant" {% if profile.role == "accountant" %}selected{% endif %}>Accountant</option>
+<option value="staff" {% if profile.role == "staff" %}selected{% endif %}>Staff</option>
+</select>
+</form>
+</td>
 <td class="p-4">
 {% if profile.user.is_active %}
 <div class="inline-flex items-center gap-2 bg-slate-800 px-2 py-1 rounded-sm border border-[#334155]">
