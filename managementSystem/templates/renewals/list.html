@@ -1,0 +1,144 @@
+{% extends "layouts/dashboard.html" %}
+{% block title %}Renewals - Iron Core{% endblock %}
+
+{% block dashboard_content %}
+<div class="flex flex-col gap-6 max-w-5xl mx-auto">
+<!-- Header -->
+<div class="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 mb-2">
+<div>
+<h2 class="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface uppercase mb-1">SUBSCRIPTION RENEWALS</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant">Process renewal for existing member contract.</p>
+</div>
+<div class="flex items-center gap-3">
+<button class="btn-secondary px-4 py-2 rounded text-sm font-label-caps transition-colors">CANCEL</button>
+<button class="btn-primary px-6 py-2 rounded text-sm transition-colors">PROCESS RENEWAL</button>
+</div>
+</div>
+<!-- Bento Grid -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-bento-gap">
+<!-- Member Info (Span 4) -->
+<div class="bento-card md:col-span-4 flex flex-col relative">
+<span class="font-label-caps text-label-caps text-on-surface-variant absolute top-4 right-4">MEMBER_DATA</span>
+<div class="flex items-center gap-4 mb-6 mt-2">
+<img alt="Member Photo" class="w-16 h-16 rounded object-cover grayscale border border-outline-variant" data-alt="A striking digital installation art piece featuring glowing, generative geometric shapes suspended in a vast, minimalist gallery space. The room is illuminated by high-key, soft white lighting that creates a bright, modern light-mode aesthetic. The artwork relies on a sophisticated palette of deep blacks and pristine whites, punctuated by intense accents of vibrant red. The mood is serene yet technologically advanced." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDm5PbQQltkwD15Ur9XQlhfkxxWivnO0vJGdMp4yLcPvVFnz4nosfHuUrRqrkEThhJIFV5P8u0QRDWj6HVQZH3Adtp1pVX3XgeE0E6i7rO7h14aY0EsWwnw2CN6YaFC8DQlCRn0CA0Zm6tVgTa83dYBi2rNbUfGh7lVsRujk-bOAEl7o9X2LUTPju09qXglQy29OmGJTSotxeItKxMS6c353dp1ihKqgQ9p58-PZOOdXrSL35U9-quFKA"/>
+<div>
+<h3 class="font-headline-md text-headline-md text-on-surface">Marcus Vance</h3>
+<p class="font-data-md text-data-md text-on-surface-variant">ID: #99482-MV</p>
+</div>
+</div>
+<div class="space-y-4">
+<div>
+<label class="block font-label-caps text-label-caps text-on-surface-variant mb-1">CURRENT PLAN</label>
+<div class="font-data-lg text-data-lg text-primary">Elite Powerhouse Annual</div>
+</div>
+<div>
+<label class="block font-label-caps text-label-caps text-on-surface-variant mb-1">STATUS</label>
+<div class="status-chip status-active font-label-caps text-label-caps text-on-surface">
+<span class="status-indicator"></span> ACTIVE (EXPIRES IN 5 DAYS)
+                                </div>
+</div>
+</div>
+</div>
+<!-- Current vs New Period (Span 8) -->
+<div class="bento-card md:col-span-8 flex flex-col relative">
+<span class="font-label-caps text-label-caps text-on-surface-variant absolute top-4 right-4">TIMELINE_COMPARISON</span>
+<h3 class="font-headline-md text-headline-md text-on-surface mb-6 mt-2">Period Configuration</h3>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-6 relative">
+<!-- Current -->
+<div class="p-4 border border-outline-variant rounded bg-[#0F172A] opacity-70">
+<h4 class="font-label-caps text-label-caps text-on-surface-variant mb-4 border-b border-outline-variant pb-2">CURRENT PERIOD</h4>
+<div class="space-y-3">
+<div class="flex justify-between">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Start Date</span>
+<span class="font-data-md text-data-md text-on-surface">Oct 15, 2022</span>
+</div>
+<div class="flex justify-between">
+<span class="font-body-sm text-body-sm text-on-surface-variant">End Date</span>
+<span class="font-data-md text-data-md text-error">Oct 15, 2023</span>
+</div>
+<div class="flex justify-between">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Billing Cycle</span>
+<span class="font-data-md text-data-md text-on-surface">Monthly ($120.00)</span>
+</div>
+</div>
+</div>
+<!-- Arrow Indicator (Desktop) -->
+<div class="hidden sm:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 bg-background border border-outline-variant rounded-full items-center justify-center z-10">
+<span class="material-symbols-outlined text-primary text-sm">arrow_forward</span>
+</div>
+<!-- New -->
+<div class="p-4 border border-primary rounded bg-[#101415]">
+<h4 class="font-label-caps text-label-caps text-primary mb-4 border-b border-outline-variant pb-2">NEW PERIOD</h4>
+<div class="space-y-4">
+<div>
+<label class="block font-body-sm text-body-sm text-on-surface-variant mb-1">Start Date</label>
+<input class="w-full input-field rounded p-2 font-data-md text-data-md" type="date" value="2023-10-16"/>
+</div>
+<div>
+<label class="block font-body-sm text-body-sm text-on-surface-variant mb-1">End Date</label>
+<input class="w-full input-field rounded p-2 font-data-md text-data-md" type="date" value="2024-10-15"/>
+</div>
+<div class="flex justify-between items-center pt-2">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Preserve Cycle?</span>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox" value=""/>
+<div class="w-9 h-5 bg-surface-variant rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-on-surface after:border-outline after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary-container"></div>
+</label>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Payment Processing (Span 12) -->
+<div class="bento-card md:col-span-12 flex flex-col md:flex-row gap-8 relative">
+<span class="font-label-caps text-label-caps text-on-surface-variant absolute top-4 right-4">TRANSACTION_GATEWAY</span>
+<div class="flex-1 mt-2">
+<h3 class="font-headline-md text-headline-md text-on-surface mb-6">Renewal Payment</h3>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+<div>
+<label class="block font-label-caps text-label-caps text-on-surface-variant mb-1">PAYMENT METHOD</label>
+<select class="w-full input-field rounded p-2.5 font-data-md text-data-md">
+<option>Card ending in 4242 (OnFile)</option>
+<option>New Credit Card</option>
+<option>Cash / Terminal</option>
+<option>Bank Transfer</option>
+</select>
+</div>
+<div>
+<label class="block font-label-caps text-label-caps text-on-surface-variant mb-1">DISCOUNT CODE</label>
+<div class="flex gap-2">
+<input class="flex-1 input-field rounded p-2.5 font-data-md text-data-md" placeholder="e.g. LOYALTY23" type="text"/>
+<button class="btn-secondary px-4 rounded text-sm font-label-caps">APPLY</button>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-2 p-3 bg-surface-variant rounded border border-outline-variant">
+<span class="material-symbols-outlined text-primary text-sm">info</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Proration is not applied as this is a contiguous renewal.</span>
+</div>
+</div>
+<div class="w-full md:w-80 bg-[#0F172A] border border-outline-variant p-6 rounded flex flex-col mt-2">
+<h4 class="font-label-caps text-label-caps text-on-surface-variant mb-4 border-b border-outline-variant pb-2">SUMMARY</h4>
+<div class="space-y-3 mb-6 flex-1">
+<div class="flex justify-between">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Annual Base Rate</span>
+<span class="font-data-md text-data-md text-on-surface">$1,440.00</span>
+</div>
+<div class="flex justify-between">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Loyalty Discount</span>
+<span class="font-data-md text-data-md text-primary">-$144.00</span>
+</div>
+</div>
+<div class="border-t border-outline-variant pt-4 flex justify-between items-end mb-4">
+<span class="font-label-caps text-label-caps text-on-surface-variant">TOTAL DUE</span>
+<span class="font-display text-2xl font-bold text-on-surface">$1,296.00</span>
+</div>
+<button class="w-full btn-secondary flex items-center justify-center gap-2 py-2 rounded text-sm font-label-caps mt-auto">
+<span class="material-symbols-outlined text-sm">receipt</span>
+                                PREVIEW RECEIPT
+                            </button>
+</div>
+</div>
+</div>
+</div>
+{% endblock %}

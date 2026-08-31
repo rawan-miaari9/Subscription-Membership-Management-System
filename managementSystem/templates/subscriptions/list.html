@@ -1,0 +1,159 @@
+{% extends "layouts/dashboard.html" %}
+{% block title %}Subscriptions - Iron Core{% endblock %}
+
+{% block dashboard_content %}
+<!-- Page Header -->
+<div class="flex justify-between items-end mb-8">
+<div>
+<h1 class="font-headline-lg text-headline-lg text-on-surface uppercase tracking-tight">SUBSCRIPTION LIFECYCLE</h1>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-2 max-w-2xl">Manage recurring memberships, track status changes, and handle manual overrides for facility access protocols.</p>
+</div>
+<button class="bg-primary-container text-on-primary-container border border-primary px-6 py-3 font-headline-md text-[14px] uppercase tracking-wider hover:bg-primary-fixed hover:text-on-primary transition-colors shadow-[4px_4px_0px_0px_rgba(83,68,52,1)] hover:shadow-none hover:translate-x-[4px] hover:translate-y-[4px] duration-150">
+                Create Subscription
+            </button>
+</div>
+<!-- Bento Grid Layout -->
+<div class="grid grid-cols-12 gap-bento-gap">
+<!-- Metrics Row -->
+<div class="col-span-4 bg-surface-container border border-outline-variant p-6 rounded-none flex flex-col justify-between h-32 relative overflow-hidden group">
+<span class="font-label-caps text-label-caps text-on-surface-variant absolute top-4 right-4">ACT_01</span>
+<div class="font-body-sm text-body-sm text-on-surface uppercase tracking-widest">Active Plans</div>
+<div class="font-display text-display text-on-surface mt-2">1,248</div>
+<div class="absolute bottom-0 left-0 h-1 bg-tertiary-container w-full scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-300"></div>
+</div>
+<div class="col-span-4 bg-surface-container border border-outline-variant p-6 rounded-none flex flex-col justify-between h-32 relative overflow-hidden group">
+<span class="font-label-caps text-label-caps text-on-surface-variant absolute top-4 right-4">EXP_02</span>
+<div class="font-body-sm text-body-sm text-on-surface uppercase tracking-widest">Expiring Soon</div>
+<div class="font-display text-display text-primary mt-2">42</div>
+<div class="absolute bottom-0 left-0 h-1 bg-primary w-full scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-300"></div>
+</div>
+<div class="col-span-4 bg-surface-container border border-outline-variant p-6 rounded-none flex flex-col justify-between h-32 relative overflow-hidden group">
+<span class="font-label-caps text-label-caps text-on-surface-variant absolute top-4 right-4">REV_03</span>
+<div class="font-body-sm text-body-sm text-on-surface uppercase tracking-widest">Est. Monthly MRR</div>
+<div class="font-display text-display text-on-surface mt-2">$84.2K</div>
+<div class="absolute bottom-0 left-0 h-1 bg-outline w-full scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-300"></div>
+</div>
+<!-- Main Data Table Container -->
+<div class="col-span-12 bg-surface-container border border-outline-variant mt-4 rounded-none">
+<!-- Table Header/Filters -->
+<div class="flex justify-between items-center p-4 border-b border-outline-variant bg-surface-container-low">
+<div class="font-label-caps text-label-caps text-on-surface">ROSTER DATA</div>
+<div class="flex gap-2">
+<select class="bg-background border border-outline-variant text-on-surface font-label-caps text-[11px] py-1 pl-2 pr-8 focus:ring-1 focus:ring-primary rounded-none uppercase">
+<option>All Statuses</option>
+<option>Active</option>
+<option>Expiring</option>
+</select>
+<button class="p-1 border border-outline-variant text-on-surface-variant hover:text-primary hover:border-primary transition-colors bg-background">
+<span class="material-symbols-outlined text-[18px]">filter_list</span>
+</button>
+</div>
+</div>
+<!-- Table Content -->
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="border-b border-outline-variant bg-surface-container-high">
+<th class="py-3 px-4 font-label-caps text-label-caps text-on-surface-variant">Member ID / Name</th>
+<th class="py-3 px-4 font-label-caps text-label-caps text-on-surface-variant">Plan Tier</th>
+<th class="py-3 px-4 font-label-caps text-label-caps text-on-surface-variant">Start Date</th>
+<th class="py-3 px-4 font-label-caps text-label-caps text-on-surface-variant">End Date</th>
+<th class="py-3 px-4 font-label-caps text-label-caps text-on-surface-variant">Status</th>
+<th class="py-3 px-4 font-label-caps text-label-caps text-on-surface-variant text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="font-data-md text-data-md text-on-surface">
+<tr class="border-b border-outline-variant hover:bg-surface-container-highest transition-colors">
+<td class="py-4 px-4">
+<div class="flex flex-col gap-1">
+<span class="text-on-surface font-bold">Marcus Thorne</span>
+<span class="text-on-surface-variant text-[12px]">MBR-9921A</span>
+</div>
+</td>
+<td class="py-4 px-4">Elite Powerlifting</td>
+<td class="py-4 px-4 text-on-surface-variant">2023-10-01</td>
+<td class="py-4 px-4 text-on-surface-variant">2024-10-01</td>
+<td class="py-4 px-4">
+<div class="inline-flex items-center gap-2 bg-secondary-container px-2 py-1 border border-outline-variant rounded-sm">
+<div class="w-1.5 h-1.5 bg-tertiary-container shrink-0"></div>
+<span class="font-label-caps text-[10px] text-on-surface uppercase">Active</span>
+</div>
+</td>
+<td class="py-4 px-4 text-right">
+<button class="text-on-surface-variant hover:text-primary transition-colors p-1" title="Manage">
+<span class="material-symbols-outlined text-[20px]">more_vert</span>
+</button>
+</td>
+</tr>
+<tr class="border-b border-outline-variant hover:bg-surface-container-highest transition-colors">
+<td class="py-4 px-4">
+<div class="flex flex-col gap-1">
+<span class="text-on-surface font-bold">Sarah Jenkins</span>
+<span class="text-on-surface-variant text-[12px]">MBR-8834B</span>
+</div>
+</td>
+<td class="py-4 px-4">Standard Access</td>
+<td class="py-4 px-4 text-on-surface-variant">2023-11-15</td>
+<td class="py-4 px-4 text-on-surface-variant">2024-11-15</td>
+<td class="py-4 px-4">
+<div class="inline-flex items-center gap-2 bg-secondary-container px-2 py-1 border border-outline-variant rounded-sm">
+<div class="w-1.5 h-1.5 bg-primary-container shrink-0"></div>
+<span class="font-label-caps text-[10px] text-on-surface uppercase">Expiring</span>
+</div>
+</td>
+<td class="py-4 px-4 text-right">
+<button class="text-on-surface-variant hover:text-primary transition-colors p-1" title="Manage">
+<span class="material-symbols-outlined text-[20px]">more_vert</span>
+</button>
+</td>
+</tr>
+<tr class="border-b border-outline-variant hover:bg-surface-container-highest transition-colors opacity-60">
+<td class="py-4 px-4">
+<div class="flex flex-col gap-1">
+<span class="text-on-surface font-bold">David Cho</span>
+<span class="text-on-surface-variant text-[12px]">MBR-7719C</span>
+</div>
+</td>
+<td class="py-4 px-4">Open Gym Off-Peak</td>
+<td class="py-4 px-4 text-on-surface-variant">2023-01-10</td>
+<td class="py-4 px-4 text-on-surface-variant">2024-01-10</td>
+<td class="py-4 px-4">
+<div class="inline-flex items-center gap-2 bg-secondary-container px-2 py-1 border border-outline-variant rounded-sm">
+<div class="w-1.5 h-1.5 bg-error shrink-0"></div>
+<span class="font-label-caps text-[10px] text-on-surface uppercase">Expired</span>
+</div>
+</td>
+<td class="py-4 px-4 text-right">
+<button class="text-on-surface-variant hover:text-primary transition-colors p-1" title="Manage">
+<span class="material-symbols-outlined text-[20px]">more_vert</span>
+</button>
+</td>
+</tr>
+<tr class="border-b border-outline-variant hover:bg-surface-container-highest transition-colors">
+<td class="py-4 px-4">
+<div class="flex flex-col gap-1">
+<span class="text-on-surface font-bold">Elena Rostova</span>
+<span class="text-on-surface-variant text-[12px]">MBR-6652D</span>
+</div>
+</td>
+<td class="py-4 px-4">Coaching 3x/Week</td>
+<td class="py-4 px-4 text-on-surface-variant">2023-08-20</td>
+<td class="py-4 px-4 text-on-surface-variant">2024-08-20</td>
+<td class="py-4 px-4">
+<div class="inline-flex items-center gap-2 bg-secondary-container px-2 py-1 border border-outline-variant rounded-sm">
+<div class="w-1.5 h-1.5 bg-surface-variant shrink-0 border border-outline"></div>
+<span class="font-label-caps text-[10px] text-on-surface uppercase">Suspended</span>
+</div>
+</td>
+<td class="py-4 px-4 text-right">
+<button class="text-on-surface-variant hover:text-primary transition-colors p-1" title="Manage">
+<span class="material-symbols-outlined text-[20px]">more_vert</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+{% endblock %}

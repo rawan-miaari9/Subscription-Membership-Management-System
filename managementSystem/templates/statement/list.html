@@ -1,0 +1,194 @@
+{% extends "layouts/dashboard.html" %}
+{% block title %}Customer Statement - Iron Core{% endblock %}
+{% block dashboard_content %}
+<div class="flex flex-col gap-6 max-w-7xl mx-auto">
+  <!-- Header -->
+  <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-outline-variant pb-4">
+    <div>
+      <h2 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface uppercase tracking-tight">Customer Statement</h2>
+      <p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Marcus Vance • MBR-8421 • Statement as of Oct 28, 2023</p>
+    </div>
+    <div class="flex flex-wrap gap-2">
+      <button data-action="print" class="inline-flex items-center gap-1.5 px-4 py-2 border border-outline-variant text-on-surface-variant font-label-caps text-[11px] uppercase hover:bg-surface-container-highest hover:text-on-surface transition-colors">
+        <span class="material-symbols-outlined text-[16px]">print</span> Print
+      </button>
+      <button data-action="pdf" class="inline-flex items-center gap-1.5 px-4 py-2 bg-primary-container text-on-primary-container font-label-caps text-[11px] font-bold uppercase hover:bg-primary transition-colors">
+        <span class="material-symbols-outlined text-[16px]">picture_as_pdf</span> PDF
+      </button>
+      <button data-action="csv" class="inline-flex items-center gap-1.5 px-4 py-2 border border-outline-variant text-on-surface-variant font-label-caps text-[11px] uppercase hover:bg-surface-container-highest hover:text-on-surface transition-colors">
+        <span class="material-symbols-outlined text-[16px]">download</span> CSV
+      </button>
+    </div>
+  </div>
+
+  <!-- Summary Cards -->
+  <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-bento-gap">
+    <div class="bg-surface-container border border-outline-variant rounded p-4 flex flex-col gap-1">
+      <span class="font-label-caps text-[11px] text-on-surface-variant uppercase tracking-wider">Opening Balance</span>
+      <span class="font-data-lg text-data-lg text-on-surface">$0.00</span>
+      <span class="font-body-sm text-[11px] text-on-surface-variant">As of Sep 01</span>
+    </div>
+    <div class="bg-surface-container border border-outline-variant rounded p-4 flex flex-col gap-1">
+      <span class="font-label-caps text-[11px] text-on-surface-variant uppercase tracking-wider">Total Charges</span>
+      <span class="font-data-lg text-data-lg text-on-surface">$650.00</span>
+      <span class="font-body-sm text-[11px] text-on-surface-variant">+2 invoices</span>
+    </div>
+    <div class="bg-surface-container border border-outline-variant rounded p-4 flex flex-col gap-1">
+      <span class="font-label-caps text-[11px] text-on-surface-variant uppercase tracking-wider">Total Payments</span>
+      <span class="font-data-lg text-data-lg text-tertiary">-$400.00</span>
+      <span class="font-body-sm text-[11px] text-on-surface-variant">2 payments</span>
+    </div>
+    <div class="bg-surface-container border border-outline-variant rounded p-4 flex flex-col gap-1">
+      <span class="font-label-caps text-[11px] text-on-surface-variant uppercase tracking-wider">Total Refunds</span>
+      <span class="font-data-lg text-data-lg text-primary">-$45.00</span>
+      <span class="font-body-sm text-[11px] text-on-surface-variant">1 refund</span>
+    </div>
+    <div class="bg-surface-container border border-outline-variant rounded p-4 flex flex-col gap-1">
+      <span class="font-label-caps text-[11px] text-on-surface-variant uppercase tracking-wider">Total Discounts</span>
+      <span class="font-data-lg text-data-lg text-tertiary">-$50.00</span>
+      <span class="font-body-sm text-[11px] text-on-surface-variant">Loyalty 10%</span>
+    </div>
+    <div class="bg-primary-container border border-primary rounded p-4 flex flex-col gap-1">
+      <span class="font-label-caps text-[11px] text-on-primary-container/80 uppercase tracking-wider">Current Balance</span>
+      <span class="font-data-lg text-data-lg text-on-primary-container">$155.00</span>
+      <span class="font-body-sm text-[11px] text-on-primary-container/80">Due</span>
+    </div>
+  </div>
+
+  <!-- Transaction Table -->
+  <div class="bg-surface-container border border-outline-variant rounded-lg flex flex-col overflow-hidden">
+    <div class="px-6 py-4 border-b border-outline-variant bg-surface-container-high flex justify-between items-center">
+      <h3 class="font-label-caps text-[11px] text-on-surface uppercase tracking-wider flex items-center gap-2">
+        <span class="material-symbols-outlined text-primary text-[18px]">receipt_long</span> Transaction Ledger
+      </h3>
+      <span class="font-data-md text-[11px] text-on-surface-variant">MBR-8421 • Marcus Vance</span>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-left border-collapse min-w-[900px]">
+        <thead>
+          <tr class="bg-background border-b border-outline-variant">
+            <th class="p-3 font-label-caps text-[11px] text-on-surface-variant uppercase">Date</th>
+            <th class="p-3 font-label-caps text-[11px] text-on-surface-variant uppercase">Description</th>
+            <th class="p-3 font-label-caps text-[11px] text-on-surface-variant uppercase text-right">Charge</th>
+            <th class="p-3 font-label-caps text-[11px] text-on-surface-variant uppercase text-right">Payment</th>
+            <th class="p-3 font-label-caps text-[11px] text-on-surface-variant uppercase text-right">Discount</th>
+            <th class="p-3 font-label-caps text-[11px] text-on-surface-variant uppercase text-right">Refund</th>
+            <th class="p-3 font-label-caps text-[11px] text-on-surface-variant uppercase text-right">Balance</th>
+          </tr>
+        </thead>
+        <tbody class="font-data-md text-[12px] divide-y divide-outline-variant">
+          <tr class="hover:bg-surface-container-high transition-colors">
+            <td class="p-3 text-on-surface-variant">2023-09-01</td>
+            <td class="p-3 text-on-surface">Opening Balance</td>
+            <td class="p-3 text-right text-on-surface">—</td>
+            <td class="p-3 text-right text-on-surface">—</td>
+            <td class="p-3 text-right text-on-surface">—</td>
+            <td class="p-3 text-right text-on-surface">—</td>
+            <td class="p-3 text-right font-bold text-on-surface">$0.00</td>
+          </tr>
+          <tr class="hover:bg-surface-container-high transition-colors">
+            <td class="p-3 text-on-surface-variant">2023-09-15</td>
+            <td class="p-3 text-on-surface">Elite Powerlifting — Monthly</td>
+            <td class="p-3 text-right text-on-surface">$150.00</td>
+            <td class="p-3 text-right text-on-surface">—</td>
+            <td class="p-3 text-right text-tertiary">-$15.00</td>
+            <td class="p-3 text-right text-on-surface">—</td>
+            <td class="p-3 text-right font-bold text-on-surface">$135.00</td>
+          </tr>
+          <tr class="hover:bg-surface-container-high transition-colors">
+            <td class="p-3 text-on-surface-variant">2023-09-15</td>
+            <td class="p-3 text-on-surface">Payment — VISA ****4242 (INV-0844)</td>
+            <td class="p-3 text-right text-on-surface">—</td>
+            <td class="p-3 text-right text-tertiary">-$150.00</td>
+            <td class="p-3 text-right text-on-surface">—</td>
+            <td class="p-3 text-right text-on-surface">—</td>
+            <td class="p-3 text-right font-bold text-tertiary">-$15.00</td>
+          </tr>
+          <tr class="hover:bg-surface-container-high transition-colors">
+            <td class="p-3 text-on-surface-variant">2023-10-01</td>
+            <td class="p-3 text-on-surface">Annual Elite Membership (12 Mo)</td>
+            <td class="p-3 text-right text-on-surface">$450.00</td>
+            <td class="p-3 text-right text-on-surface">—</td>
+            <td class="p-3 text-right text-tertiary">-$35.00</td>
+            <td class="p-3 text-right text-on-surface">—</td>
+            <td class="p-3 text-right font-bold text-on-surface">$400.00</td>
+          </tr>
+          <tr class="hover:bg-surface-container-high transition-colors">
+            <td class="p-3 text-on-surface-variant">2023-10-01</td>
+            <td class="p-3 text-on-surface">Locker Rental</td>
+            <td class="p-3 text-right text-on-surface">$50.00</td>
+            <td class="p-3 text-right text-on-surface">—</td>
+            <td class="p-3 text-right text-on-surface">—</td>
+            <td class="p-3 text-right text-on-surface">—</td>
+            <td class="p-3 text-right font-bold text-on-surface">$450.00</td>
+          </tr>
+          <tr class="hover:bg-surface-container-high transition-colors">
+            <td class="p-3 text-on-surface-variant">2023-10-24</td>
+            <td class="p-3 text-on-surface">Payment — VISA ****4242 (INV-2023-089)</td>
+            <td class="p-3 text-right text-on-surface">—</td>
+            <td class="p-3 text-right text-tertiary">-$250.00</td>
+            <td class="p-3 text-right text-on-surface">—</td>
+            <td class="p-3 text-right text-on-surface">—</td>
+            <td class="p-3 text-right font-bold text-on-surface">$200.00</td>
+          </tr>
+          <tr class="hover:bg-surface-container-high transition-colors">
+            <td class="p-3 text-on-surface-variant">2023-10-26</td>
+            <td class="p-3 text-on-surface">Refund — RFD-2023-1039 (Service cancellation)</td>
+            <td class="p-3 text-right text-on-surface">—</td>
+            <td class="p-3 text-right text-on-surface">—</td>
+            <td class="p-3 text-right text-on-surface">—</td>
+            <td class="p-3 text-right text-primary">-$45.00</td>
+            <td class="p-3 text-right font-bold text-on-surface">$155.00</td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr class="bg-surface-container-high border-t-2 border-outline-variant font-bold">
+            <td colspan="2" class="p-3 text-right font-label-caps text-[11px] text-on-surface uppercase">Totals</td>
+            <td class="p-3 text-right font-data-md text-on-surface">$650.00</td>
+            <td class="p-3 text-right font-data-md text-tertiary">-$400.00</td>
+            <td class="p-3 text-right font-data-md text-tertiary">-$50.00</td>
+            <td class="p-3 text-right font-data-md text-primary">-$45.00</td>
+            <td class="p-3 text-right font-data-md text-primary">$155.00</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+    <div class="p-4 border-t border-outline-variant bg-background flex justify-between items-center">
+      <span class="font-body-sm text-[11px] text-on-surface-variant">Generated on Oct 28, 2023 • Iron Core Gym</span>
+      <span class="font-data-md text-[11px] text-on-surface-variant">7 transactions</span>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  function toast(msg,type='info'){
+    if(window.toast) return window.toast(msg,type);
+    let c=document.getElementById('toast-container'); if(!c){c=document.createElement('div'); c.id='toast-container'; c.className='fixed bottom-4 right-4 z-50 flex flex-col gap-2'; document.body.appendChild(c);}
+    const el=document.createElement('div'); const bg=type==='error'?'bg-error text-on-error-container border-error':type==='success'?'bg-tertiary-container text-on-tertiary-container border-tertiary':'bg-surface-container-high border-outline-variant text-on-surface';
+    el.className=`px-4 py-3 rounded border text-sm font-label-caps shadow-lg ${bg}`; el.textContent=msg; c.appendChild(el); setTimeout(()=>{el.style.opacity='0'; setTimeout(()=>el.remove(),300);},2500);
+  }
+  document.querySelector('[data-action="print"]')?.addEventListener('click',()=>{
+    toast('Print statement (demo) — use browser print','info');
+    // Uncomment to enable real print: window.print();
+  });
+  document.querySelector('[data-action="pdf"]')?.addEventListener('click',()=>{
+    toast('Downloading PDF statement (frontend demo)','success');
+  });
+  document.querySelector('[data-action="csv"]')?.addEventListener('click',()=>{
+    const csv = `Date,Description,Charge,Payment,Discount,Refund,Balance
+2023-09-01,Opening Balance,,,,,0.00
+2023-09-15,Elite Powerlifting - Monthly,150.00,,-15.00,,135.00
+2023-09-15,Payment - VISA ****4242,, -150.00,,, -15.00
+2023-10-01,Annual Elite Membership (12 Mo),450.00,,-35.00,,400.00
+2023-10-01,Locker Rental,50.00,,,,450.00
+2023-10-24,Payment - VISA ****4242,, -250.00,,,200.00
+2023-10-26,Refund - RFD-2023-1039,,,,-45.00,155.00`;
+    const blob = new Blob([csv], {type:'text/csv'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href=url; a.download='statement-MBR-8421.csv'; a.click(); URL.revokeObjectURL(url);
+    toast('CSV downloaded (frontend demo)','success');
+  });
+})();
+</script>
+{% endblock %}

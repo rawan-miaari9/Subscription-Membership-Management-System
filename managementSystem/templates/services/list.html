@@ -1,0 +1,80 @@
+{% extends "layouts/dashboard.html" %}
+{% block title %}Services & Benefits - Iron Core{% endblock %}
+{% block dashboard_content %}
+<div class="flex justify-between items-center mb-6">
+  <div><h1 class="font-headline-lg text-headline-lg text-on-surface uppercase">SERVICES & BENEFITS</h1><p class="font-body-sm text-on-surface-variant">Manage gym services and plan benefits.</p></div>
+  <button data-toast="Add service (demo)" class="px-4 py-2 bg-primary text-surface-dim font-label-caps text-[11px]">Add Service</button>
+</div>
+<div class="bg-surface-container border border-outline-variant rounded overflow-hidden">
+  <table class="w-full text-left font-data-md text-[12px]"><thead><tr class="border-b border-outline-variant bg-surface-container-high"><th class="py-3 px-4">Service ID</th><th class="py-3 px-4">Service Name</th><th class="py-3 px-4">Description</th><th class="py-3 px-4">Members</th><th class="py-3 px-4">Status</th><th class="py-3 px-4 text-right">Actions</th></tr></thead><tbody><tr class="border-b border-outline-variant"><td class="py-3 px-4">SRV-001</td><td class="py-3">Personal Training</td><td class="py-3 text-on-surface-variant">1-on-1 coaching</td><td class="py-3"><span class="px-2 py-1 bg-surface-container-high text-[11px] border border-outline-variant">3 members</span> <button data-view-members="SRV-001" class="ml-2 text-primary text-[11px] underline">View</button></td><td class="py-3"><span class="px-2 py-1 bg-tertiary-container text-[10px]">ACTIVE</span></td><td class="py-3 px-4 text-right"><button data-assign-service="SRV-001" class="px-3 py-1 bg-primary-container text-on-primary-container font-label-caps text-[11px] rounded mr-1">Assign Member</button><button data-toast="Edit (demo)" class="text-primary font-label-caps text-[11px]">Edit</button></td></tr><tr class="border-b border-outline-variant"><td class="py-3 px-4">SRV-002</td><td class="py-3">Group Classes</td><td class="py-3 text-on-surface-variant">Yoga, HIIT</td><td class="py-3"><span class="px-2 py-1 bg-surface-container-high text-[11px] border border-outline-variant">0 members</span> <button data-view-members="SRV-002" class="ml-2 text-primary text-[11px] underline">View</button></td><td class="py-3"><span class="px-2 py-1 bg-surface-container-high text-[10px]">INACTIVE</span></td><td class="py-3 px-4 text-right"><button data-assign-service="SRV-002" class="px-3 py-1 bg-primary-container text-on-primary-container font-label-caps text-[11px] rounded mr-1">Assign Member</button><button data-toast="Activate (demo)" class="text-primary font-label-caps text-[11px]">Activate</button></td></tr></tbody></table>
+</div>
+<!-- Assign Member Modal -->
+<div id="assign-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+  <div class="absolute inset-0 bg-background/80 backdrop-blur-sm" data-close-assign></div>
+  <div class="relative bg-surface-container border border-outline-variant rounded-lg p-6 w-full max-w-md shadow-2xl">
+    <h3 class="font-headline-md text-headline-md text-on-surface mb-1">Assign Member to Service</h3>
+    <p class="font-body-sm text-on-surface-variant mb-4">Select member to assign to <span id="assign-service-name" class="text-primary font-bold">SRV-001</span></p>
+    <select id="assign-member-select" class="w-full bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 text-[13px] mb-4"><option value="">Select member</option><option>John Doe - MBR-9921A</option><option>Marcus Stone - MBR-8834B</option><option>Sarah Vance - MBR-7719C</option><option>Evan Wright - MBR-6652D</option></select>
+    <div class="flex justify-end gap-2">
+      <button data-close-assign class="px-6 py-2 border border-outline-variant font-label-caps text-[11px]">Cancel</button>
+      <button id="confirm-assign" class="px-6 py-2 bg-primary text-surface-dim font-label-caps text-[11px]">Assign</button>
+    </div>
+  </div>
+</div>
+<!-- View Members Modal -->
+<div id="view-members-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+  <div class="absolute inset-0 bg-background/80 backdrop-blur-sm" data-close-view></div>
+  <div class="relative bg-surface-container border border-outline-variant rounded-lg p-6 w-full max-w-md shadow-2xl">
+    <h3 class="font-headline-md text-headline-md text-on-surface mb-3">Members in <span id="view-service-name">SRV-001</span></h3>
+    <div id="view-members-list" class="space-y-2 font-data-md text-[12px]"></div>
+    <button data-close-view class="mt-4 px-6 py-2 border border-outline-variant font-label-caps text-[11px] w-full">Close</button>
+  </div>
+</div>
+<script>
+(function(){
+  const assignModal=document.getElementById('assign-modal');
+  const viewModal=document.getElementById('view-members-modal');
+  let currentService=null;
+  const membersByService={'SRV-001':['John Doe','Elena Rostova','Marcus Stone'],'SRV-002':[]};
+  document.querySelectorAll('[data-assign-service]').forEach(btn=>{
+    btn.addEventListener('click',()=>{ currentService=btn.dataset.assignService; document.getElementById('assign-service-name').textContent=currentService; assignModal.classList.remove('hidden'); });
+  });
+  document.querySelectorAll('[data-close-assign]').forEach(b=>b.addEventListener('click',()=>assignModal.classList.add('hidden')));
+  document.getElementById('confirm-assign')?.addEventListener('click',()=>{
+    const sel=document.getElementById('assign-member-select').value;
+    if(!sel){ toast('Select member','error'); return; }
+    const name=sel.split(' - ')[0];
+    if(!membersByService[currentService].includes(name)) membersByService[currentService].push(name);
+    // update count in table
+    const row=document.querySelector(`[data-assign-service="${currentService}"]`)?.closest('tr');
+    if(row){ const countEl=row.querySelector('td:nth-child(4) span'); if(countEl) countEl.textContent=membersByService[currentService].length+' members'; }
+    assignModal.classList.add('hidden');
+    toast(name+' assigned to '+currentService+' (frontend demo)','success');
+  });
+  document.querySelectorAll('[data-view-members]').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const svc=btn.dataset.viewMembers;
+      document.getElementById('view-service-name').textContent=svc;
+      const list=document.getElementById('view-members-list');
+      const members=membersByService[svc]||[];
+      list.innerHTML = members.length ? members.map(m=>`<div class="p-2 border border-outline-variant bg-surface-container-lowest flex justify-between"><span>${m}</span><button data-remove-member="${m}" data-service="${svc}" class="text-error text-[11px]">Remove</button></div>`).join('') : '<p class="text-on-surface-variant text-center py-4">No members in this service</p>';
+      viewModal.classList.remove('hidden');
+      list.querySelectorAll('[data-remove-member]').forEach(b=>{
+        b.addEventListener('click',()=>{
+          const m=b.dataset.removeMember; const s=b.dataset.service;
+          membersByService[s]=membersByService[s].filter(x=>x!==m);
+          b.parentElement.remove();
+          const row=document.querySelector(`[data-assign-service="${s}"]`)?.closest('tr');
+          if(row){ row.querySelector('td:nth-child(4) span').textContent=membersByService[s].length+' members'; }
+          toast(m+' removed from '+s,'info');
+          if(membersByService[s].length===0) list.innerHTML='<p class="text-on-surface-variant text-center py-4">No members in this service</p>';
+        });
+      });
+    });
+  });
+  document.querySelectorAll('[data-close-view]').forEach(b=>b.addEventListener('click',()=>viewModal.classList.add('hidden')));
+  assignModal?.addEventListener('click',e=>{ if(e.target===assignModal) assignModal.classList.add('hidden'); });
+  viewModal?.addEventListener('click',e=>{ if(e.target===viewModal) viewModal.classList.add('hidden'); });
+})();
+</script>
+{% endblock %}

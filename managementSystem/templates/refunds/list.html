@@ -1,0 +1,122 @@
+{% extends "layouts/dashboard.html" %}
+{% block title %}Refunds - Iron Core{% endblock %}
+
+{% block dashboard_content %}
+<div class="flex justify-between items-end mb-6">
+<div>
+<h2 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-background uppercase tracking-tight">REFUND MANAGEMENT</h2>
+</div>
+<button class="bg-[#F59E0B] text-[#0F172A] font-bold uppercase font-label-caps text-label-caps px-6 py-3 hover:bg-[#D97706] transition-colors">
+                PROCESS REFUND
+            </button>
+</div>
+<!-- Bento Grid Layout -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-bento-gap">
+<!-- Quick Stats -->
+<div class="col-span-1 lg:col-span-4 bg-[#1E293B] border border-[#334155] p-6 rounded-lg relative overflow-hidden">
+<div class="absolute top-4 right-4 text-[#334155]">
+<span class="material-symbols-outlined">pending_actions</span>
+</div>
+<h3 class="font-label-caps text-label-caps text-on-surface-variant uppercase mb-2">Pending Requests</h3>
+<div class="font-display text-display text-[#F59E0B] leading-none">12</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-2">Requires review</p>
+</div>
+<div class="col-span-1 lg:col-span-4 bg-[#1E293B] border border-[#334155] p-6 rounded-lg relative overflow-hidden">
+<div class="absolute top-4 right-4 text-[#334155]">
+<span class="material-symbols-outlined">check_circle</span>
+</div>
+<h3 class="font-label-caps text-label-caps text-on-surface-variant uppercase mb-2">Processed (30d)</h3>
+<div class="font-display text-display text-on-background leading-none">45</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-2">$4,250.00 Total</p>
+</div>
+<div class="col-span-1 lg:col-span-4 bg-[#1E293B] border border-[#334155] p-6 rounded-lg relative overflow-hidden">
+<div class="absolute top-4 right-4 text-[#334155]">
+<span class="material-symbols-outlined">error</span>
+</div>
+<h3 class="font-label-caps text-label-caps text-on-surface-variant uppercase mb-2">Failed (30d)</h3>
+<div class="font-display text-display text-[#690005] leading-none">3</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-2">Check gateway logs</p>
+</div>
+<!-- Refund History Table -->
+<div class="col-span-1 lg:col-span-12 bg-[#1E293B] border border-[#334155] rounded-lg flex flex-col">
+<div class="p-5 border-b border-[#334155] flex justify-between items-center">
+<h3 class="font-label-caps text-label-caps text-on-background uppercase">Refund History Ledger</h3>
+<div class="flex space-x-2">
+<button class="border border-[#334155] bg-transparent text-on-surface-variant font-label-caps text-label-caps px-4 py-2 hover:bg-[#334155] transition-colors uppercase">Filter</button>
+<button class="border border-[#334155] bg-transparent text-on-surface-variant font-label-caps text-label-caps px-4 py-2 hover:bg-[#334155] transition-colors uppercase">Export</button>
+</div>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="border-b border-[#334155] bg-[#0F172A]">
+<th class="p-4 font-label-caps text-label-caps text-on-surface-variant uppercase">Date</th>
+<th class="p-4 font-label-caps text-label-caps text-on-surface-variant uppercase">Transaction ID</th>
+<th class="p-4 font-label-caps text-label-caps text-on-surface-variant uppercase">Member</th>
+<th class="p-4 font-label-caps text-label-caps text-on-surface-variant uppercase">Amount</th>
+<th class="p-4 font-label-caps text-label-caps text-on-surface-variant uppercase">Type</th>
+<th class="p-4 font-label-caps text-label-caps text-on-surface-variant uppercase">Status</th>
+<th class="p-4 font-label-caps text-label-caps text-on-surface-variant uppercase text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="font-data-md text-data-md divide-y divide-[#334155]">
+<tr class="hover:bg-[#334155]/30 transition-colors group">
+<td class="p-4 text-on-surface-variant">2023-10-24</td>
+<td class="p-4 font-mono text-[#F59E0B]">TX-9982A</td>
+<td class="p-4 text-on-background">Marcus Vance</td>
+<td class="p-4 text-on-background">$150.00</td>
+<td class="p-4 text-on-surface-variant">Full</td>
+<td class="p-4">
+<div class="inline-flex items-center space-x-2 bg-[#1E293B] border border-[#334155] px-2 py-1 rounded">
+<div class="w-1.5 h-1.5 bg-[#F59E0B]"></div>
+<span class="font-label-caps text-[10px] text-on-surface-variant uppercase">Requested</span>
+</div>
+</td>
+<td class="p-4 text-right">
+<button class="text-on-surface-variant hover:text-[#F59E0B] transition-colors">
+<span class="material-symbols-outlined text-sm">visibility</span>
+</button>
+</td>
+</tr>
+<tr class="hover:bg-[#334155]/30 transition-colors group">
+<td class="p-4 text-on-surface-variant">2023-10-22</td>
+<td class="p-4 font-mono text-[#F59E0B]">TX-9951C</td>
+<td class="p-4 text-on-background">Sarah Connor</td>
+<td class="p-4 text-on-background">$45.00</td>
+<td class="p-4 text-on-surface-variant">Partial</td>
+<td class="p-4">
+<div class="inline-flex items-center space-x-2 bg-[#1E293B] border border-[#334155] px-2 py-1 rounded">
+<div class="w-1.5 h-1.5 bg-green-500"></div>
+<span class="font-label-caps text-[10px] text-on-surface-variant uppercase">Processed</span>
+</div>
+</td>
+<td class="p-4 text-right">
+<button class="text-on-surface-variant hover:text-[#F59E0B] transition-colors">
+<span class="material-symbols-outlined text-sm">visibility</span>
+</button>
+</td>
+</tr>
+<tr class="hover:bg-[#334155]/30 transition-colors group">
+<td class="p-4 text-on-surface-variant">2023-10-21</td>
+<td class="p-4 font-mono text-[#F59E0B]">TX-9940B</td>
+<td class="p-4 text-on-background">John Rambo</td>
+<td class="p-4 text-on-background">$200.00</td>
+<td class="p-4 text-on-surface-variant">Full</td>
+<td class="p-4">
+<div class="inline-flex items-center space-x-2 bg-[#1E293B] border border-[#334155] px-2 py-1 rounded">
+<div class="w-1.5 h-1.5 bg-green-500"></div>
+<span class="font-label-caps text-[10px] text-on-surface-variant uppercase">Processed</span>
+</div>
+</td>
+<td class="p-4 text-right">
+<button class="text-on-surface-variant hover:text-[#F59E0B] transition-colors">
+<span class="material-symbols-outlined text-sm">visibility</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+{% endblock %}
