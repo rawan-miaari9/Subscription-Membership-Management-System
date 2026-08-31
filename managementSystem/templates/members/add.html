@@ -1,0 +1,71 @@
+{% extends "layouts/dashboard.html" %}
+{% block title %}Add Member - Iron Core{% endblock %}
+{% block dashboard_content %}
+<div class="max-w-3xl mx-auto">
+  <div class="mb-6">
+    <h1 class="font-headline-lg text-headline-lg text-on-surface uppercase">ADD MEMBER</h1>
+    <p class="font-body-sm text-on-surface-variant">Create a new gym member.</p>
+  </div>
+  <form data-add-member-form class="bg-surface-container border border-outline-variant p-6 rounded space-y-6" novalidate>
+    {% csrf_token %}
+    <div data-form-msg class="hidden p-3 rounded border border-error bg-error-container text-on-error-container text-sm"></div>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div>
+        <label class="block font-label-caps text-[11px] text-on-surface-variant mb-2">Full Name *</label>
+        <input name="full_name" required class="w-full bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 font-body-sm text-on-surface" placeholder="John Doe">
+        <p class="hidden text-error text-xs mt-1" data-error="full_name">Required</p>
+      </div>
+      <div>
+        <label class="block font-label-caps text-[11px] text-on-surface-variant mb-2">Phone *</label>
+        <input name="phone" required class="w-full bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 font-body-sm text-on-surface" placeholder="555-0192">
+        <p class="hidden text-error text-xs mt-1" data-error="phone">Required</p>
+      </div>
+      <div>
+        <label class="block font-label-caps text-[11px] text-on-surface-variant mb-2">Email</label>
+        <input name="email" type="email" class="w-full bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 font-body-sm text-on-surface" placeholder="john@example.com">
+      </div>
+      <div>
+        <label class="block font-label-caps text-[11px] text-on-surface-variant mb-2">Join Date *</label>
+        <input name="join_date" type="date" required class="w-full bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 font-body-sm text-on-surface" value="2023-10-01">
+      </div>
+      <div>
+        <label class="block font-label-caps text-[11px] text-on-surface-variant mb-2">Status</label>
+        <select name="status" class="w-full bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 font-body-sm text-on-surface"><option>Active</option><option>Expiring</option><option>Suspended</option></select>
+      </div>
+      <div>
+        <label class="block font-label-caps text-[11px] text-on-surface-variant mb-2">Current Plan</label>
+        <select name="plan" class="w-full bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 font-body-sm text-on-surface"><option>Elite Power</option><option>Standard Access</option><option>Open Gym Off-Peak</option></select>
+      </div>
+    </div>
+    <div class="flex gap-3 pt-4">
+      <button type="submit" class="px-6 py-3 bg-primary text-surface-dim font-label-caps text-[11px]">Save</button>
+      <a href="{% url 'members' %}" class="px-6 py-3 border border-outline-variant font-label-caps text-[11px] text-on-surface hover:bg-surface-container-high">Cancel</a>
+      <span data-loading class="hidden ml-4 flex items-center gap-2 font-label-caps text-[11px] text-on-surface-variant"><span class="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></span> Saving...</span>
+    </div>
+    <div data-success class="hidden p-4 bg-tertiary-container border border-tertiary text-on-tertiary-container rounded font-body-sm">Member created successfully (frontend demo).</div>
+    <div data-error-state class="hidden p-4 bg-error-container border border-error text-on-error-container rounded font-body-sm">Failed to save. Check fields.</div>
+  </form>
+</div>
+<script>
+(function(){
+  const form=document.querySelector('[data-add-member-form]');
+  if(!form) return;
+  form.addEventListener('submit',e=>{
+    e.preventDefault();
+    let valid=true;
+    form.querySelectorAll('[required]').forEach(inp=>{
+      const err=form.querySelector(`[data-error="${inp.name}"]`);
+      if(!inp.value.trim()){valid=false; inp.classList.add('border-error'); if(err) err.classList.remove('hidden');} else {inp.classList.remove('border-error'); if(err) err.classList.add('hidden');}
+    });
+    const msg=form.querySelector('[data-form-msg]');
+    if(!valid){msg.textContent='Please fix validation errors.';msg.classList.remove('hidden'); return;}
+    msg.classList.add('hidden');
+    const loading=form.querySelector('[data-loading]');
+    const success=form.querySelector('[data-success]');
+    const errState=form.querySelector('[data-error-state]');
+    loading.classList.remove('hidden'); success.classList.add('hidden'); errState.classList.add('hidden');
+    setTimeout(()=>{loading.classList.add('hidden'); if(Math.random()>0.2){success.classList.remove('hidden'); if(window.toast) toast('Member saved (demo)','success');} else {errState.classList.remove('hidden'); if(window.toast) toast('Save failed','error');}}, 800);
+  });
+})();
+</script>
+{% endblock %}

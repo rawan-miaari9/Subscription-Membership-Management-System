@@ -1,0 +1,387 @@
+{% extends "layouts/dashboard.html" %}
+{% block title %}Generate Report - Iron Core{% endblock %}
+
+{% block dashboard_content %}
+<div class="max-w-[1400px] mx-auto">
+  <!-- Header -->
+  <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-6 gap-4">
+    <div>
+      <div class="flex items-center gap-2 mb-2">
+        <a href="{% url 'reports' %}" class="inline-flex items-center gap-1.5 font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant hover:text-primary transition-colors">
+          <span class="material-symbols-outlined text-[16px]">arrow_back</span> Back to Reports
+        </a>
+      </div>
+      <h2 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface uppercase tracking-tight">GENERATE REPORT</h2>
+      <p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Select report type, filters and export — all frontend-only.</p>
+    </div>
+    <div class="flex flex-wrap gap-2">
+      <button data-action="generate" class="bg-primary-container text-on-primary-container font-label-caps text-[11px] uppercase font-bold px-5 py-2.5 hover:bg-primary-container/90 transition-colors flex items-center gap-2 border border-primary-container">
+        <span class="material-symbols-outlined text-[16px]">analytics</span> Generate
+      </button>
+      <button data-action="pdf" class="bg-transparent border border-outline-variant text-on-surface font-label-caps text-[11px] uppercase px-4 py-2.5 hover:bg-surface-container-high transition-colors flex items-center gap-2">
+        <span class="material-symbols-outlined text-[16px]">picture_as_pdf</span> PDF
+      </button>
+      <button data-action="csv" class="bg-transparent border border-outline-variant text-on-surface font-label-caps text-[11px] uppercase px-4 py-2.5 hover:bg-surface-container-high transition-colors flex items-center gap-2">
+        <span class="material-symbols-outlined text-[16px]">file_download</span> CSV
+      </button>
+      <button data-action="print" class="bg-transparent border border-outline-variant text-on-surface font-label-caps text-[11px] uppercase px-4 py-2.5 hover:bg-surface-container-high transition-colors flex items-center gap-2">
+        <span class="material-symbols-outlined text-[16px]">print</span> Print
+      </button>
+    </div>
+  </div>
+
+  <div class="flex flex-col lg:flex-row gap-bento-gap pb-8">
+    <!-- Sidebar Filters -->
+    <aside class="w-full lg:w-72 flex flex-col gap-bento-gap shrink-0">
+      <div class="bg-surface-container border border-outline-variant rounded-lg p-5 flex flex-col gap-6">
+        <h3 class="font-label-caps text-[11px] uppercase tracking-widest text-on-surface border-b border-outline-variant pb-2">PARAMETERS</h3>
+
+        <!-- Date Range -->
+        <div class="space-y-2">
+          <label class="font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant">DATE RANGE</label>
+          <div class="relative">
+            <select data-filter="date_range" class="w-full bg-surface-container-lowest border border-outline-variant text-on-surface font-body-sm text-body-sm p-2.5 pr-8 focus:ring-1 focus:ring-primary focus:border-primary outline-none appearance-none rounded">
+              <option value="last_30">LAST 30 DAYS</option>
+              <option value="last_7">LAST 7 DAYS</option>
+              <option value="this_month">THIS MONTH</option>
+              <option value="this_quarter">THIS QUARTER</option>
+              <option value="year_to_date">YEAR TO DATE</option>
+              <option value="custom">CUSTOM RANGE...</option>
+            </select>
+            <span class="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none text-[18px]">expand_more</span>
+          </div>
+          <div data-custom-dates class="hidden grid grid-cols-2 gap-2">
+            <input type="date" data-filter="date_from" class="bg-surface-container-lowest border border-outline-variant text-on-surface font-body-sm text-xs p-2 rounded focus:ring-1 focus:ring-primary focus:border-primary outline-none">
+            <input type="date" data-filter="date_to" class="bg-surface-container-lowest border border-outline-variant text-on-surface font-body-sm text-xs p-2 rounded focus:ring-1 focus:ring-primary focus:border-primary outline-none">
+          </div>
+        </div>
+
+        <!-- Status -->
+        <div class="space-y-2">
+          <label class="font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant">STATUS</label>
+          <div class="relative">
+            <select data-filter="status" class="w-full bg-surface-container-lowest border border-outline-variant text-on-surface font-body-sm text-body-sm p-2.5 pr-8 focus:ring-1 focus:ring-primary focus:border-primary outline-none appearance-none rounded">
+              <option value="">ALL STATUSES</option>
+              <option value="active">ACTIVE</option>
+              <option value="expiring">EXPIRING</option>
+              <option value="expired">EXPIRED</option>
+              <option value="suspended">SUSPENDED</option>
+              <option value="paid">PAID</option>
+              <option value="pending">PENDING</option>
+              <option value="failed">FAILED</option>
+            </select>
+            <span class="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none text-[18px]">expand_more</span>
+          </div>
+        </div>
+
+        <!-- Category -->
+        <div class="space-y-2">
+          <label class="font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant">CATEGORY</label>
+          <div class="relative">
+            <select data-filter="category" class="w-full bg-surface-container-lowest border border-outline-variant text-on-surface font-body-sm text-body-sm p-2.5 pr-8 focus:ring-1 focus:ring-primary focus:border-primary outline-none appearance-none rounded">
+              <option value="">ALL CATEGORIES</option>
+              <option value="Equipment">EQUIPMENT</option>
+              <option value="Maintenance">MAINTENANCE</option>
+              <option value="Salary">SALARY</option>
+              <option value="Utility">UTILITY</option>
+              <option value="Other">OTHER</option>
+            </select>
+            <span class="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none text-[18px]">expand_more</span>
+          </div>
+        </div>
+
+        <!-- Plan -->
+        <div class="space-y-2">
+          <label class="font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant">PLAN</label>
+          <div class="relative">
+            <select data-filter="plan" class="w-full bg-surface-container-lowest border border-outline-variant text-on-surface font-body-sm text-body-sm p-2.5 pr-8 focus:ring-1 focus:ring-primary focus:border-primary outline-none appearance-none rounded">
+              <option value="">ALL PLANS</option>
+              <option value="Silver">SILVER</option>
+              <option value="Gold">GOLD</option>
+              <option value="Premium">PREMIUM</option>
+              <option value="Custom">CUSTOM</option>
+            </select>
+            <span class="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none text-[18px]">expand_more</span>
+          </div>
+        </div>
+
+        <!-- Report Types -->
+        <div class="space-y-3 pt-4 border-t border-outline-variant">
+          <label class="font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant">REPORT TYPE *</label>
+          <div class="grid grid-cols-1 gap-2">
+            <label class="flex items-center gap-2 cursor-pointer p-2 border border-outline-variant rounded bg-surface-container-lowest hover:border-primary-container transition-colors has-[input:checked]:border-primary-container has-[input:checked]:bg-surface-container-high">
+              <input type="radio" name="report_type" value="Revenue" checked class="accent-primary">
+              <span class="font-label-caps text-[11px] uppercase tracking-widest text-on-surface">Revenue</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer p-2 border border-outline-variant rounded bg-surface-container-lowest hover:border-primary-container transition-colors has-[input:checked]:border-primary-container has-[input:checked]:bg-surface-container-high">
+              <input type="radio" name="report_type" value="Payments" class="accent-primary">
+              <span class="font-label-caps text-[11px] uppercase tracking-widest text-on-surface">Payments</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer p-2 border border-outline-variant rounded bg-surface-container-lowest hover:border-primary-container transition-colors has-[input:checked]:border-primary-container has-[input:checked]:bg-surface-container-high">
+              <input type="radio" name="report_type" value="Subscriptions" class="accent-primary">
+              <span class="font-label-caps text-[11px] uppercase tracking-widest text-on-surface">Subscriptions</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer p-2 border border-outline-variant rounded bg-surface-container-lowest hover:border-primary-container transition-colors has-[input:checked]:border-primary-container has-[input:checked]:bg-surface-container-high">
+              <input type="radio" name="report_type" value="Expenses" class="accent-primary">
+              <span class="font-label-caps text-[11px] uppercase tracking-widest text-on-surface">Expenses</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer p-2 border border-outline-variant rounded bg-surface-container-lowest hover:border-primary-container transition-colors has-[input:checked]:border-primary-container has-[input:checked]:bg-surface-container-high">
+              <input type="radio" name="report_type" value="Refunds" class="accent-primary">
+              <span class="font-label-caps text-[11px] uppercase tracking-widest text-on-surface">Refunds</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer p-2 border border-outline-variant rounded bg-surface-container-lowest hover:border-primary-container transition-colors has-[input:checked]:border-primary-container has-[input:checked]:bg-surface-container-high">
+              <input type="radio" name="report_type" value="Members" class="accent-primary">
+              <span class="font-label-caps text-[11px] uppercase tracking-widest text-on-surface">Members</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer p-2 border border-outline-variant rounded bg-surface-container-lowest hover:border-primary-container transition-colors has-[input:checked]:border-primary-container has-[input:checked]:bg-surface-container-high">
+              <input type="radio" name="report_type" value="Attendance" class="accent-primary">
+              <span class="font-label-caps text-[11px] uppercase tracking-widest text-on-surface">Attendance</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer p-2 border border-outline-variant rounded bg-surface-container-lowest hover:border-primary-container transition-colors has-[input:checked]:border-primary-container has-[input:checked]:bg-surface-container-high">
+              <input type="radio" name="report_type" value="Expiring" class="accent-primary">
+              <span class="font-label-caps text-[11px] uppercase tracking-widest text-on-surface">Expiring</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer p-2 border border-outline-variant rounded bg-surface-container-lowest hover:border-primary-container transition-colors has-[input:checked]:border-primary-container has-[input:checked]:bg-surface-container-high">
+              <input type="radio" name="report_type" value="Expired" class="accent-primary">
+              <span class="font-label-caps text-[11px] uppercase tracking-widest text-on-surface">Expired</span>
+            </label>
+          </div>
+          <p class="hidden text-error text-xs font-body-sm" data-error="report_type">Please select a report type.</p>
+        </div>
+
+        <button data-action="generate" class="w-full bg-primary-container text-on-primary-container font-label-caps text-[11px] uppercase font-bold py-2.5 rounded border border-primary-container hover:bg-primary-container/90 transition-colors">
+          GENERATE REPORT
+        </button>
+        <div data-loading class="hidden flex items-center justify-center gap-2 font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant">
+          <span class="w-4 h-4 border-2 border-primary-container border-t-transparent rounded-full animate-spin"></span> Generating...
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Canvas -->
+    <div class="flex-1 flex flex-col gap-bento-gap">
+      <!-- KPIs Top Row -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-bento-gap">
+        <div class="bg-surface-container border border-outline-variant rounded-lg p-5 relative overflow-hidden group">
+          <div class="absolute top-4 right-4 opacity-10 group-hover:opacity-20 transition-opacity">
+            <span class="material-symbols-outlined text-[48px]">account_balance_wallet</span>
+          </div>
+          <h4 class="font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">TOTAL VALUE</h4>
+          <div data-kpi="total" class="font-data-lg text-[28px] font-bold text-on-surface tracking-tighter">$124,500.00</div>
+          <div class="font-label-caps text-[11px] text-tertiary mt-2 flex items-center gap-1">
+            <span class="material-symbols-outlined text-[12px]">trending_up</span> <span data-kpi-trend>Ready to generate</span>
+          </div>
+        </div>
+        <div class="bg-surface-container border border-outline-variant rounded-lg p-5 relative overflow-hidden group">
+          <div class="absolute top-4 right-4 opacity-10 group-hover:opacity-20 transition-opacity">
+            <span class="material-symbols-outlined text-[48px]">groups</span>
+          </div>
+          <h4 class="font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">RECORDS</h4>
+          <div data-kpi="count" class="font-data-lg text-[28px] font-bold text-on-surface tracking-tighter">—</div>
+          <div class="font-label-caps text-[11px] text-on-surface-variant mt-2">filtered rows</div>
+        </div>
+        <div class="bg-surface-container border border-outline-variant rounded-lg p-5 relative overflow-hidden group">
+          <div class="absolute top-4 right-4 opacity-10 group-hover:opacity-20 transition-opacity">
+            <span class="material-symbols-outlined text-[48px]">model_training</span>
+          </div>
+          <h4 class="font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">TYPE</h4>
+          <div data-kpi="type" class="font-data-lg text-[20px] font-bold text-primary">Revenue</div>
+          <div class="font-label-caps text-[11px] text-on-surface-variant mt-2">current selection</div>
+        </div>
+      </div>
+
+      <!-- Preview Table -->
+      <div class="bg-surface-container border border-outline-variant rounded-lg overflow-hidden flex flex-col">
+        <div class="p-4 border-b border-outline-variant bg-surface-container-high flex justify-between items-center">
+          <h3 class="font-label-caps text-[11px] uppercase tracking-widest text-on-surface">REPORT PREVIEW</h3>
+          <span data-preview-meta class="font-label-caps text-[10px] uppercase tracking-widest text-on-surface-variant">No report generated yet — click Generate</span>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left font-data-md text-data-md" id="preview-table">
+            <thead class="bg-background border-b border-outline-variant">
+              <tr>
+                <th class="p-3 font-label-caps text-[11px] text-on-surface-variant uppercase">Date</th>
+                <th class="p-3 font-label-caps text-[11px] text-on-surface-variant uppercase">Metric ID</th>
+                <th class="p-3 font-label-caps text-[11px] text-on-surface-variant uppercase">Category</th>
+                <th class="p-3 font-label-caps text-[11px] text-on-surface-variant uppercase text-right">Value</th>
+                <th class="p-3 font-label-caps text-[11px] text-on-surface-variant uppercase text-center">Status</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-outline-variant">
+              <tr>
+                <td colspan="5" class="p-8 text-center font-body-sm text-on-surface-variant">Click <span class="text-primary font-bold">Generate</span> to populate preview (frontend demo data).</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div data-success class="hidden p-3 bg-tertiary-container border-t border-tertiary text-on-tertiary-container font-body-sm text-sm flex items-center gap-2">
+          <span class="material-symbols-outlined text-[18px]">check_circle</span> Report generated successfully (frontend demo).
+        </div>
+      </div>
+
+      <!-- Export Bar (repeat) -->
+      <div class="flex flex-wrap gap-2 justify-end">
+        <button data-action="pdf" class="bg-transparent border border-outline-variant text-on-surface font-label-caps text-[11px] uppercase px-4 py-2 hover:bg-surface-container-high transition-colors flex items-center gap-2">
+          <span class="material-symbols-outlined text-[14px]">picture_as_pdf</span> Export PDF
+        </button>
+        <button data-action="csv" class="bg-transparent border border-outline-variant text-on-surface font-label-caps text-[11px] uppercase px-4 py-2 hover:bg-surface-container-high transition-colors flex items-center gap-2">
+          <span class="material-symbols-outlined text-[14px]">file_download</span> Export CSV
+        </button>
+        <button data-action="print" class="bg-transparent border border-outline-variant text-on-surface font-label-caps text-[11px] uppercase px-4 py-2 hover:bg-surface-container-high transition-colors flex items-center gap-2">
+          <span class="material-symbols-outlined text-[14px]">print</span> Print
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const form = document; // filters are not a form, use document
+  function toastLocal(msg, type){
+    if(typeof toast==='function') toast(msg,type);
+    else if(window.toast) window.toast(msg,type);
+    else {
+      let c=document.getElementById('toast-container'); if(!c){c=document.createElement('div'); c.id='toast-container'; c.className='fixed bottom-4 right-4 z-50 flex flex-col gap-2'; document.body.appendChild(c);}
+      const el=document.createElement('div'); el.className='px-4 py-3 rounded border text-sm font-label-caps shadow-lg '+(type==='error'?'bg-error text-on-error border-error':type==='success'?'bg-tertiary-container text-on-tertiary-container border-tertiary':'bg-surface-container-high border-outline-variant text-on-surface'); el.textContent=msg; c.appendChild(el); setTimeout(()=>{el.style.opacity='0'; setTimeout(()=>el.remove(),300);},2500);
+    }
+  }
+
+  const dateRange = document.querySelector('[data-filter="date_range"]');
+  const customDates = document.querySelector('[data-custom-dates]');
+  if(dateRange && customDates){
+    dateRange.addEventListener('change', ()=>{
+      if(dateRange.value==='custom') customDates.classList.remove('hidden');
+      else customDates.classList.add('hidden');
+    });
+  }
+
+  // Keep KPI type in sync
+  document.querySelectorAll('input[name="report_type"]').forEach(r=>{
+    r.addEventListener('change', ()=>{
+      const kpiType = document.querySelector('[data-kpi="type"]');
+      if(kpiType) kpiType.textContent = r.value;
+    });
+  });
+
+  function getSelectedType(){
+    const checked = document.querySelector('input[name="report_type"]:checked');
+    return checked ? checked.value : null;
+  }
+
+  function generateDemoRows(type){
+    const categories = {
+      Revenue: ['SUBSCRIPTIONS','MERCHANDISE'],
+      Payments: ['CASH','CARD','TRANSFER'],
+      Subscriptions: ['SILVER','GOLD','PREMIUM'],
+      Expenses: ['EQUIPMENT','MAINTENANCE','SALARY','UTILITY'],
+      Refunds: ['REFUND-REQ','CHARGEBACK'],
+      Members: ['ACTIVE','EXPIRING','EXPIRED'],
+      Attendance: ['CHECK-IN','CHECK-OUT'],
+      Expiring: ['EXPIRING SOON'],
+      Expired: ['EXPIRED']
+    };
+    const cats = categories[type] || ['GENERAL'];
+    const now = new Date();
+    const rows = [];
+    for(let i=0;i<5;i++){
+      const d = new Date(now); d.setDate(d.getDate()-i);
+      const dateStr = d.toISOString().slice(0,10);
+      const cat = cats[i % cats.length];
+      const amount = (Math.random()*2000 + 100).toFixed(2);
+      const status = i%3===0 ? 'VERIFIED' : i%3===1 ? 'PENDING' : 'PAID';
+      const id = (type.slice(0,3).toUpperCase()+'-90'+(12+i));
+      rows.push({date:dateStr, id, cat, amount, status});
+    }
+    return rows;
+  }
+
+  function renderTable(rows){
+    const tbody = document.querySelector('#preview-table tbody');
+    if(!tbody) return;
+    tbody.innerHTML = '';
+    rows.forEach(r=>{
+      const tr = document.createElement('tr');
+      tr.className = 'hover:bg-surface-container-high transition-colors';
+      const statusColor = r.status==='VERIFIED' ? 'bg-tertiary' : r.status==='PENDING' ? 'bg-primary-container' : 'bg-on-surface';
+      tr.innerHTML = `
+        <td class="p-3 text-on-surface">${r.date}</td>
+        <td class="p-3 text-primary">${r.id}</td>
+        <td class="p-3 text-on-surface">${r.cat}</td>
+        <td class="p-3 text-on-surface text-right">$${parseFloat(r.amount).toLocaleString('en-US', {minimumFractionDigits:2})}</td>
+        <td class="p-3 text-center">
+          <span class="inline-flex items-center gap-1 px-2 py-1 bg-surface-container-highest border border-outline-variant rounded font-label-caps text-[10px] text-on-surface">
+            <span class="w-1.5 h-1.5 ${statusColor} rounded-full"></span> ${r.status}
+          </span>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  function doGenerate(){
+    const type = getSelectedType();
+    const err = document.querySelector('[data-error="report_type"]');
+    if(!type){
+      if(err) err.classList.remove('hidden');
+      toastLocal('Please select a report type','error');
+      return;
+    }
+    if(err) err.classList.add('hidden');
+    const loadingEls = document.querySelectorAll('[data-loading]');
+    loadingEls.forEach(el=>el.classList.remove('hidden'));
+    const success = document.querySelector('[data-success]');
+    if(success) success.classList.add('hidden');
+    setTimeout(()=>{
+      loadingEls.forEach(el=>el.classList.add('hidden'));
+      const rows = generateDemoRows(type);
+      renderTable(rows);
+      const total = rows.reduce((sum,r)=>sum+parseFloat(r.amount),0);
+      const totalEl = document.querySelector('[data-kpi="total"]');
+      if(totalEl) totalEl.textContent = '$' + total.toLocaleString('en-US', {minimumFractionDigits:2});
+      const countEl = document.querySelector('[data-kpi="count"]');
+      if(countEl) countEl.textContent = rows.length;
+      const trendEl = document.querySelector('[data-kpi-trend]');
+      if(trendEl) trendEl.textContent = type + ' • ' + document.querySelector('[data-filter="date_range"]').value.replace('_',' ').toUpperCase();
+      const meta = document.querySelector('[data-preview-meta]');
+      if(meta) meta.textContent = rows.length + ' rows • ' + type + ' • ' + new Date().toLocaleDateString();
+      if(success) success.classList.remove('hidden');
+      toastLocal(type + ' report generated (demo)','success');
+    }, 800);
+  }
+
+  document.querySelectorAll('[data-action="generate"]').forEach(btn=>{
+    btn.addEventListener('click', doGenerate);
+  });
+
+  function handleExport(kind){
+    const type = getSelectedType() || 'Report';
+    const hasRows = document.querySelector('#preview-table tbody tr td[colspan]') === null;
+    if(kind==='pdf'){
+      toastLocal('Exporting PDF for ' + type + ' — frontend demo', 'info');
+      if(hasRows) window.print(); // fallback
+    } else if(kind==='csv'){
+      if(!hasRows){ toastLocal('Generate a report before exporting CSV','error'); return; }
+      // Build CSV frontend
+      const rows = Array.from(document.querySelectorAll('#preview-table tbody tr')).map(tr=>{
+        return Array.from(tr.querySelectorAll('td')).map(td=> '"' + td.textContent.trim().replace(/"/g,'""') + '"').join(',');
+      });
+      const header = Array.from(document.querySelectorAll('#preview-table thead th')).map(th=> '"' + th.textContent.trim() + '"').join(',');
+      const csv = [header, ...rows].join('\n');
+      const blob = new Blob([csv], {type:'text/csv'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href=url; a.download= type.toLowerCase() + '_report_' + new Date().toISOString().slice(0,10) + '.csv'; a.click(); URL.revokeObjectURL(url);
+      toastLocal('CSV downloaded (frontend demo)','success');
+    } else if(kind==='print'){
+      window.print();
+      toastLocal('Print dialog opened','info');
+    }
+  }
+
+  document.querySelectorAll('[data-action="pdf"]').forEach(btn=> btn.addEventListener('click', ()=>handleExport('pdf')));
+  document.querySelectorAll('[data-action="csv"]').forEach(btn=> btn.addEventListener('click', ()=>handleExport('csv')));
+  document.querySelectorAll('[data-action="print"]').forEach(btn=> btn.addEventListener('click', ()=>handleExport('print')));
+
+})();
+</script>
+{% endblock %}

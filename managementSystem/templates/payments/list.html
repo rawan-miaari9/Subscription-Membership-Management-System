@@ -1,0 +1,175 @@
+{% extends "layouts/dashboard.html" %}
+{% block title %}Payments - Iron Core{% endblock %}
+
+{% block dashboard_content %}
+<!-- Header -->
+<div class="mb-8 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+<div>
+<h2 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface tracking-tight uppercase">PAYMENT TRANSACTIONS</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1 max-w-xl">Manage member dues, process ad-hoc payments, and track transaction history.</p>
+</div>
+</div>
+<!-- Bento Grid Layout -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-bento-gap">
+<!-- Process Payment Form Module -->
+<div class="col-span-1 lg:col-span-4 bg-surface-container rounded-lg border border-outline-variant flex flex-col">
+<div class="p-6 border-b border-outline-variant bg-surface-container-high rounded-t-lg">
+<h3 class="font-label-caps text-label-caps text-on-surface uppercase tracking-wider">PROCESS PAYMENT</h3>
+</div>
+<div class="p-6 flex-1 flex flex-col gap-6">
+<!-- Search Member (Contextual extra) -->
+<div class="flex flex-col gap-2">
+<label class="font-label-caps text-label-caps text-on-surface-variant">MEMBER ID / NAME</label>
+<input class="w-full bg-background border border-outline-variant text-on-surface font-body-sm rounded-DEFAULT px-3 py-2 focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all" placeholder="Enter details..." type="text"/>
+</div>
+<!-- Amount -->
+<div class="flex flex-col gap-2">
+<label class="font-label-caps text-label-caps text-on-surface-variant">AMOUNT (USD)</label>
+<div class="relative">
+<span class="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface font-data-md">$</span>
+<input class="w-full bg-background border border-outline-variant text-on-surface font-data-md rounded-DEFAULT pl-8 pr-3 py-2 focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all" placeholder="0.00" type="number"/>
+</div>
+</div>
+<!-- Payment Model: Full/Partial -->
+<div class="flex flex-col gap-2">
+<label class="font-label-caps text-label-caps text-on-surface-variant">PAYMENT MODEL</label>
+<div class="grid grid-cols-2 gap-2">
+<label class="flex items-center justify-center gap-2 border border-outline-variant bg-background py-2 cursor-pointer hover:border-primary transition-colors">
+<input checked="" class="text-primary focus:ring-primary bg-background border-outline-variant rounded-none" name="payment_model" type="radio"/>
+<span class="font-label-caps text-label-caps">FULL PAYMENT</span>
+</label>
+<label class="flex items-center justify-center gap-2 border border-outline-variant bg-background py-2 cursor-pointer hover:border-primary transition-colors">
+<input class="text-primary focus:ring-primary bg-background border-outline-variant rounded-none" name="payment_model" type="radio"/>
+<span class="font-label-caps text-label-caps">PARTIAL</span>
+</label>
+</div>
+</div>
+<!-- Methods -->
+<div class="flex flex-col gap-2">
+<label class="font-label-caps text-label-caps text-on-surface-variant">METHOD</label>
+<select class="w-full bg-background border border-outline-variant text-on-surface font-body-sm rounded-DEFAULT px-3 py-2 focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all appearance-none">
+<option value="card">Credit/Debit Card</option>
+<option value="cash">Cash</option>
+<option value="transfer">Bank Transfer</option>
+</select>
+</div>
+<!-- Status -->
+<div class="flex flex-col gap-2">
+<label class="font-label-caps text-label-caps text-on-surface-variant">STATUS</label>
+<select class="w-full bg-background border border-outline-variant text-on-surface font-body-sm rounded-DEFAULT px-3 py-2 focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all appearance-none">
+<option value="paid">Paid</option>
+<option value="pending">Pending</option>
+</select>
+</div>
+</div>
+<div class="p-6 pt-0 mt-auto">
+<button class="w-full bg-primary-container text-on-primary-container font-headline-md font-bold uppercase rounded-DEFAULT py-3 hover:bg-primary transition-colors duration-200">
+                        Process Payment
+                    </button>
+</div>
+</div>
+<!-- Transaction History Module -->
+<div class="col-span-1 lg:col-span-8 bg-surface-container rounded-lg border border-outline-variant flex flex-col overflow-hidden">
+<div class="p-6 border-b border-outline-variant bg-surface-container-high flex justify-between items-center">
+<h3 class="font-label-caps text-label-caps text-on-surface uppercase tracking-wider">TRANSACTION HISTORY</h3>
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined" style="font-size: 20px;">filter_list</span>
+</button>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse min-w-[600px]">
+<thead>
+<tr class="border-b border-outline-variant bg-background">
+<th class="p-4 font-label-caps text-label-caps text-on-surface-variant">RECEIPT NO.</th>
+<th class="p-4 font-label-caps text-label-caps text-on-surface-variant">TIMESTAMP</th>
+<th class="p-4 font-label-caps text-label-caps text-on-surface-variant">MEMBER</th>
+<th class="p-4 font-label-caps text-label-caps text-on-surface-variant">METHOD</th>
+<th class="p-4 font-label-caps text-label-caps text-on-surface-variant text-right">AMOUNT</th>
+<th class="p-4 font-label-caps text-label-caps text-on-surface-variant">STATUS</th>
+</tr>
+</thead>
+<tbody class="font-data-md text-data-md divide-y divide-outline-variant">
+<!-- Row 1 -->
+<tr class="hover:bg-surface-container-high transition-colors">
+<td class="p-4 text-primary">#PY-5001</td>
+<td class="p-4 text-on-surface-variant">2023-10-27 14:32</td>
+<td class="p-4 text-on-surface">Marcus Vance</td>
+<td class="p-4 text-on-surface-variant uppercase text-xs">Card</td>
+<td class="p-4 text-right">$150.00</td>
+<td class="p-4">
+<div class="inline-flex items-center gap-2 bg-surface-container-highest px-2 py-1 rounded-sm border border-outline-variant">
+<div class="w-1.5 h-1.5 bg-on-surface"></div>
+<span class="font-label-caps text-label-caps text-on-surface">PAID</span>
+</div>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-surface-container-high transition-colors">
+<td class="p-4 text-primary">#PY-5002</td>
+<td class="p-4 text-on-surface-variant">2023-10-27 15:05</td>
+<td class="p-4 text-on-surface">Elena Rostova</td>
+<td class="p-4 text-on-surface-variant uppercase text-xs">Cash</td>
+<td class="p-4 text-right">$45.00</td>
+<td class="p-4">
+<div class="inline-flex items-center gap-2 bg-surface-container-highest px-2 py-1 rounded-sm border border-outline-variant">
+<div class="w-1.5 h-1.5 bg-primary"></div>
+<span class="font-label-caps text-label-caps text-primary">PENDING</span>
+</div>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-surface-container-high transition-colors">
+<td class="p-4 text-primary">#PY-5003</td>
+<td class="p-4 text-on-surface-variant">2023-10-27 16:12</td>
+<td class="p-4 text-on-surface">David Chen</td>
+<td class="p-4 text-on-surface-variant uppercase text-xs">Transfer</td>
+<td class="p-4 text-right">$300.00</td>
+<td class="p-4">
+<div class="inline-flex items-center gap-2 bg-surface-container-highest px-2 py-1 rounded-sm border border-outline-variant">
+<div class="w-1.5 h-1.5 bg-on-surface"></div>
+<span class="font-label-caps text-label-caps text-on-surface">PAID</span>
+</div>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="hover:bg-surface-container-high transition-colors">
+<td class="p-4 text-primary">#PY-5004</td>
+<td class="p-4 text-on-surface-variant">2023-10-28 09:15</td>
+<td class="p-4 text-on-surface">Sarah Connor</td>
+<td class="p-4 text-on-surface-variant uppercase text-xs">Card</td>
+<td class="p-4 text-right">$150.00</td>
+<td class="p-4">
+<div class="inline-flex items-center gap-2 bg-surface-container-highest px-2 py-1 rounded-sm border border-outline-variant">
+<div class="w-1.5 h-1.5 bg-on-surface"></div>
+<span class="font-label-caps text-label-caps text-on-surface">PAID</span>
+</div>
+</td>
+</tr>
+<!-- Row 5 -->
+<tr class="hover:bg-surface-container-high transition-colors">
+<td class="p-4 text-primary">#PY-5005</td>
+<td class="p-4 text-on-surface-variant">2023-10-28 10:45</td>
+<td class="p-4 text-on-surface">John Matrix</td>
+<td class="p-4 text-on-surface-variant uppercase text-xs">Cash</td>
+<td class="p-4 text-right">$75.00</td>
+<td class="p-4">
+<div class="inline-flex items-center gap-2 bg-surface-container-highest px-2 py-1 rounded-sm border border-outline-variant">
+<div class="w-1.5 h-1.5 bg-primary"></div>
+<span class="font-label-caps text-label-caps text-primary">PENDING</span>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination / Footer area of table -->
+<div class="p-4 border-t border-outline-variant bg-background flex justify-between items-center mt-auto">
+<span class="font-label-caps text-label-caps text-on-surface-variant">SHOWING 5 OF 124</span>
+<div class="flex gap-2">
+<button class="px-3 py-1 border border-outline-variant text-on-surface hover:bg-surface-container transition-colors"><span class="material-symbols-outlined" style="font-size: 16px;">chevron_left</span></button>
+<button class="px-3 py-1 border border-outline-variant text-on-surface hover:bg-surface-container transition-colors"><span class="material-symbols-outlined" style="font-size: 16px;">chevron_right</span></button>
+</div>
+</div>
+</div>
+</div>
+{% endblock %}

@@ -1,0 +1,205 @@
+{% extends "layouts/dashboard.html" %}
+{% block title %}Create Membership Plan - Iron Core{% endblock %}
+
+{% block dashboard_content %}
+<div class="max-w-3xl mx-auto">
+  <!-- Header -->
+  <div class="flex items-center gap-2 mb-4">
+    <a href="{% url 'plans' %}" class="inline-flex items-center gap-1.5 font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant hover:text-primary transition-colors">
+      <span class="material-symbols-outlined text-[16px]">arrow_back</span> Back to Plans
+    </a>
+  </div>
+  <div class="mb-8 border-b border-outline-variant pb-6">
+    <div class="flex items-center gap-3 mb-2">
+      <span class="w-8 h-8 flex items-center justify-center rounded bg-primary-container text-on-primary-container">
+        <span class="material-symbols-outlined text-[18px]">add</span>
+      </span>
+      <span class="font-label-caps text-[11px] uppercase tracking-[0.12em] text-primary-container">Membership Plans</span>
+    </div>
+    <h1 class="font-headline-lg text-headline-lg text-on-surface uppercase tracking-tight">Create Membership Plan</h1>
+    <p class="font-body-sm text-body-sm text-on-surface-variant mt-2 max-w-2xl">Define a new membership tier for the facility. Pricing and duration affect automated billing cycles and access rules.</p>
+  </div>
+
+  <!-- Form Card - bento-card style -->
+  <form data-create-plan-form class="bg-surface-container border border-outline-variant rounded-lg p-6 md:p-8 space-y-6" novalidate>
+    {% csrf_token %}
+    <div data-form-msg class="hidden p-3 rounded border border-error bg-error-container text-on-error-container font-body-sm text-sm"></div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <!-- Plan Name -->
+      <div class="md:col-span-2">
+        <label class="block font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">Plan Name *</label>
+        <input name="plan_name" required placeholder="e.g. Gold, Premium, Elite Power" class="w-full bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 font-body-sm text-body-sm text-on-surface placeholder:text-on-surface-variant/60 focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all" />
+        <p class="hidden text-error text-xs mt-1.5 font-body-sm" data-error="plan_name">Plan name is required.</p>
+      </div>
+
+      <!-- Description -->
+      <div class="md:col-span-2">
+        <label class="block font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">Description</label>
+        <textarea name="description" rows="3" placeholder="Brief description of the plan — target audience, access level, key selling point..." class="w-full bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 font-body-sm text-body-sm text-on-surface placeholder:text-on-surface-variant/60 focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all resize-none"></textarea>
+      </div>
+
+      <!-- Duration -->
+      <div>
+        <label class="block font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">Duration *</label>
+        <div class="relative">
+          <select name="duration" required class="w-full appearance-none bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 pr-10 font-body-sm text-body-sm text-on-surface focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all">
+            <option value="" disabled selected>Select duration</option>
+            <option value="1_month">1 Month</option>
+            <option value="3_months">3 Months</option>
+            <option value="6_months">6 Months</option>
+            <option value="12_months">12 Months / Yearly</option>
+            <option value="custom">Custom</option>
+          </select>
+          <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none text-[20px]">expand_more</span>
+        </div>
+        <p class="hidden text-error text-xs mt-1.5 font-body-sm" data-error="duration">Please select a duration.</p>
+      </div>
+
+      <!-- Price -->
+      <div>
+        <label class="block font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">Price *</label>
+        <div class="relative">
+          <span class="absolute left-3 top-1/2 -translate-y-1/2 font-data-md text-data-md text-on-surface-variant">$</span>
+          <input name="price" type="number" min="0" step="0.01" required placeholder="0.00" class="w-full bg-surface-container-lowest border border-outline-variant rounded pl-8 pr-4 py-3 font-body-sm text-body-sm text-on-surface placeholder:text-on-surface-variant/60 focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all" />
+        </div>
+        <p class="hidden text-error text-xs mt-1.5 font-body-sm" data-error="price">Valid price is required (&gt; 0).</p>
+      </div>
+
+      <!-- Benefits -->
+      <div class="md:col-span-2">
+        <label class="block font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">Benefits *</label>
+        <textarea name="benefits" required rows="4" placeholder="List benefits, one per line — e.g.&#10;24/7 Facility Access&#10;Standard Equipment Usage&#10;2 Guest Passes / Month" class="w-full bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 font-body-sm text-body-sm text-on-surface placeholder:text-on-surface-variant/60 focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all resize-none"></textarea>
+        <p class="hidden text-error text-xs mt-1.5 font-body-sm" data-error="benefits">Please add at least one benefit.</p>
+        <p class="font-body-sm text-[11px] text-on-surface-variant mt-1.5">One benefit per line. Displayed as checklist on plan card.</p>
+      </div>
+
+      <!-- Status -->
+      <div>
+        <label class="block font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">Status *</label>
+        <div class="relative">
+          <select name="status" required class="w-full appearance-none bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 pr-10 font-body-sm text-body-sm text-on-surface focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all">
+            <option value="active" selected>Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+          <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none text-[20px]">expand_more</span>
+        </div>
+        <p class="hidden text-error text-xs mt-1.5 font-body-sm" data-error="status">Status is required.</p>
+      </div>
+
+      <!-- Info hint -->
+      <div class="flex items-start gap-2 p-3 rounded border border-outline-variant bg-surface-container-high">
+        <span class="material-symbols-outlined text-primary-container text-[18px] mt-0.5 shrink-0">info</span>
+        <p class="font-body-sm text-xs leading-relaxed text-on-surface-variant">Active plans are immediately available for new subscriptions. Inactive plans are hidden from members but preserved for existing subscribers.</p>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="flex flex-wrap items-center gap-3 pt-6 border-t border-outline-variant">
+      <button type="submit" class="inline-flex items-center justify-center gap-2 px-8 py-3 bg-primary-container text-on-primary-container border border-primary-container font-label-caps text-[11px] uppercase tracking-widest font-bold rounded hover:bg-primary-container/90 transition-colors">
+        Save Plan
+      </button>
+      <a href="{% url 'plans' %}" class="inline-flex items-center justify-center px-8 py-3 border border-outline-variant bg-transparent text-on-surface font-label-caps text-[11px] uppercase tracking-widest rounded hover:bg-surface-container-high transition-colors">
+        Cancel
+      </a>
+      <span data-loading class="hidden ml-2 inline-flex items-center gap-2 font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant">
+        <span class="w-4 h-4 border-2 border-primary-container border-t-transparent rounded-full animate-spin"></span> Saving...
+      </span>
+    </div>
+
+    <div data-success class="hidden p-4 bg-tertiary-container border border-tertiary text-on-tertiary-container rounded font-body-sm text-sm flex items-center gap-2">
+      <span class="material-symbols-outlined text-[18px]">check_circle</span> Membership plan created successfully (frontend demo).
+    </div>
+    <div data-error-state class="hidden p-4 bg-error-container border border-error text-on-error-container rounded font-body-sm text-sm flex items-center gap-2">
+      <span class="material-symbols-outlined text-[18px]">error</span> Failed to save. Please check highlighted fields.
+    </div>
+  </form>
+</div>
+
+<script>
+(function(){
+  const form = document.querySelector('[data-create-plan-form]');
+  if(!form) return;
+  form.addEventListener('submit', function(e){
+    e.preventDefault();
+    let valid = true;
+    const msg = form.querySelector('[data-form-msg]');
+    // reset errors
+    form.querySelectorAll('[data-error]').forEach(el => el.classList.add('hidden'));
+    form.querySelectorAll('.border-error').forEach(el => el.classList.remove('border-error'));
+
+    function markError(name, message){
+      valid = false;
+      const input = form.querySelector(`[name="${name}"]`);
+      const err = form.querySelector(`[data-error="${name}"]`);
+      if(input) input.classList.add('border-error', '!border-error');
+      if(err){
+        if(message) err.textContent = message;
+        err.classList.remove('hidden');
+      }
+    }
+
+    const planName = form.querySelector('[name="plan_name"]');
+    const duration = form.querySelector('[name="duration"]');
+    const price = form.querySelector('[name="price"]');
+    const benefits = form.querySelector('[name="benefits"]');
+    const status = form.querySelector('[name="status"]');
+
+    if(!planName.value.trim()) markError('plan_name');
+    if(!duration.value) markError('duration');
+    if(!price.value.trim() || isNaN(parseFloat(price.value)) || parseFloat(price.value) <= 0) markError('price');
+    if(!benefits.value.trim()) markError('benefits');
+    if(!status.value) markError('status');
+
+    if(!valid){
+      msg.textContent = 'Please fix validation errors before saving.';
+      msg.classList.remove('hidden');
+      if(typeof toast === 'function') toast('Please fix validation errors', 'error');
+      else if(window.toast) window.toast('Please fix validation errors','error');
+      return;
+    }
+    msg.classList.add('hidden');
+
+    const loading = form.querySelector('[data-loading]');
+    const success = form.querySelector('[data-success]');
+    const errState = form.querySelector('[data-error-state]');
+    loading.classList.remove('hidden');
+    success.classList.add('hidden');
+    errState.classList.add('hidden');
+
+    const submitBtn = form.querySelector('button[type="submit"]');
+    if(submitBtn) submitBtn.disabled = true;
+
+    setTimeout(function(){
+      loading.classList.add('hidden');
+      if(submitBtn) submitBtn.disabled = false;
+      if(Math.random() > 0.2){
+        success.classList.remove('hidden');
+        if(typeof toast === 'function') toast('Membership plan saved (demo)', 'success');
+        else if(window.toast) window.toast('Membership plan saved (demo)','success');
+        // optional reset for demo: keep values but show success
+      } else {
+        errState.classList.remove('hidden');
+        errState.textContent = 'Failed to save. Simulated server error — try again.';
+        if(typeof toast === 'function') toast('Save failed — try again', 'error');
+        else if(window.toast) window.toast('Save failed — try again','error');
+      }
+    }, 900);
+  });
+
+  // live clear error on input
+  form.querySelectorAll('input, select, textarea').forEach(inp => {
+    inp.addEventListener('input', () => {
+      inp.classList.remove('border-error', '!border-error');
+      const err = form.querySelector(`[data-error="${inp.name}"]`);
+      if(err) err.classList.add('hidden');
+    });
+    inp.addEventListener('change', () => {
+      inp.classList.remove('border-error', '!border-error');
+      const err = form.querySelector(`[data-error="${inp.name}"]`);
+      if(err) err.classList.add('hidden');
+    });
+  });
+})();
+</script>
+{% endblock %}

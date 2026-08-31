@@ -1,0 +1,254 @@
+{% extends "layouts/dashboard.html" %}
+{% block title %}Check-In - Iron Core{% endblock %}
+{% block dashboard_content %}
+<div class="flex flex-col gap-6 max-w-5xl mx-auto">
+  <!-- Header -->
+  <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-outline-variant pb-4">
+    <div>
+      <h2 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface uppercase tracking-tight">Member Check-In</h2>
+      <p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Search member and record attendance. Frontend demo.</p>
+    </div>
+    <a href="{% url 'attendance' %}" class="inline-flex items-center gap-2 px-4 py-2 border border-outline-variant text-on-surface-variant font-label-caps text-[11px] uppercase hover:bg-surface-container-high transition-colors">
+      <span class="material-symbols-outlined text-[16px]">arrow_back</span> Back to Attendance
+    </a>
+  </div>
+
+  <!-- Search Member -->
+  <div class="bg-surface-container border border-outline-variant rounded-lg p-6 flex flex-col gap-4">
+    <label for="member-search" class="font-label-caps text-[11px] text-on-surface-variant uppercase tracking-wider">Search Member</label>
+    <div class="flex flex-col sm:flex-row gap-3">
+      <div class="relative flex-1">
+        <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">search</span>
+        <input id="member-search" data-member-search type="text" placeholder="Enter name, member ID or phone (e.g., Marcus, MBR-8421, 555-0192)…"
+          class="w-full bg-background border border-outline-variant text-on-surface font-body-sm rounded-DEFAULT pl-10 pr-4 py-2.5 focus:ring-1 focus:ring-primary focus:border-primary outline-none placeholder:text-on-surface-variant/60" autocomplete="off" />
+        <!-- Autocomplete dropdown -->
+        <div data-search-results class="hidden absolute left-0 right-0 top-full mt-1 bg-surface-container-high border border-outline-variant rounded shadow-xl z-20 max-h-60 overflow-y-auto"></div>
+      </div>
+      <button data-search-btn class="inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-primary-container text-on-primary-container font-label-caps text-[11px] font-bold uppercase hover:bg-primary transition-colors shrink-0">
+        <span class="material-symbols-outlined text-[16px]">person_search</span> Search
+      </button>
+    </div>
+    <p class="font-body-sm text-[11px] text-on-surface-variant">Try: <button data-preset="Marcus" class="text-primary hover:underline">Marcus</button> • <button data-preset="Sarah" class="text-primary hover:underline">Sarah</button> • <button data-preset="Evan" class="text-primary hover:underline">Evan (expired)</button> • <button data-preset="John Doe" class="text-primary hover:underline">John Doe</button></p>
+  </div>
+
+  <!-- Member Information Card -->
+  <div data-member-card class="hidden bg-surface-container border border-outline-variant rounded-lg overflow-hidden">
+    <div class="px-6 py-4 border-b border-outline-variant bg-surface-container-high flex items-center justify-between">
+      <h3 class="font-label-caps text-[11px] text-on-surface uppercase tracking-wider flex items-center gap-2">
+        <span class="material-symbols-outlined text-primary text-[18px]">badge</span> Member Information
+      </h3>
+      <span data-member-id class="font-data-md text-[11px] text-on-surface-variant font-mono">MBR-0000</span>
+    </div>
+    <div class="p-6 flex flex-col md:flex-row gap-6">
+      <div class="flex gap-4 items-start flex-1">
+        <div data-member-avatar class="w-16 h-16 rounded bg-surface-container-highest border border-outline-variant flex items-center justify-center font-display text-display text-xl text-on-surface shrink-0">?</div>
+        <div class="flex-1 min-w-0">
+          <h4 data-member-name class="font-headline-md text-headline-md text-on-surface leading-none">—</h4>
+          <p data-member-contact class="font-body-sm text-[12px] text-on-surface-variant mt-1">—</p>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4">
+            <div class="bg-background border border-outline-variant rounded p-3">
+              <span class="font-label-caps text-[11px] text-on-surface-variant uppercase block">Current Plan</span>
+              <span data-member-plan class="font-data-md text-[12px] text-on-surface block mt-1">—</span>
+            </div>
+            <div class="bg-background border border-outline-variant rounded p-3">
+              <span class="font-label-caps text-[11px] text-on-surface-variant uppercase block">Subscription Status</span>
+              <span data-member-status class="inline-flex items-center gap-1.5 mt-1 font-label-caps text-[11px] px-2 py-1 rounded-sm border">—</span>
+            </div>
+            <div class="bg-background border border-outline-variant rounded p-3">
+              <span class="font-label-caps text-[11px] text-on-surface-variant uppercase block">Expiry Date</span>
+              <span data-member-expiry class="font-data-md text-[12px] text-on-surface block mt-1">—</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cannot Check In State -->
+    <div data-blocked-state class="hidden mx-6 mb-6 bg-error-container border border-error rounded p-4 flex items-start gap-3">
+      <span class="material-symbols-outlined text-error text-[22px] shrink-0">block</span>
+      <div>
+        <p class="font-label-caps text-[11px] text-error uppercase">Cannot Check In</p>
+        <p data-blocked-msg class="font-body-sm text-[12px] text-on-error-container mt-1">Subscription has expired. Please renew to allow check-in.</p>
+      </div>
+    </div>
+
+    <!-- Success State -->
+    <div data-checkin-success class="hidden mx-6 mb-6 bg-tertiary-container/20 border border-tertiary rounded p-4 flex items-start gap-3">
+      <span class="material-symbols-outlined text-tertiary text-[22px] shrink-0">check_circle</span>
+      <div>
+        <p class="font-label-caps text-[11px] text-tertiary uppercase">Checked In</p>
+        <p class="font-body-sm text-[12px] text-on-surface mt-1"><span data-success-name class="font-bold"></span> checked in at <span data-success-time class="font-mono"></span>.</p>
+      </div>
+      <button type="button" data-dismiss-success class="ml-auto text-on-surface-variant hover:text-on-surface"><span class="material-symbols-outlined text-[18px]">close</span></button>
+    </div>
+
+    <!-- Actions -->
+    <div class="px-6 py-4 border-t border-outline-variant bg-background flex justify-end">
+      <button data-checkin-btn class="inline-flex items-center justify-center gap-2 px-8 py-3 bg-primary-container text-on-primary-container font-label-caps text-[11px] font-bold uppercase hover:bg-primary transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-primary-container">
+        <span class="material-symbols-outlined text-[16px]">login</span> <span data-checkin-text>Check In</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Empty / Prompt State -->
+  <div data-prompt-state class="bg-surface-container border border-outline-variant border-dashed rounded-lg p-12 flex flex-col items-center justify-center text-center">
+    <div class="w-14 h-14 rounded-full bg-surface-container-high border border-outline-variant flex items-center justify-center mb-4">
+      <span class="material-symbols-outlined text-on-surface-variant text-[28px]">person_search</span>
+    </div>
+    <h4 class="font-label-caps text-[11px] text-on-surface uppercase tracking-wider">No member selected</h4>
+    <p class="font-body-sm text-[12px] text-on-surface-variant mt-1 max-w-sm">Search for a member above to view their subscription status and check them in.</p>
+  </div>
+</div>
+
+<script>
+(function(){
+  const members = [
+    { id:'MBR-8421', name:'Marcus Vance', phone:'555-0144', email:'marcus.v@example.com', plan:'Elite Powerlifting', status:'active', expiry:'2024-12-15', avatar:'MV' },
+    { id:'MBR-9042', name:'John Doe', phone:'555-0192', email:'john.doe@example.com', plan:'Elite Power', status:'active', expiry:'2024-10-01', avatar:'JD' },
+    { id:'MBR-7381', name:'Sarah Connor', phone:'555-0188', email:'sarah.c@example.com', plan:'Basic Lift', status:'active', expiry:'2024-11-20', avatar:'SC' },
+    { id:'MBR-6129', name:'Evan Wright', phone:'555-0112', email:'evan.w@example.com', plan:'Drop-In', status:'expired', expiry:'2023-09-15', avatar:'EW' },
+    { id:'MBR-5290', name:'David Chen', phone:'555-0167', email:'david.c@example.com', plan:'Pro Strength', status:'suspended', expiry:'2024-09-30', avatar:'DC' },
+  ];
+
+  const searchInput = document.querySelector('[data-member-search]');
+  const searchBtn = document.querySelector('[data-search-btn]');
+  const resultsBox = document.querySelector('[data-search-results]');
+  const card = document.querySelector('[data-member-card]');
+  const prompt = document.querySelector('[data-prompt-state]');
+  const avatarEl = document.querySelector('[data-member-avatar]');
+  const nameEl = document.querySelector('[data-member-name]');
+  const contactEl = document.querySelector('[data-member-contact]');
+  const idEl = document.querySelector('[data-member-id]');
+  const planEl = document.querySelector('[data-member-plan]');
+  const statusEl = document.querySelector('[data-member-status]');
+  const expiryEl = document.querySelector('[data-member-expiry]');
+  const checkinBtn = document.querySelector('[data-checkin-btn]');
+  const checkinText = document.querySelector('[data-checkin-text]');
+  const blockedState = document.querySelector('[data-blocked-state]');
+  const blockedMsg = document.querySelector('[data-blocked-msg]');
+  const successState = document.querySelector('[data-checkin-success]');
+  const successName = document.querySelector('[data-success-name]');
+  const successTime = document.querySelector('[data-success-time]');
+
+  let selected = null;
+
+  function toast(msg,type='info'){
+    if(window.toast) return window.toast(msg,type);
+    let c=document.getElementById('toast-container'); if(!c){c=document.createElement('div'); c.id='toast-container'; c.className='fixed bottom-4 right-4 z-50 flex flex-col gap-2'; document.body.appendChild(c);}
+    const el=document.createElement('div'); const bg=type==='error'?'bg-error text-on-error-container border-error':type==='success'?'bg-tertiary-container text-on-tertiary-container border-tertiary':'bg-surface-container-high border-outline-variant text-on-surface';
+    el.className=`px-4 py-3 rounded border text-sm font-label-caps shadow-lg ${bg}`; el.textContent=msg; c.appendChild(el); setTimeout(()=>{el.style.opacity='0'; setTimeout(()=>el.remove(),300);},2500);
+  }
+
+  function statusBadge(status){
+    const s=(status||'').toLowerCase();
+    if(s==='active') return '<span class="inline-flex items-center gap-1.5 bg-tertiary-container/20 border border-tertiary px-2 py-1 rounded-sm font-label-caps text-[10px] text-tertiary uppercase"><span class="w-1.5 h-1.5 bg-tertiary rounded-full"></span>Active</span>';
+    if(s==='expired') return '<span class="inline-flex items-center gap-1.5 bg-error-container border border-error px-2 py-1 rounded-sm font-label-caps text-[10px] text-error uppercase"><span class="w-1.5 h-1.5 bg-error rounded-full"></span>Expired</span>';
+    if(s==='suspended') return '<span class="inline-flex items-center gap-1.5 bg-error-container border border-error px-2 py-1 rounded-sm font-label-caps text-[10px] text-error uppercase"><span class="w-1.5 h-1.5 bg-error rounded-full"></span>Suspended</span>';
+    return '<span class="font-label-caps text-[10px]">'+status+'</span>';
+  }
+
+  function renderMember(m){
+    selected = m;
+    card.classList.remove('hidden');
+    prompt.classList.add('hidden');
+    avatarEl.textContent = m.avatar;
+    nameEl.textContent = m.name;
+    contactEl.textContent = m.phone + ' • ' + m.email;
+    idEl.textContent = m.id;
+    planEl.textContent = m.plan;
+    // status badge inject
+    const badge = statusBadge(m.status);
+    // Use wrapper to parse badge html safely
+    statusEl.outerHTML = `<span data-member-status class="inline-flex items-center mt-1">${badge}</span>`;
+    // re-query after replace
+    const newStatus = document.querySelector('[data-member-status]');
+    // need to keep reference for next render; reassign variable behavior via closure capture not needed — next render will replace again
+    expiryEl.textContent = m.expiry;
+    // Reset states
+    successState.classList.add('hidden');
+    const isBlocked = (m.status==='expired' || m.status==='suspended');
+    if(isBlocked){
+      blockedState.classList.remove('hidden');
+      blockedMsg.textContent = m.status==='suspended' ? 'Account is suspended. Contact admin to restore access.' : 'Subscription expired on '+m.expiry+'. Please renew to allow check-in.';
+      checkinBtn.disabled = true;
+      checkinText.textContent = 'Cannot Check In';
+      toast('Cannot check in — '+m.status,'error');
+    } else {
+      blockedState.classList.add('hidden');
+      checkinBtn.disabled = false;
+      checkinText.textContent = 'Check In';
+    }
+  }
+
+  function filterMembers(q){
+    const query = (q||'').toLowerCase().trim();
+    if(!query) return [];
+    return members.filter(m=> m.name.toLowerCase().includes(query) || m.id.toLowerCase().includes(query) || m.phone.includes(query) );
+  }
+
+  function showResults(list){
+    if(!list.length){ resultsBox.classList.add('hidden'); resultsBox.innerHTML=''; return; }
+    resultsBox.innerHTML = list.map(m=>`
+      <button type="button" data-select="${m.id}" class="w-full text-left px-4 py-3 hover:bg-surface-container-high border-b border-outline-variant last:border-0 flex items-center gap-3 transition-colors">
+        <span class="w-8 h-8 rounded bg-background border border-outline-variant flex items-center justify-center font-data-md text-[12px] text-on-surface">${m.avatar}</span>
+        <span class="flex-1 min-w-0">
+          <span class="font-data-md text-[12px] text-on-surface block">${m.name}</span>
+          <span class="font-body-sm text-[11px] text-on-surface-variant">${m.id} • ${m.plan} • ${m.status}</span>
+        </span>
+        <span class="material-symbols-outlined text-on-surface-variant text-[16px]">chevron_right</span>
+      </button>
+    `).join('');
+    resultsBox.classList.remove('hidden');
+    resultsBox.querySelectorAll('[data-select]').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        const id = btn.getAttribute('data-select');
+        const m = members.find(x=>x.id===id);
+        if(m){ renderMember(m); resultsBox.classList.add('hidden'); searchInput.value = m.name; toast('Member selected: '+m.name,'info'); }
+      });
+    });
+  }
+
+  searchInput.addEventListener('input',()=>{
+    const list = filterMembers(searchInput.value);
+    showResults(list);
+  });
+  searchInput.addEventListener('keydown',(e)=>{
+    if(e.key==='Enter'){ e.preventDefault(); doSearch(); }
+    if(e.key==='Escape'){ resultsBox.classList.add('hidden'); }
+  });
+  document.addEventListener('click',(e)=>{
+    if(!resultsBox.contains(e.target) && e.target!==searchInput) resultsBox.classList.add('hidden');
+  });
+
+  function doSearch(){
+    const q = searchInput.value.trim();
+    if(!q){ toast('Enter a name or ID to search','error'); return; }
+    const list = filterMembers(q);
+    if(list.length===1){ renderMember(list[0]); resultsBox.classList.add('hidden'); }
+    else if(list.length>1){ showResults(list); toast(list.length+' members found — select one','info'); }
+    else { toast('No member found for "'+q+'"','error'); }
+  }
+  searchBtn.addEventListener('click', doSearch);
+  document.querySelectorAll('[data-preset]').forEach(b=>{
+    b.addEventListener('click',()=>{ searchInput.value=b.getAttribute('data-preset'); doSearch(); });
+  });
+
+  checkinBtn.addEventListener('click',()=>{
+    if(!selected) return;
+    if(checkinBtn.disabled){ toast('Cannot check in — subscription expired','error'); return; }
+    checkinBtn.disabled = true;
+    checkinText.textContent = 'Checking in…';
+    setTimeout(()=>{
+      const now = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+      successName.textContent = selected.name;
+      successTime.textContent = now;
+      successState.classList.remove('hidden');
+      checkinBtn.disabled = true;
+      checkinText.textContent = 'Checked In';
+      toast(selected.name+' checked in at '+now,'success');
+    }, 600);
+  });
+  document.querySelector('[data-dismiss-success]')?.addEventListener('click',()=> successState.classList.add('hidden'));
+})();
+</script>
+{% endblock %}

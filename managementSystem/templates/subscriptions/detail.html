@@ -1,0 +1,18 @@
+{% extends "layouts/dashboard.html" %}
+{% block title %}Subscription Details - Iron Core{% endblock %}
+{% block dashboard_content %}
+<div class="flex flex-col gap-6">
+  <div class="flex justify-between"><div><h1 class="font-headline-lg text-headline-lg text-on-surface uppercase">SUB-9921A</h1><p class="font-data-md text-on-surface-variant">Marcus Thorne • Elite Powerlifting</p></div><div class="flex gap-2"><button data-toast="Renew (demo)" class="px-4 py-2 bg-primary text-surface-dim font-label-caps text-[11px]">Renew</button><button data-toast="Suspend (demo)" class="px-4 py-2 border border-outline-variant font-label-caps text-[11px]">Suspend</button><button data-toast="Cancel (demo)" class="px-4 py-2 border border-error text-error font-label-caps text-[11px]">Cancel</button></div></div>
+  <div class="grid grid-cols-12 gap-bento-gap">
+    <div class="col-span-6 md:col-span-3 bg-surface-container border border-outline-variant p-4 rounded"><p class="font-label-caps text-[11px] text-on-surface-variant">Plan</p><p class="font-data-md mt-1">Elite Powerlifting $120/mo</p></div>
+    <div class="col-span-6 md:col-span-3 bg-surface-container border border-outline-variant p-4 rounded"><p class="font-label-caps text-[11px] text-on-surface-variant">Dates</p><p class="font-data-md mt-1">2023-10-01 → 2024-10-01</p></div>
+    <div class="col-span-6 md:col-span-3 bg-surface-container border border-outline-variant p-4 rounded"><p class="font-label-caps text-[11px] text-on-surface-variant">Amount</p><p class="font-data-md mt-1">$1,296.00</p></div>
+    <div class="col-span-6 md:col-span-3 bg-surface-container border border-outline-variant p-4 rounded"><p class="font-label-caps text-[11px] text-on-surface-variant">Status</p><p class="font-data-md mt-1 text-tertiary">Active</p></div>
+  </div>
+  <div class="bg-surface-container border border-outline-variant p-6 rounded">
+    <h3 class="font-label-caps text-[11px] text-on-surface-variant mb-4">Pricing Breakdown</h3>
+    <div class="space-y-2 font-data-md text-[12px]"><div class="flex justify-between"><span>Base Price</span><span>$120.00</span></div><div class="flex justify-between"><span>Discount 10%</span><span class="text-error">-$12.00</span></div><div class="flex justify-between"><span>Subtotal</span><span>$108.00</span></div><div class="flex justify-between font-bold border-t border-outline-variant pt-2"><span>Total</span><span class="text-primary">$108.00</span></div></div>
+  </div>
+  <div class="flex gap-2"><button data-toast="View Invoice (demo)" class="px-4 py-2 border border-outline-variant font-label-caps text-[11px]">View Invoice</button><button data-toast="View Receipt (demo)" class="px-4 py-2 bg-surface-container-high font-label-caps text-[11px]">View Receipt</button></div>
+</div>
+{% endblock %}
