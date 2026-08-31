@@ -2,6 +2,16 @@
 {% block title %}Users & Roles - Iron Core{% endblock %}
 
 {% block dashboard_content %}
+{% if messages %}
+<div class="space-y-2 mb-4">
+{% for message in messages %}
+<div class="p-4 rounded border flex items-center gap-2 font-body-sm text-sm {% if message.tags == 'success' %}bg-tertiary-container border-tertiary text-on-tertiary-container{% elif message.tags == 'error' %}bg-error-container border-error text-on-error-container{% else %}bg-surface-container-high border-outline-variant text-on-surface{% endif %}">
+<span class="material-symbols-outlined text-[18px]">{% if message.tags == 'success' %}check_circle{% elif message.tags == 'error' %}error{% else %}info{% endif %}</span>
+{{ message }}
+</div>
+{% endfor %}
+</div>
+{% endif %}
 <!-- Page Header -->
 <div class="flex justify-between items-end pb-4 border-b border-[#334155] mb-4">
 <div>
@@ -24,7 +34,7 @@
 <span class="material-symbols-outlined text-[#F59E0B]">group</span>
 </div>
 <div class="mt-4 z-10 relative">
-<span class="font-display text-on-surface">24</span>
+<span class="font-display text-on-surface">{{ total_active|stringformat:"02d" }}</span>
 </div>
 <!-- Decorative Graphic -->
 <div class="absolute -bottom-4 -right-4 opacity-10 group-hover:opacity-20 transition-opacity">
@@ -48,21 +58,21 @@
 <h2 class="font-label-caps text-on-surface-variant mb-6 border-b border-[#334155] pb-2">ROLE DISTRIBUTION</h2>
 <div class="flex-1 grid grid-cols-3 gap-4">
 <div class="border border-[#334155] bg-[#0F172A] p-4 flex flex-col justify-center items-center rounded-sm hover:border-[#F59E0B] transition-colors cursor-pointer">
-<span class="font-data-lg text-[#F59E0B] mb-1">05</span>
+<span class="font-data-lg text-[#F59E0B] mb-1">{{ admin_count|stringformat:"02d" }}</span>
 <span class="font-label-caps text-on-surface">ADMINISTRATOR</span>
 <div class="w-full bg-[#1E293B] h-1 mt-3">
 <div class="bg-[#F59E0B] h-1 w-full"></div>
 </div>
 </div>
 <div class="border border-[#334155] bg-[#0F172A] p-4 flex flex-col justify-center items-center rounded-sm hover:border-[#F59E0B] transition-colors cursor-pointer">
-<span class="font-data-lg text-on-surface mb-1">08</span>
+<span class="font-data-lg text-on-surface mb-1">{{ accountant_count|stringformat:"02d" }}</span>
 <span class="font-label-caps text-on-surface">ACCOUNTANT</span>
 <div class="w-full bg-[#1E293B] h-1 mt-3">
 <div class="bg-secondary h-1 w-3/4"></div>
 </div>
 </div>
 <div class="border border-[#334155] bg-[#0F172A] p-4 flex flex-col justify-center items-center rounded-sm hover:border-[#F59E0B] transition-colors cursor-pointer">
-<span class="font-data-lg text-on-surface mb-1">11</span>
+<span class="font-data-lg text-on-surface mb-1">{{ staff_count|stringformat:"02d" }}</span>
 <span class="font-label-caps text-on-surface">COACH/STAFF</span>
 <div class="w-full bg-[#1E293B] h-1 mt-3">
 <div class="bg-outline h-1 w-1/2"></div>
@@ -95,87 +105,45 @@
 </tr>
 </thead>
 <tbody class="font-body-sm text-on-surface divide-y divide-[#334155]">
-<!-- Row 1 -->
+{% for profile in user_profiles %}
 <tr class="hover:bg-[#0F172A] transition-colors group">
 <td class="p-4">
 <div class="flex items-center gap-3">
 <div class="w-8 h-8 rounded-sm bg-[#334155] flex items-center justify-center font-data-md text-[#F59E0B]">
-                                            MR
+                                            {{ profile.user.first_name|slice:":1"|upper }}{{ profile.user.last_name|slice:":1"|upper }}
                                         </div>
 <div>
-<p class="font-data-md">Marcus Ruhl</p>
-<p class="text-[12px] text-on-surface-variant">marcus@ironcore.gym</p>
+<p class="font-data-md">{{ profile.user.get_full_name|default:profile.user.username }}</p>
+<p class="text-[12px] text-on-surface-variant">{{ profile.user.email }}</p>
 </div>
 </div>
 </td>
-<td class="p-4 font-data-md">Admin</td>
+<td class="p-4 font-data-md">{{ profile.get_role_display|default:"—" }}</td>
 <td class="p-4">
+{% if profile.user.is_active %}
 <div class="inline-flex items-center gap-2 bg-slate-800 px-2 py-1 rounded-sm border border-[#334155]">
 <div class="w-1.5 h-1.5 bg-emerald-500"></div>
 <span class="font-label-caps text-[10px]">ACTIVE</span>
 </div>
-</td>
-<td class="p-4 font-data-md text-on-surface-variant hidden md:table-cell">Today, 08:42 AM</td>
-<td class="p-4 text-right">
-<button class="text-on-surface-variant group-hover:text-[#F59E0B] transition-colors">
-<span class="material-symbols-outlined">more_vert</span>
-</button>
-</td>
-</tr>
-<!-- Row 2 -->
-<tr class="hover:bg-[#0F172A] transition-colors group">
-<td class="p-4">
-<div class="flex items-center gap-3">
-<div class="w-8 h-8 rounded-sm bg-[#334155] flex items-center justify-center font-data-md text-secondary">
-                                            SJ
-                                        </div>
-<div>
-<p class="font-data-md">Sarah Jenkins</p>
-<p class="text-[12px] text-on-surface-variant">sarah.j@ironcore.gym</p>
-</div>
-</div>
-</td>
-<td class="p-4 font-data-md">Accountant</td>
-<td class="p-4">
-<div class="inline-flex items-center gap-2 bg-slate-800 px-2 py-1 rounded-sm border border-[#334155]">
-<div class="w-1.5 h-1.5 bg-emerald-500"></div>
-<span class="font-label-caps text-[10px]">ACTIVE</span>
-</div>
-</td>
-<td class="p-4 font-data-md text-on-surface-variant hidden md:table-cell">Yesterday, 16:20</td>
-<td class="p-4 text-right">
-<button class="text-on-surface-variant group-hover:text-[#F59E0B] transition-colors">
-<span class="material-symbols-outlined">more_vert</span>
-</button>
-</td>
-</tr>
-<!-- Row 3 -->
-<tr class="hover:bg-[#0F172A] transition-colors group">
-<td class="p-4">
-<div class="flex items-center gap-3">
-<div class="w-8 h-8 rounded-sm bg-[#334155] flex items-center justify-center font-data-md text-secondary">
-                                            DT
-                                        </div>
-<div>
-<p class="font-data-md">Dave Tate</p>
-<p class="text-[12px] text-on-surface-variant">dave@ironcore.gym</p>
-</div>
-</div>
-</td>
-<td class="p-4 font-data-md">Coach</td>
-<td class="p-4">
+{% else %}
 <div class="inline-flex items-center gap-2 bg-slate-800 px-2 py-1 rounded-sm border border-[#334155]">
 <div class="w-1.5 h-1.5 bg-red-500"></div>
 <span class="font-label-caps text-[10px]">DISABLED</span>
 </div>
+{% endif %}
 </td>
-<td class="p-4 font-data-md text-on-surface-variant hidden md:table-cell">Oct 12, 2023</td>
+<td class="p-4 font-data-md text-on-surface-variant hidden md:table-cell">{{ profile.user.last_login|date:"M d, Y, h:i A"|default:"Never" }}</td>
 <td class="p-4 text-right">
-<button class="text-on-surface-variant group-hover:text-[#F59E0B] transition-colors">
-<span class="material-symbols-outlined">more_vert</span>
-</button>
+<a href="{% url 'user-edit' profile.id %}" title="Edit user" class="text-on-surface-variant group-hover:text-[#F59E0B] transition-colors inline-flex items-center justify-center">
+<span class="material-symbols-outlined">edit</span>
+</a>
 </td>
 </tr>
+{% empty %}
+<tr>
+<td colspan="5" class="p-4 text-center font-data-md text-on-surface-variant">No users found.</td>
+</tr>
+{% endfor %}
 </tbody>
 </table>
 </div>
