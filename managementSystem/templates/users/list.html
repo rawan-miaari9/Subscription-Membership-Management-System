@@ -134,9 +134,17 @@
 </td>
 <td class="p-4 font-data-md text-on-surface-variant hidden md:table-cell">{{ profile.user.last_login|date:"M d, Y, h:i A"|default:"Never" }}</td>
 <td class="p-4 text-right">
+<div class="inline-flex items-center gap-2">
 <a href="{% url 'user-edit' profile.id %}" title="Edit user" class="text-on-surface-variant group-hover:text-[#F59E0B] transition-colors inline-flex items-center justify-center">
 <span class="material-symbols-outlined">edit</span>
 </a>
+<form method="post" action="{% url 'user-toggle-status' profile.id %}" onsubmit="return confirm('Are you sure you want to {% if profile.user.is_active %}disable{% else %}enable{% endif %} this user?');">
+{% csrf_token %}
+<button type="submit" title="{% if profile.user.is_active %}Disable user{% else %}Enable user{% endif %}" class="text-on-surface-variant group-hover:text-[#F59E0B] transition-colors inline-flex items-center justify-center">
+<span class="material-symbols-outlined">{% if profile.user.is_active %}block{% else %}check_circle{% endif %}</span>
+</button>
+</form>
+</div>
 </td>
 </tr>
 {% empty %}

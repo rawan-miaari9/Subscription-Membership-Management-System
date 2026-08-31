@@ -1,5 +1,6 @@
 from django.contrib import messages
 from django.contrib.auth.models import User
+from django.http import HttpResponseNotAllowed
 from django.shortcuts import get_object_or_404, redirect, render
 
 from .forms import UserAddForm
@@ -162,6 +163,18 @@ def user_add_view(request, pk=None):
         "is_edit": instance_user is not None,
         "edit_profile": profile,
     })
+
+def user_toggle_status_view(request, pk):
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+
+    profile = get_object_or_404(UserProfile.objects.select_related('user'), pk=pk)
+    user = profile.user
+    user.is_active = not user.is_active
+    user.save(update_fields=['is_active'])
+
+    messages.success(request, "User enabled." if user.is_active else "User disabled.")
+    return redirect('users')
 
 def reports_generate_view(request):
     return render(request, "reports/generate.html")
