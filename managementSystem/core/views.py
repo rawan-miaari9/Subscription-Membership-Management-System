@@ -1,3 +1,5 @@
+import datetime
+
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db import IntegrityError, connection
@@ -103,12 +105,41 @@ def member_detail_view(request, pk):
     # this project) keeps the tab fast and readable without needing Previous/
     # Next controls crammed into a tab panel.
     attendance_records = Attendance.objects.filter(member=member).order_by('-date')[:20]
+
+    # Statement = subscriptions + payments merged into one chronological feed.
+    # No extra queries — reuse the querysets already fetched above. Each entry
+    # becomes a plain dict with a common 'date' key (a date, not datetime — a
+    # payment's paid_at is a datetime, a subscription's start_date is a plain
+    # date, so payments are normalized down to .date() for sorting alongside
+    # subscriptions) plus a 'type' tag the template branches on, then the
+    # combined list is sorted by that common key, most recent first.
+    statement_entries = []
+    for sub in subscriptions:
+        statement_entries.append({
+            'type': 'subscription',
+            'date': sub.start_date,
+            'code': sub.subscription_code or f"#{sub.pk}",
+            'status': sub.get_status_display() if sub.status else None,
+            'amount': None,
+        })
+    for payment in payments:
+        statement_entries.append({
+            'type': 'payment',
+            'date': payment.paid_at.date() if payment.paid_at else None,
+            'code': payment.payment_code or f"#{payment.pk}",
+            'method': payment.get_method_display() if payment.method else None,
+            'status': payment.get_status_display() if payment.status else None,
+            'amount': payment.total,
+        })
+    statement_entries.sort(key=lambda entry: entry['date'] or datetime.date.min, reverse=True)
+
     return render(request, "members/detail.html", {
         "member": member,
         "subscriptions": subscriptions,
         "payments": payments,
         "total_paid": total_paid,
         "attendance_records": attendance_records,
+        "statement_entries": statement_entries,
     })
 
 def _create_member(data, attempt=1):
