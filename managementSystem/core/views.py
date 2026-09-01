@@ -4,7 +4,7 @@ from django.core.paginator import Paginator
 from django.db import IntegrityError, connection
 from django.db.models import Q
 from django.http import HttpResponseNotAllowed, JsonResponse
-from django.shortcuts import render
+from django.shortcuts import get_object_or_404, render
 from django.utils import timezone
 
 
@@ -124,6 +124,20 @@ def attendance_view(request):
         'filters_active': bool(date_from_raw or date_to_raw or status or member_query),
     }
     return render(request, "attendance/index.html", context)
+
+def member_attendance_view(request, pk):
+    member = get_object_or_404(Member, pk=pk)
+    attendance_qs = Attendance.objects.filter(member=member).order_by('-date')
+
+    paginator = Paginator(attendance_qs, 20)
+    page_obj = paginator.get_page(request.GET.get('page'))
+
+    context = {
+        'member': member,
+        'attendance_records': page_obj.object_list,
+        'page_obj': page_obj,
+    }
+    return render(request, "attendance/member_history.html", context)
 
 def expenses_view(request):
     return render(request, "expenses/list.html")

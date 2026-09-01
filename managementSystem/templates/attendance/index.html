@@ -96,12 +96,19 @@
 <tr class="border-b border-outline-variant hover:bg-surface-container-highest transition-colors group">
 <td class="p-4 font-data-md text-data-md text-on-surface">{% if record.check_out %}{{ record.check_out|time:"h:i A" }}{% else %}{{ record.check_in|time:"h:i A" }}{% endif %}</td>
 <td class="p-4">
-<div class="flex items-center gap-3">
+{% if record.member %}
+<a href="{% url 'member-attendance' record.member.id %}" class="flex items-center gap-3 hover:text-primary transition-colors">
 <div class="w-8 h-8 rounded bg-surface-dim overflow-hidden flex items-center justify-center text-on-surface-variant">
 <span class="font-data-md">{% if record.member.initials %}{{ record.member.initials }}{% elif record.member.full_name %}{{ record.member.full_name|slice:":1"|upper }}{% else %}?{% endif %}</span>
 </div>
 <span class="font-body-sm text-body-sm font-semibold">{{ record.member.full_name|default:"Unknown Member" }}</span>
+</a>
+{% else %}
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-surface-dim overflow-hidden flex items-center justify-center text-on-surface-variant">?</div>
+<span class="font-body-sm text-body-sm font-semibold">Unknown Member</span>
 </div>
+{% endif %}
 </td>
 <td class="p-4">
 {% if record.check_out %}

@@ -14,6 +14,7 @@ urlpatterns = [
     path("renewals/", views.renewals_view, name="renewals"),
     path("refunds/", views.refunds_view, name="refunds"),
     path("attendance/", views.attendance_view, name="attendance"),
+    path("members/<int:pk>/attendance/", views.member_attendance_view, name="member-attendance"),
     path("expenses/", views.expenses_view, name="expenses"),
     path("notifications/", views.notifications_view, name="notifications"),
     path("reports/", views.reports_view, name="reports"),
