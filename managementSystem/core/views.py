@@ -1,12 +1,12 @@
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db import IntegrityError, connection
-from django.db.models import Q
+from django.db.models import Q, Sum
 from django.http import HttpResponseNotAllowed
 from django.shortcuts import get_object_or_404, redirect, render
 
 from .forms import MemberForm
-from .models import Member, Subscription
+from .models import Member, Payment, Subscription
 
 def login_view(request):
     return render(request, "auth/login.html")
@@ -91,7 +91,17 @@ def settings_view(request):
 def member_detail_view(request, pk):
     member = get_object_or_404(Member, pk=pk)
     subscriptions = Subscription.objects.filter(member=member).order_by('-start_date')
-    return render(request, "members/detail.html", {"member": member, "subscriptions": subscriptions})
+    payments = Payment.objects.filter(member=member).order_by('-paid_at')
+    # Cheap aggregate over the same already-scoped queryset — not a separate
+    # "outstanding" figure, since that's just Member.balance, already shown
+    # in the summary card above the tabs.
+    total_paid = payments.filter(status='success').aggregate(total=Sum('total'))['total'] or 0
+    return render(request, "members/detail.html", {
+        "member": member,
+        "subscriptions": subscriptions,
+        "payments": payments,
+        "total_paid": total_paid,
+    })
 
 def _create_member(data, attempt=1):
     """Insert a Member with a freshly generated member_code.

@@ -95,8 +95,48 @@
     </div>
   </div>
   <div id="tab-payments" class="tab-content hidden">
-    <div class="bg-surface-container border border-outline-variant p-6 rounded">
-      <p class="font-body-sm text-on-surface-variant">Not yet available — payment history is coming in a future update.</p>
+    <div class="bg-surface-container border border-outline-variant rounded overflow-hidden">
+      {% if payments %}
+      <div class="p-4 border-b border-outline-variant">
+        <p class="font-label-caps text-[11px] text-on-surface-variant">Total Paid</p>
+        <p class="font-data-lg text-data-lg text-tertiary mt-1">${{ total_paid|floatformat:2 }}</p>
+      </div>
+      <table class="w-full text-left font-data-md text-[12px]">
+        <thead>
+          <tr class="border-b border-outline-variant bg-surface-container-low">
+            <th class="py-3 px-4 font-label-caps text-[11px] text-on-surface-variant font-normal">Payment</th>
+            <th class="py-3 px-4 font-label-caps text-[11px] text-on-surface-variant font-normal">Date</th>
+            <th class="py-3 px-4 font-label-caps text-[11px] text-on-surface-variant font-normal text-right">Amount</th>
+            <th class="py-3 px-4 font-label-caps text-[11px] text-on-surface-variant font-normal text-right">Discount</th>
+            <th class="py-3 px-4 font-label-caps text-[11px] text-on-surface-variant font-normal text-right">Total</th>
+            <th class="py-3 px-4 font-label-caps text-[11px] text-on-surface-variant font-normal">Method</th>
+            <th class="py-3 px-4 font-label-caps text-[11px] text-on-surface-variant font-normal">Status</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-outline-variant">
+          {% for payment in payments %}
+          <tr>
+            <td class="py-3 px-4 text-on-surface font-mono">{{ payment.payment_code|default:"—" }}</td>
+            <td class="py-3 px-4 text-on-surface">{{ payment.paid_at|date:"M d, Y"|default:"—" }}</td>
+            <td class="py-3 px-4 text-on-surface text-right">${{ payment.amount|floatformat:2 }}</td>
+            <td class="py-3 px-4 text-on-surface text-right">${{ payment.discount|default:0|floatformat:2 }}</td>
+            <td class="py-3 px-4 text-on-surface text-right font-semibold">${{ payment.total|floatformat:2 }}</td>
+            <td class="py-3 px-4 text-on-surface-variant">{{ payment.get_method_display|default:"—" }}</td>
+            <td class="py-3 px-4">
+              <div class="inline-flex items-center gap-2 bg-surface-container-highest border border-outline-variant px-2 py-1 rounded font-label-caps text-[10px] text-on-surface">
+                <div class="w-1.5 h-1.5 rounded-full {% if payment.status == 'success' %}bg-tertiary{% elif payment.status == 'pending' %}bg-on-surface-variant{% elif payment.status == 'failed' %}bg-error{% else %}bg-on-surface-variant{% endif %}"></div>
+                {{ payment.status|default:"—"|capfirst }}
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div class="p-6 text-center">
+        <p class="font-body-sm text-on-surface-variant">No payments found for this member.</p>
+      </div>
+      {% endif %}
     </div>
   </div>
   <div id="tab-statement" class="tab-content hidden">
