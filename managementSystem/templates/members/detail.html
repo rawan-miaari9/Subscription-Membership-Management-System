@@ -63,8 +63,35 @@
     </div>
   </div>
   <div id="tab-subscriptions" class="tab-content hidden">
-    <div class="bg-surface-container border border-outline-variant p-6 rounded">
-      <p class="font-body-sm text-on-surface-variant">Not yet available — subscription history is coming in a future update.</p>
+    <div class="bg-surface-container border border-outline-variant rounded overflow-hidden">
+      {% if subscriptions %}
+      <table class="w-full text-left font-data-md text-[12px]">
+        <thead>
+          <tr class="border-b border-outline-variant bg-surface-container-low">
+            <th class="py-3 px-4 font-label-caps text-[11px] text-on-surface-variant font-normal">Code</th>
+            <th class="py-3 px-4 font-label-caps text-[11px] text-on-surface-variant font-normal">Start Date</th>
+            <th class="py-3 px-4 font-label-caps text-[11px] text-on-surface-variant font-normal">End Date</th>
+            <th class="py-3 px-4 font-label-caps text-[11px] text-on-surface-variant font-normal">Status</th>
+            <th class="py-3 px-4 font-label-caps text-[11px] text-on-surface-variant font-normal">Auto-Renew</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-outline-variant">
+          {% for sub in subscriptions %}
+          <tr>
+            <td class="py-3 px-4 text-on-surface font-mono">{{ sub.subscription_code|default:"—" }}</td>
+            <td class="py-3 px-4 text-on-surface">{{ sub.start_date|date:"M d, Y" }}</td>
+            <td class="py-3 px-4 text-on-surface">{{ sub.end_date|date:"M d, Y" }}</td>
+            <td class="py-3 px-4 {% if sub.status == 'active' %}text-tertiary{% elif sub.status == 'expiring' %}text-primary{% elif sub.status == 'suspended' or sub.status == 'expired' or sub.status == 'cancelled' %}text-error{% else %}text-on-surface{% endif %}">{{ sub.status|default:"—"|capfirst }}</td>
+            <td class="py-3 px-4 text-on-surface">{% if sub.auto_renew %}Yes{% else %}No{% endif %}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div class="p-6 text-center">
+        <p class="font-body-sm text-on-surface-variant">No subscriptions found for this member.</p>
+      </div>
+      {% endif %}
     </div>
   </div>
   <div id="tab-payments" class="tab-content hidden">

@@ -6,7 +6,7 @@ from django.http import HttpResponseNotAllowed
 from django.shortcuts import get_object_or_404, redirect, render
 
 from .forms import MemberForm
-from .models import Member
+from .models import Member, Subscription
 
 def login_view(request):
     return render(request, "auth/login.html")
@@ -90,7 +90,8 @@ def settings_view(request):
 
 def member_detail_view(request, pk):
     member = get_object_or_404(Member, pk=pk)
-    return render(request, "members/detail.html", {"member": member})
+    subscriptions = Subscription.objects.filter(member=member).order_by('-start_date')
+    return render(request, "members/detail.html", {"member": member, "subscriptions": subscriptions})
 
 def _create_member(data, attempt=1):
     """Insert a Member with a freshly generated member_code.
