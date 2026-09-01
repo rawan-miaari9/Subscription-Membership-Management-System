@@ -4,8 +4,8 @@ from django.db import IntegrityError, connection
 from django.http import HttpResponseNotAllowed
 from django.shortcuts import get_object_or_404, redirect, render
 
-from .forms import PlanForm
-from .models import MembershipPlan
+from .forms import PlanForm, ServiceForm
+from .models import MembershipPlan, Service
 
 def login_view(request):
     return render(request, "auth/login.html")
@@ -99,7 +99,55 @@ def member_add_view(request):
     return render(request, "members/add.html")
 
 def services_view(request):
-    return render(request, "services/list.html")
+    services_qs = Service.objects.all().order_by('name')
+    paginator = Paginator(services_qs, 20)
+    page_obj = paginator.get_page(request.GET.get('page'))
+    context = {
+        'services': page_obj.object_list,
+        'page_obj': page_obj,
+    }
+    return render(request, "services/list.html", context)
+
+def _create_service(data, attempt=1):
+    """Insert a Service with a freshly generated service_code.
+
+    Raw INSERT (not Service.objects.create()) — no GENERATED-column concern
+    here, but kept consistent with the raw-INSERT pattern used for
+    Member/Plan so only the real columns this form collects are ever touched.
+
+    service_code is an app-level generated sequence (see
+    ServiceForm.generate_service_code), not an atomic DB one, so retry once on
+    a UNIQUE violation before giving up — same pattern as Member/Plan.
+    """
+    service_code = ServiceForm.generate_service_code()
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "INSERT INTO services (service_code, name, description, is_active) VALUES (%s, %s, %s, %s) RETURNING id",
+                [service_code, data['name'], data['description'] or None, data['is_active']],
+            )
+            new_id = cursor.fetchone()[0]
+        return Service.objects.get(pk=new_id)
+    except IntegrityError:
+        if attempt >= 2:
+            return None
+        return _create_service(data, attempt=attempt + 1)
+
+def service_add_view(request):
+    if request.method == "POST":
+        form = ServiceForm(request.POST)
+        if form.is_valid():
+            service = _create_service(form.cleaned_data)
+            if service is None:
+                messages.error(request, "Could not save this service due to a conflict — please try again.")
+                return render(request, "services/add.html", {"form": form})
+
+            messages.success(request, f'Service "{service.name}" was added successfully ({service.service_code}).')
+            return redirect('services')
+    else:
+        form = ServiceForm()
+
+    return render(request, "services/add.html", {"form": form})
 
 # The frontend's Duration dropdown only offers these buckets, not a raw day
 # count — approximated as flat day-counts since a plan *template* has no

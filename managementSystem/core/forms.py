@@ -1,7 +1,9 @@
+import re
+
 from django import forms
 from django.utils.text import slugify
 
-from .models import MembershipPlan
+from .models import MembershipPlan, Service
 
 
 class PlanForm(forms.Form):
@@ -71,3 +73,42 @@ class PlanForm(forms.Form):
             suffix += 1
             slug = f"{base_slug}-{suffix}"
         return slug
+
+
+class ServiceForm(forms.Form):
+    name = forms.CharField(max_length=150, label='Service Name')
+    description = forms.CharField(required=False, widget=forms.Textarea, label='Description')
+    # The real `services.is_active` column is a genuine boolean (not a
+    # status string like Member/Plan use elsewhere in this project), and
+    # there's no pre-existing frontend convention to match here (no add-form
+    # template existed before this task) — so it's represented directly as a
+    # checkbox rather than an Active/Inactive dropdown needing translation.
+    is_active = forms.BooleanField(required=False, initial=True, label='Active')
+
+    def __init__(self, *args, instance_service=None, **kwargs):
+        # Not used for any validation yet (services.name has no UNIQUE
+        # constraint in the DB, unlike Member/Plan names, so there's nothing
+        # to exclude-self from). Accepted now anyway so a future Edit Service
+        # view can pass it in without changing this form's signature —
+        # deferred building that view itself, since this task's scope is
+        # List + Add only.
+        self.instance_service = instance_service
+        super().__init__(*args, **kwargs)
+
+    @staticmethod
+    def generate_service_code():
+        """Next sequential "SRV-<n>" code, based on the highest existing numeric suffix.
+
+        Same numeric-max approach as MemberForm.generate_member_code(): scan
+        existing codes in Python rather than sort them as text in the DB
+        (avoids "SRV-9" sorting after "SRV-10"), matching the SRV-NNN pattern
+        already visible in this page's previous fake data (SRV-001, SRV-002).
+        """
+        pattern = re.compile(r'^SRV-(\d+)$')
+        max_num = 0
+        codes = Service.objects.filter(service_code__startswith='SRV-').values_list('service_code', flat=True)
+        for code in codes:
+            match = pattern.match(code)
+            if match:
+                max_num = max(max_num, int(match.group(1)))
+        return f"SRV-{max_num + 1:03d}"
