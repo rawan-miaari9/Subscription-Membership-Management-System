@@ -1,4 +1,5 @@
 from django.contrib import messages
+from django.core.paginator import Paginator
 from django.db import IntegrityError, connection
 from django.shortcuts import redirect, render
 
@@ -15,7 +16,14 @@ def members_view(request):
     return render(request, "members/list.html")
 
 def plans_view(request):
-    return render(request, "plans/list.html")
+    plans_qs = MembershipPlan.objects.all().order_by('name')
+    paginator = Paginator(plans_qs, 20)
+    page_obj = paginator.get_page(request.GET.get('page'))
+    context = {
+        'plans': page_obj.object_list,
+        'page_obj': page_obj,
+    }
+    return render(request, "plans/list.html", context)
 
 def subscriptions_view(request):
     return render(request, "subscriptions/list.html")
