@@ -1,6 +1,7 @@
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db import IntegrityError, connection
+from django.http import HttpResponseNotAllowed
 from django.shortcuts import get_object_or_404, redirect, render
 
 from .forms import PlanForm
@@ -24,6 +25,21 @@ def plans_view(request):
         'page_obj': page_obj,
     }
     return render(request, "plans/list.html", context)
+
+def plan_activate_view(request, pk):
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+
+    plan = get_object_or_404(MembershipPlan, pk=pk)
+
+    if plan.is_active:
+        messages.info(request, f'"{plan.name}" is already active.')
+    else:
+        plan.is_active = True
+        plan.save(update_fields=['is_active'])
+        messages.success(request, f'"{plan.name}" was activated.')
+
+    return redirect('plans')
 
 def subscriptions_view(request):
     return render(request, "subscriptions/list.html")
