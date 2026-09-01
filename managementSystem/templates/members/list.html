@@ -18,20 +18,23 @@
 <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
 <h2 class="font-headline-lg text-headline-lg text-on-surface uppercase tracking-tight">MEMBER MANAGEMENT</h2>
 <div class="flex items-center gap-3">
-<form method="get" class="relative">
+<form method="get" class="flex items-center gap-3">
+<div class="relative">
 <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px] pointer-events-none">search</span>
 <input type="text" name="q" value="{{ search_query }}" placeholder="Search name, code, phone, email…" class="bg-surface-container border border-outline-variant rounded h-10 pl-10 pr-4 py-0 text-on-surface font-body-sm w-56 sm:w-64 focus:ring-1 focus:ring-primary focus:border-primary outline-none placeholder:text-on-surface-variant/60" />
-</form>
+</div>
 <div class="relative">
-<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">filter_list</span>
-<select data-status-filter class="appearance-none bg-surface-container border border-outline-variant rounded h-10 pl-10 pr-10 py-0 text-on-surface font-label-caps text-label-caps uppercase focus:ring-1 focus:ring-primary focus:border-primary outline-none cursor-pointer">
-<option>All Statuses</option>
-<option>Active</option>
-<option>Suspended</option>
-<option>Expiring</option>
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px] pointer-events-none">filter_list</span>
+<select name="status" onchange="this.form.submit()" class="appearance-none bg-surface-container border border-outline-variant rounded h-10 pl-10 pr-10 py-0 text-on-surface font-label-caps text-label-caps uppercase focus:ring-1 focus:ring-primary focus:border-primary outline-none cursor-pointer">
+<option value="" {% if not status_filter %}selected{% endif %}>All Statuses</option>
+<option value="active" {% if status_filter == "active" %}selected{% endif %}>Active</option>
+<option value="expiring" {% if status_filter == "expiring" %}selected{% endif %}>Expiring</option>
+<option value="suspended" {% if status_filter == "suspended" %}selected{% endif %}>Suspended</option>
+<option value="expired" {% if status_filter == "expired" %}selected{% endif %}>Expired</option>
 </select>
 <span class="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none">arrow_drop_down</span>
 </div>
+</form>
 <a href="{% url 'member-add' %}" class="bg-primary-container text-on-primary-container font-label-caps text-label-caps uppercase px-6 h-10 rounded border border-primary hover:bg-primary-fixed-dim transition-colors flex items-center gap-2 inline-flex">
 <span class="material-symbols-outlined text-[18px]">add</span>
                             Add Member
@@ -97,8 +100,8 @@
 <!-- Pagination Footer -->
 <div class="border-t border-outline-variant bg-surface-container-low p-4 flex flex-wrap justify-between items-center gap-2">
 <span class="font-label-caps text-label-caps text-on-surface-variant uppercase">
-Showing {{ page_obj.start_index }}-{{ page_obj.end_index }} of {{ page_obj.paginator.count }}{% if search_query %} for "{{ search_query }}"{% endif %}
-{% if search_query %} · <a href="{% url 'members' %}" class="text-primary hover:underline normal-case">Clear search</a>{% endif %}
+Showing {{ page_obj.start_index }}-{{ page_obj.end_index }} of {{ page_obj.paginator.count }}{% if search_query %} for "{{ search_query }}"{% endif %}{% if status_filter %} · status: {{ status_filter|capfirst }}{% endif %}
+{% if filters_active %} · <a href="{% url 'members' %}" class="text-primary hover:underline normal-case">Clear filters</a>{% endif %}
 </span>
 <div class="flex gap-4">
 {% if page_obj.has_previous %}

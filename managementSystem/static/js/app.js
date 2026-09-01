@@ -95,20 +95,6 @@ document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('[data-close-drawer]').forEach(b => b.addEventListener('click', closeDrawer));
   if (overlay) overlay.addEventListener('click', closeDrawer);
 
-  // ── Status filter (members) ──
-  const statusFilter = document.querySelector('[data-status-filter]');
-  if (statusFilter) {
-    statusFilter.addEventListener('change', () => {
-      const v = statusFilter.value.toLowerCase();
-      const tbody = document.querySelector('[data-members-tbody]');
-      if (!tbody) return;
-      tbody.querySelectorAll('tr').forEach(tr => {
-        const statusCell = tr.querySelector('td:nth-child(4)')?.textContent.toLowerCase() || '';
-        tr.style.display = (v === 'all statuses' || v === '' || statusCell.includes(v)) ? '' : 'none';
-      });
-    });
-  }
-
   // ── Add member demo ──
   const addBtn = document.querySelector('[data-add-member]');
   if (addBtn) addBtn.addEventListener('click', () => toast('Add Member modal (frontend demo) - backend later', 'info'));

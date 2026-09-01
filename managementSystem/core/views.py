@@ -15,6 +15,7 @@ def dashboard_view(request):
 
 def members_view(request):
     search_query = request.GET.get('q', '').strip()
+    status_filter = request.GET.get('status', '').strip()
 
     # Newest members first — the most useful default for an admin glancing at
     # who just joined; '-id' breaks ties for same-day joins deterministically.
@@ -26,11 +27,13 @@ def members_view(request):
             | Q(phone__icontains=search_query)
             | Q(email__icontains=search_query)
         )
+    if status_filter in dict(Member.STATUS_CHOICES):
+        members_qs = members_qs.filter(status=status_filter)
 
     paginator = Paginator(members_qs, 20)
     page_obj = paginator.get_page(request.GET.get('page'))
 
-    # Preserve the search query across Previous/Next links (drop 'page' — the link supplies its own).
+    # Preserve active filters across Previous/Next links (drop 'page' — the link supplies its own).
     filters_querydict = request.GET.copy()
     filters_querydict.pop('page', None)
     filters_querystring = filters_querydict.urlencode()
@@ -39,7 +42,9 @@ def members_view(request):
         'members': page_obj.object_list,
         'page_obj': page_obj,
         'search_query': search_query,
+        'status_filter': status_filter,
         'filters_querystring': filters_querystring,
+        'filters_active': bool(search_query or status_filter),
     }
     return render(request, "members/list.html", context)
 
