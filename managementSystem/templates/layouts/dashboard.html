@@ -27,7 +27,7 @@
                 </button>
                 <ul data-sidebar-group="members" class="ml-4 mt-1 pl-3 border-l border-outline-variant flex flex-col gap-0.5 {% if request.resolver_match.url_name not in 'members member-detail' %}hidden{% endif %}">
                     <li><a class="{% if request.resolver_match.url_name == 'members' %}text-primary bg-surface-container-high{% else %}text-on-surface-variant hover:text-primary{% endif %} block px-3 py-2 font-label-caps text-[11px] rounded" href="{% url 'members' %}"><span class="sidebar-text">All Members</span></a></li>
-                    <li><a class="{% if request.resolver_match.url_name == 'member-detail' %}text-primary bg-surface-container-high{% else %}text-on-surface-variant hover:text-primary{% endif %} block px-3 py-2 font-label-caps text-[11px] rounded" href="{% url 'member-detail' %}"><span class="sidebar-text">Member Details</span></a></li>
+                    <li><a class="{% if request.resolver_match.url_name == 'member-detail' %}text-primary bg-surface-container-high{% else %}text-on-surface-variant hover:text-primary{% endif %} block px-3 py-2 font-label-caps text-[11px] rounded" href="{% url 'members' %}"><span class="sidebar-text">Member Details</span></a></li>
                 </ul>
             </li>
 

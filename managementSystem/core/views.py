@@ -88,8 +88,9 @@ def users_view(request):
 def settings_view(request):
     return render(request, "settings/index.html")
 
-def member_detail_view(request):
-    return render(request, "members/detail.html")
+def member_detail_view(request, pk):
+    member = get_object_or_404(Member, pk=pk)
+    return render(request, "members/detail.html", {"member": member})
 
 def _create_member(data, attempt=1):
     """Insert a Member with a freshly generated member_code.

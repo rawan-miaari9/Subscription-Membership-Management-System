@@ -79,7 +79,7 @@
 <td class="py-4 px-6 text-center relative">
 <button data-action-toggle class="text-on-surface-variant hover:text-primary transition-colors p-1" onclick="event.stopPropagation()"><span class="material-symbols-outlined text-[20px]">more_vert</span></button>
 <div data-action-menu class="hidden absolute right-6 top-10 z-20 w-56 bg-surface-container border border-outline-variant rounded shadow-xl flex flex-col py-1">
-<a href="/members/detail/?member={{ member.full_name|urlencode }}" class="px-4 py-2.5 font-label-caps text-[11px] text-on-surface hover:bg-surface-container-high flex items-center gap-2"><span class="material-symbols-outlined text-[16px]">visibility</span> View</a>
+<a href="{% url 'member-detail' member.id %}" class="px-4 py-2.5 font-label-caps text-[11px] text-on-surface hover:bg-surface-container-high flex items-center gap-2"><span class="material-symbols-outlined text-[16px]">visibility</span> View</a>
 <a href="{% url 'member-edit' member.id %}" class="px-4 py-2.5 font-label-caps text-[11px] text-on-surface hover:bg-surface-container-high flex items-center gap-2"><span class="material-symbols-outlined text-[16px]">edit</span> Edit</a>
 <form method="post" action="{% url 'member-delete' member.id %}" onsubmit="return confirm('Are you sure you want to delete {{ member.full_name|escapejs }}? This cannot be undone.');">
 {% csrf_token %}
@@ -208,7 +208,7 @@ Showing {{ page_obj.start_index }}-{{ page_obj.end_index }} of {{ page_obj.pagin
 </div>
 <!-- Drawer Footer Actions -->
 <div class="mt-auto p-6 border-t border-outline-variant bg-surface sticky bottom-0 z-10">
-<a id="drawer-view-details" href="/members/detail/?member=John Doe" class="w-full bg-primary text-surface-dim border border-primary font-label-caps text-label-caps uppercase px-6 h-10 rounded hover:bg-primary-container transition-colors flex items-center justify-center gap-2">
+<a id="drawer-view-details" href="{% url 'members' %}" class="w-full bg-primary text-surface-dim border border-primary font-label-caps text-label-caps uppercase px-6 h-10 rounded hover:bg-primary-container transition-colors flex items-center justify-center gap-2">
 <span class="material-symbols-outlined text-[18px]">visibility</span>
                         View Full Details
                     </a>

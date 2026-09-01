@@ -1,29 +1,43 @@
 {% extends "layouts/dashboard.html" %}
-{% block title %}Member Details - Iron Core{% endblock %}
+{% block title %}{{ member.full_name }} - Iron Core{% endblock %}
 
 {% block dashboard_content %}
 <div class="flex flex-col gap-6">
+  {% if messages %}
+  <div class="space-y-2">
+  {% for message in messages %}
+  <div class="p-4 rounded border flex items-center gap-2 font-body-sm text-sm {% if message.tags == 'success' %}bg-tertiary-container border-tertiary text-on-tertiary-container{% elif message.tags == 'error' %}bg-error-container border-error text-on-error-container{% else %}bg-surface-container-high border-outline-variant text-on-surface{% endif %}">
+  <span class="material-symbols-outlined text-[18px]">{% if message.tags == 'success' %}check_circle{% elif message.tags == 'error' %}error{% else %}info{% endif %}</span>
+  {{ message }}
+  </div>
+  {% endfor %}
+  </div>
+  {% endif %}
+
   <!-- Header -->
   <div class="flex flex-col md:flex-row justify-between gap-4">
     <div class="flex gap-4 items-center">
-      <div id="detail-avatar" class="w-16 h-16 rounded bg-surface-container-high border border-outline-variant flex items-center justify-center font-display text-display">JD</div>
+      <div class="w-16 h-16 rounded bg-surface-container-high border border-outline-variant flex items-center justify-center font-display text-display">{% if member.initials %}{{ member.initials }}{% elif member.full_name %}{{ member.full_name|slice:":1"|upper }}{% else %}?{% endif %}</div>
       <div>
-        <h1 id="detail-name" class="font-headline-lg text-headline-lg text-on-surface uppercase">John Doe</h1>
-        <p id="detail-sub" class="font-data-md text-data-md text-on-surface-variant">MBR-9921A • Elite Powerlifting</p>
+        <h1 class="font-headline-lg text-headline-lg text-on-surface uppercase">{{ member.full_name }}</h1>
+        <p class="font-data-md text-data-md text-on-surface-variant">{{ member.member_code }} • Joined {{ member.join_date|date:"M d, Y"|default:"—" }}</p>
       </div>
     </div>
     <div class="flex gap-2">
-      <button data-toast="Edit member (demo)" class="px-4 py-2 border border-outline-variant text-on-surface font-label-caps text-[11px] hover:bg-surface-container-high">Edit</button>
-      <button data-toast="Create subscription (demo)" class="px-4 py-2 bg-primary text-surface-dim font-label-caps text-[11px]">New Subscription</button>
+      <a href="{% url 'member-edit' member.id %}" class="px-4 py-2 border border-outline-variant text-on-surface font-label-caps text-[11px] hover:bg-surface-container-high">Edit</a>
+      <button data-toast="Create subscription (not yet available)" class="px-4 py-2 bg-primary text-surface-dim font-label-caps text-[11px]">New Subscription</button>
     </div>
   </div>
 
   <!-- Summary Cards -->
   <div class="grid grid-cols-12 gap-bento-gap">
-    <div class="col-span-6 md:col-span-3 bg-surface-container border border-outline-variant p-4 rounded"><p class="font-label-caps text-[11px] text-on-surface-variant">Current Plan</p><p id="detail-plan" class="font-data-lg text-data-lg text-primary mt-1">Elite Power</p></div>
-    <div class="col-span-6 md:col-span-3 bg-surface-container border border-outline-variant p-4 rounded"><p class="font-label-caps text-[11px] text-on-surface-variant">Status</p><p id="detail-status" class="font-data-md text-data-md text-tertiary mt-1">ACTIVE</p></div>
-    <div class="col-span-6 md:col-span-3 bg-surface-container border border-outline-variant p-4 rounded"><p class="font-label-caps text-[11px] text-on-surface-variant">Expiry</p><p id="detail-expiry" class="font-data-md text-data-md text-on-surface mt-1">2024-10-01</p></div>
-    <div class="col-span-6 md:col-span-3 bg-surface-container border border-outline-variant p-4 rounded"><p class="font-label-caps text-[11px] text-on-surface-variant">Balance</p><p id="detail-balance" class="font-data-md text-data-md text-on-surface mt-1">$0.00</p></div>
+    <div class="col-span-6 md:col-span-3 bg-surface-container border border-outline-variant p-4 rounded"><p class="font-label-caps text-[11px] text-on-surface-variant">Current Plan</p><p class="font-data-lg text-data-lg text-on-surface-variant mt-1">—</p></div>
+    <div class="col-span-6 md:col-span-3 bg-surface-container border border-outline-variant p-4 rounded">
+      <p class="font-label-caps text-[11px] text-on-surface-variant">Status</p>
+      <p class="font-data-md text-data-md mt-1 {% if member.status == 'active' %}text-tertiary{% elif member.status == 'expiring' %}text-primary{% elif member.status == 'suspended' or member.status == 'expired' %}text-error{% else %}text-on-surface{% endif %}">{{ member.status|default:"—"|upper }}</p>
+    </div>
+    <div class="col-span-6 md:col-span-3 bg-surface-container border border-outline-variant p-4 rounded"><p class="font-label-caps text-[11px] text-on-surface-variant">Expiry</p><p class="font-data-md text-data-md text-on-surface-variant mt-1">—</p></div>
+    <div class="col-span-6 md:col-span-3 bg-surface-container border border-outline-variant p-4 rounded"><p class="font-label-caps text-[11px] text-on-surface-variant">Balance</p><p class="font-data-md text-data-md {% if member.balance and member.balance > 0 %}text-error{% else %}text-on-surface{% endif %} mt-1">${{ member.balance|default:0|floatformat:2 }}</p></div>
   </div>
 
   <!-- Tabs -->
@@ -40,41 +54,32 @@
     <div class="grid grid-cols-12 gap-bento-gap">
       <div class="col-span-12 md:col-span-6 bg-surface-container border border-outline-variant p-6 rounded">
         <h3 class="font-label-caps text-[11px] text-on-surface-variant mb-3">Subscription History</h3>
-        <div class="space-y-2 font-data-md text-[12px]"><div class="flex justify-between"><span>Elite Power (Monthly)</span><span class="text-tertiary">ACTIVE</span></div><div class="flex justify-between opacity-60"><span>Basic Lift (Monthly)</span><span>EXPIRED</span></div></div>
+        <p class="font-body-sm text-[13px] text-on-surface-variant">Not yet available — subscription tracking is coming in a future update.</p>
       </div>
       <div class="col-span-12 md:col-span-6 bg-surface-container border border-outline-variant p-6 rounded">
         <h3 class="font-label-caps text-[11px] text-on-surface-variant mb-3">Contact</h3>
-        <p id="detail-contact" class="font-body-sm text-[13px] text-on-surface">555-0192<br>john.doe@example.com<br>Join: 2023-01-15</p>
+        <p class="font-body-sm text-[13px] text-on-surface">{{ member.phone|default:"—" }}<br>{{ member.email|default:"—" }}<br>Join: {{ member.join_date|date:"M d, Y"|default:"—" }}</p>
       </div>
     </div>
   </div>
   <div id="tab-subscriptions" class="tab-content hidden">
     <div class="bg-surface-container border border-outline-variant p-6 rounded">
-      <p class="font-body-sm text-on-surface-variant">Subscription history table (frontend demo).</p>
-      <table class="w-full mt-4 text-left font-data-md text-[12px]"><thead><tr class="border-b border-outline-variant"><th class="py-2">Plan</th><th>Dates</th><th>Status</th></tr></thead><tbody><tr><td class="py-2">Elite Power</td><td>2023-10-01 → 2024-10-01</td><td class="text-tertiary">Active</td></tr></tbody></table>
+      <p class="font-body-sm text-on-surface-variant">Not yet available — subscription history is coming in a future update.</p>
     </div>
   </div>
   <div id="tab-payments" class="tab-content hidden">
     <div class="bg-surface-container border border-outline-variant p-6 rounded">
-      <p class="font-body-sm text-on-surface-variant">Payment history (frontend demo).</p>
-      <div class="mt-4 space-y-2 font-data-md text-[12px]"><div class="flex justify-between p-3 border border-outline-variant bg-background"><span>INV-2023-089 $390.00 VISA</span><span class="text-tertiary">PAID</span></div></div>
+      <p class="font-body-sm text-on-surface-variant">Not yet available — payment history is coming in a future update.</p>
     </div>
   </div>
   <div id="tab-statement" class="tab-content hidden">
     <div class="bg-surface-container border border-outline-variant p-6 rounded">
-      <div class="grid grid-cols-4 gap-4 text-center">
-        <div><p class="font-label-caps text-[11px] text-on-surface-variant">Opening</p><p class="font-data-md">$0.00</p></div>
-        <div><p class="font-label-caps text-[11px] text-on-surface-variant">Charges</p><p class="font-data-md">$490.00</p></div>
-        <div><p class="font-label-caps text-[11px] text-on-surface-variant">Payments</p><p class="font-data-md text-tertiary">-$390.00</p></div>
-        <div><p class="font-label-caps text-[11px] text-on-surface-variant">Balance</p><p class="font-data-md">$100.00</p></div>
-      </div>
-      <table class="w-full mt-6 text-left font-data-md text-[12px]"><thead><tr class="border-b border-outline-variant"><th class="py-2">Date</th><th>Description</th><th>Charge</th><th>Payment</th><th>Balance</th></tr></thead><tbody><tr><td class="py-2">2023-10-24</td><td>Elite Membership</td><td>$450.00</td><td>-$390.00</td><td>$60.00</td></tr></tbody></table>
+      <p class="font-body-sm text-on-surface-variant">Not yet available — customer statements are coming in a future update.</p>
     </div>
   </div>
   <div id="tab-attendance" class="tab-content hidden">
     <div class="bg-surface-container border border-outline-variant p-6 rounded">
-      <p class="font-body-sm text-on-surface-variant">Check-in/out history (frontend demo).</p>
-      <table class="w-full mt-4 text-left font-data-md text-[12px]"><thead><tr class="border-b border-outline-variant"><th class="py-2">Date</th><th>Check-in</th><th>Check-out</th><th>Duration</th></tr></thead><tbody><tr><td class="py-2">2023-10-20</td><td>08:32</td><td>10:15</td><td>1h 43m</td></tr></tbody></table>
+      <p class="font-body-sm text-on-surface-variant">Not yet available — attendance history is coming in a future update.</p>
     </div>
   </div>
 </div>
@@ -88,27 +93,5 @@ document.querySelectorAll('.tab-btn').forEach(b=>{
     document.getElementById('tab-'+b.dataset.tab).classList.remove('hidden');
   });
 });
-// Dynamic member details via ?member= query param (frontend-only)
-const membersData = {
-  "John Doe": {id:"MBR-9921A", plan:"Elite Powerlifting", phone:"555-0192", email:"john.doe@example.com", join:"2023-01-15", status:"ACTIVE", expiry:"2024-10-01", balance:"$0.00", initials:"JD", statusClass:"text-tertiary"},
-  "Marcus Stone": {id:"MBR-8834B", plan:"Basic Lift", phone:"555-0144", email:"marcus.stone@example.com", join:"2023-02-20", status:"EXPIRING", expiry:"2024-02-20", balance:"$150.00", initials:"MS", statusClass:"text-primary"},
-  "Sarah Vance": {id:"MBR-7719C", plan:"Elite Power", phone:"555-0188", email:"sarah.vance@example.com", join:"2022-11-10", status:"SUSPENDED", expiry:"2024-01-10", balance:"$450.00", initials:"SV", statusClass:"text-error"},
-  "Evan Wright": {id:"MBR-6652D", plan:"Drop-In", phone:"555-0112", email:"evan.wright@example.com", join:"2023-03-05", status:"ACTIVE", expiry:"2024-03-05", balance:"$0.00", initials:"EW", statusClass:"text-tertiary"}
-};
-const params = new URLSearchParams(window.location.search);
-const selected = params.get('member');
-if(selected && membersData[selected]){
-  const m = membersData[selected];
-  document.getElementById('detail-name').textContent = selected;
-  document.getElementById('detail-sub').textContent = m.id + ' • ' + m.plan;
-  document.getElementById('detail-avatar').textContent = m.initials;
-  document.getElementById('detail-plan').textContent = m.plan;
-  const statusEl = document.getElementById('detail-status');
-  if(statusEl){ statusEl.textContent=m.status; statusEl.className='font-data-md text-data-md mt-1 '+m.statusClass; }
-  document.getElementById('detail-expiry').textContent = m.expiry;
-  document.getElementById('detail-balance').textContent = m.balance;
-  document.getElementById('detail-contact').innerHTML = `${m.phone}<br>${m.email}<br>Join: ${m.join}`;
-  document.title = selected + ' - Iron Core';
-}
 </script>
 {% endblock %}
