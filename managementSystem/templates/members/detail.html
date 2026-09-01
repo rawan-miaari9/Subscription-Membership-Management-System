@@ -145,8 +145,33 @@
     </div>
   </div>
   <div id="tab-attendance" class="tab-content hidden">
-    <div class="bg-surface-container border border-outline-variant p-6 rounded">
-      <p class="font-body-sm text-on-surface-variant">Not yet available — attendance history is coming in a future update.</p>
+    <div class="bg-surface-container border border-outline-variant rounded overflow-hidden">
+      {% if attendance_records %}
+      <table class="w-full text-left font-data-md text-[12px]">
+        <thead>
+          <tr class="border-b border-outline-variant bg-surface-container-low">
+            <th class="py-3 px-4 font-label-caps text-[11px] text-on-surface-variant font-normal">Date</th>
+            <th class="py-3 px-4 font-label-caps text-[11px] text-on-surface-variant font-normal">Check-in</th>
+            <th class="py-3 px-4 font-label-caps text-[11px] text-on-surface-variant font-normal">Check-out</th>
+            <th class="py-3 px-4 font-label-caps text-[11px] text-on-surface-variant font-normal">Duration</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-outline-variant">
+          {% for record in attendance_records %}
+          <tr>
+            <td class="py-3 px-4 text-on-surface">{{ record.date|date:"M d, Y" }}</td>
+            <td class="py-3 px-4 text-on-surface">{{ record.check_in|time:"h:i A"|default:"—" }}</td>
+            <td class="py-3 px-4 text-on-surface">{% if record.check_out %}{{ record.check_out|time:"h:i A" }}{% else %}<span class="text-on-surface-variant">—</span>{% endif %}</td>
+            <td class="py-3 px-4 text-on-surface">{% if record.duration_min is not None %}{{ record.duration_min }} min{% else %}<span class="text-on-surface-variant">—</span>{% endif %}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div class="p-6 text-center">
+        <p class="font-body-sm text-on-surface-variant">No attendance records for this member.</p>
+      </div>
+      {% endif %}
     </div>
   </div>
 </div>

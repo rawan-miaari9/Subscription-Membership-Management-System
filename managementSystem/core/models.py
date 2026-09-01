@@ -104,3 +104,27 @@ class Payment(models.Model):
 
     def __str__(self):
         return self.payment_code or f"Payment #{self.pk}"
+
+
+class Attendance(models.Model):
+    member = models.ForeignKey(
+        Member,
+        on_delete=models.CASCADE,
+        db_column='member_id',
+        null=True,
+        blank=True,
+        related_name='attendance_records',
+    )
+    date = models.DateField()
+    check_in = models.TimeField(null=True, blank=True)
+    check_out = models.TimeField(null=True, blank=True)
+    # Postgres GENERATED column (check_out - check_in in minutes) — read-only, never write to it.
+    duration_min = models.IntegerField(null=True, blank=True, editable=False)
+
+    class Meta:
+        managed = False
+        db_table = 'attendance'
+        unique_together = ('member', 'date')
+
+    def __str__(self):
+        return f"{self.member} - {self.date}"

@@ -6,7 +6,7 @@ from django.http import HttpResponseNotAllowed
 from django.shortcuts import get_object_or_404, redirect, render
 
 from .forms import MemberForm
-from .models import Member, Payment, Subscription
+from .models import Attendance, Member, Payment, Subscription
 
 def login_view(request):
     return render(request, "auth/login.html")
@@ -96,11 +96,19 @@ def member_detail_view(request, pk):
     # "outstanding" figure, since that's just Member.balance, already shown
     # in the summary card above the tabs.
     total_paid = payments.filter(status='success').aggregate(total=Sum('total'))['total'] or 0
+    # This is a tab on a detail page, not a standalone list — full Paginator
+    # controls would be overkill here. A member's attendance realistically
+    # tops out in the low hundreds even after years of daily visits, so a
+    # simple "most recent 20" cap (matching the page size used elsewhere in
+    # this project) keeps the tab fast and readable without needing Previous/
+    # Next controls crammed into a tab panel.
+    attendance_records = Attendance.objects.filter(member=member).order_by('-date')[:20]
     return render(request, "members/detail.html", {
         "member": member,
         "subscriptions": subscriptions,
         "payments": payments,
         "total_paid": total_paid,
+        "attendance_records": attendance_records,
     })
 
 def _create_member(data, attempt=1):
