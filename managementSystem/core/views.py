@@ -1,6 +1,7 @@
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db import IntegrityError, connection
+from django.db.models import Q
 from django.shortcuts import redirect, render
 
 from .forms import MemberForm
@@ -13,14 +14,32 @@ def dashboard_view(request):
     return render(request, "dashboard/index.html")
 
 def members_view(request):
+    search_query = request.GET.get('q', '').strip()
+
     # Newest members first — the most useful default for an admin glancing at
     # who just joined; '-id' breaks ties for same-day joins deterministically.
     members_qs = Member.objects.all().order_by('-join_date', '-id')
+    if search_query:
+        members_qs = members_qs.filter(
+            Q(full_name__icontains=search_query)
+            | Q(member_code__icontains=search_query)
+            | Q(phone__icontains=search_query)
+            | Q(email__icontains=search_query)
+        )
+
     paginator = Paginator(members_qs, 20)
     page_obj = paginator.get_page(request.GET.get('page'))
+
+    # Preserve the search query across Previous/Next links (drop 'page' — the link supplies its own).
+    filters_querydict = request.GET.copy()
+    filters_querydict.pop('page', None)
+    filters_querystring = filters_querydict.urlencode()
+
     context = {
         'members': page_obj.object_list,
         'page_obj': page_obj,
+        'search_query': search_query,
+        'filters_querystring': filters_querystring,
     }
     return render(request, "members/list.html", context)
 
