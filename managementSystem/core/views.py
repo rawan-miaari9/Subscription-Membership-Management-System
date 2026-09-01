@@ -1,3 +1,4 @@
+from django.core.paginator import Paginator
 from django.db import IntegrityError, connection
 from django.http import HttpResponseNotAllowed, JsonResponse
 from django.shortcuts import render
@@ -71,7 +72,14 @@ def refunds_view(request):
     return render(request, "refunds/list.html")
 
 def attendance_view(request):
-    return render(request, "attendance/index.html")
+    attendance_qs = Attendance.objects.select_related('member').order_by('-date', '-check_in')
+    paginator = Paginator(attendance_qs, 20)
+    page_obj = paginator.get_page(request.GET.get('page'))
+    context = {
+        'attendance_records': page_obj.object_list,
+        'page_obj': page_obj,
+    }
+    return render(request, "attendance/index.html", context)
 
 def expenses_view(request):
     return render(request, "expenses/list.html")
