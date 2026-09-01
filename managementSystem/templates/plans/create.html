@@ -1,5 +1,5 @@
 {% extends "layouts/dashboard.html" %}
-{% block title %}Create Membership Plan - Iron Core{% endblock %}
+{% block title %}{% if is_edit %}Edit Membership Plan{% else %}Create Membership Plan{% endif %} - Iron Core{% endblock %}
 
 {% block dashboard_content %}
 <div class="max-w-3xl mx-auto">
@@ -12,16 +12,16 @@
   <div class="mb-8 border-b border-outline-variant pb-6">
     <div class="flex items-center gap-3 mb-2">
       <span class="w-8 h-8 flex items-center justify-center rounded bg-primary-container text-on-primary-container">
-        <span class="material-symbols-outlined text-[18px]">add</span>
+        <span class="material-symbols-outlined text-[18px]">{% if is_edit %}edit{% else %}add{% endif %}</span>
       </span>
       <span class="font-label-caps text-[11px] uppercase tracking-[0.12em] text-primary-container">Membership Plans</span>
     </div>
-    <h1 class="font-headline-lg text-headline-lg text-on-surface uppercase tracking-tight">Create Membership Plan</h1>
-    <p class="font-body-sm text-body-sm text-on-surface-variant mt-2 max-w-2xl">Define a new membership tier for the facility. Pricing and duration affect automated billing cycles and access rules.</p>
+    <h1 class="font-headline-lg text-headline-lg text-on-surface uppercase tracking-tight">{% if is_edit %}Edit Membership Plan{% else %}Create Membership Plan{% endif %}</h1>
+    <p class="font-body-sm text-body-sm text-on-surface-variant mt-2 max-w-2xl">{% if is_edit %}Update {{ edit_plan.name }}'s tier settings.{% else %}Define a new membership tier for the facility.{% endif %} Pricing and duration affect automated billing cycles and access rules.</p>
   </div>
 
   <!-- Form Card - bento-card style -->
-  <form method="post" action="{% url 'plan-create' %}" class="bg-surface-container border border-outline-variant rounded-lg p-6 md:p-8 space-y-6" novalidate>
+  <form method="post" action="{% if is_edit %}{% url 'plan-edit' edit_plan.id %}{% else %}{% url 'plan-create' %}{% endif %}" class="bg-surface-container border border-outline-variant rounded-lg p-6 md:p-8 space-y-6" novalidate>
     {% csrf_token %}
     {% if form.errors %}
     <div class="p-3 rounded border border-error bg-error-container text-on-error-container font-body-sm text-sm">Please fix the highlighted fields before saving.</div>
@@ -51,12 +51,17 @@
             <option value="3_months" {% if submitted_duration == "3_months" %}selected{% endif %}>3 Months</option>
             <option value="6_months" {% if submitted_duration == "6_months" %}selected{% endif %}>6 Months</option>
             <option value="12_months" {% if submitted_duration == "12_months" %}selected{% endif %}>12 Months / Yearly</option>
+            {% if is_edit and current_duration_days %}
+            <option value="__current__" selected>Current — {{ current_duration_days }} days</option>
+            {% endif %}
             <option value="custom" {% if submitted_duration == "custom" %}selected{% endif %}>Custom</option>
           </select>
           <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none text-[20px]">expand_more</span>
         </div>
         <p class="{% if not form.duration_days.errors %}hidden{% endif %} text-error text-xs mt-1.5 font-body-sm">{{ form.duration_days.errors.0 }}</p>
-        <p class="font-body-sm text-[11px] text-on-surface-variant mt-1.5">Selecting "Custom" takes you to Create Custom Plan instead.</p>
+        <p class="font-body-sm text-[11px] text-on-surface-variant mt-1.5">
+          {% if is_edit and current_duration_days %}This plan's current duration doesn't match a standard bucket — "Current" keeps it as-is; pick a preset to change it.{% else %}Selecting "Custom" takes you to Create Custom Plan instead.{% endif %}
+        </p>
       </div>
 
       <!-- Price -->
@@ -99,7 +104,7 @@
     <!-- Actions -->
     <div class="flex flex-wrap items-center gap-3 pt-6 border-t border-outline-variant">
       <button type="submit" class="inline-flex items-center justify-center gap-2 px-8 py-3 bg-primary-container text-on-primary-container border border-primary-container font-label-caps text-[11px] uppercase tracking-widest font-bold rounded hover:bg-primary-container/90 transition-colors">
-        Save Plan
+        {% if is_edit %}Update Plan{% else %}Save Plan{% endif %}
       </button>
       <a href="{% url 'plans' %}" class="inline-flex items-center justify-center px-8 py-3 border border-outline-variant bg-transparent text-on-surface font-label-caps text-[11px] uppercase tracking-widest rounded hover:bg-surface-container-high transition-colors">
         Cancel

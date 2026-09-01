@@ -1,7 +1,7 @@
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db import IntegrityError, connection
-from django.shortcuts import redirect, render
+from django.shortcuts import get_object_or_404, redirect, render
 
 from .forms import PlanForm
 from .models import MembershipPlan
@@ -83,7 +83,11 @@ PLAN_DURATION_DAYS_BY_BUCKET = {
     '12_months': 365,
 }
 
-def plan_create_view(request):
+def plan_create_view(request, pk=None):
+    plan = None
+    if pk is not None:
+        plan = get_object_or_404(MembershipPlan, pk=pk)
+
     if request.method == "POST":
         duration_bucket = request.POST.get('duration', '')
 
@@ -92,7 +96,9 @@ def plan_create_view(request):
             # its own sibling task) with a different set of fields entirely
             # (services checkboxes, etc.) — this form can't represent one, so
             # send the admin to the flow that actually can rather than showing
-            # a dead-end validation error.
+            # a dead-end validation error. Applies the same way whether adding
+            # or editing — "convert this plan to custom" isn't something this
+            # form can do either.
             messages.info(
                 request,
                 'This form is for standard, fixed-duration plans. Use "Create Custom Plan" for custom/negotiated tiers.',
@@ -100,16 +106,54 @@ def plan_create_view(request):
             return redirect('plan-custom')
 
         post_data = request.POST.copy()
-        post_data['duration_days'] = str(PLAN_DURATION_DAYS_BY_BUCKET.get(duration_bucket, ''))
-        # This view only ever creates standard (non-custom) plans — force
+        if duration_bucket == '__current__' and plan is not None:
+            # Editing a plan whose duration_days doesn't match any preset
+            # bucket (see the GET branch below) — leave it exactly as-is
+            # rather than run it through the bucket map (which would resolve
+            # to '' and fail validation), silently overwriting a value that
+            # was presumably set deliberately outside this form.
+            post_data['duration_days'] = str(plan.duration_days)
+        else:
+            post_data['duration_days'] = str(PLAN_DURATION_DAYS_BY_BUCKET.get(duration_bucket, ''))
+        # This view only ever handles standard (non-custom) plans — force
         # is_fixed True regardless of the checkbox's absence from this
         # template, rather than let an unchecked/missing checkbox silently
         # default to False.
         post_data['is_fixed'] = 'on'
 
-        form = PlanForm(post_data)
+        form = PlanForm(post_data, instance_plan=plan)
         if form.is_valid():
             data = form.cleaned_data
+
+            if plan is not None:
+                # Only regenerate the slug if the name actually changed.
+                # instance_plan is passed to generate_slug() either way so its
+                # collision check correctly excludes the plan's own current
+                # slug (otherwise re-saving a plan with an unchanged name
+                # would see its own slug as "taken" and bump it to "-2").
+                slug = plan.slug if data['name'] == plan.name else PlanForm.generate_slug(data['name'], instance_plan=plan)
+                try:
+                    with connection.cursor() as cursor:
+                        cursor.execute(
+                            "UPDATE membership_plans SET name = %s, slug = %s, duration_days = %s, "
+                            "price = %s, is_fixed = %s, is_active = %s WHERE id = %s",
+                            [data['name'], slug, data['duration_days'], data['price'], data['is_fixed'], data['status'] == 'active', plan.pk],
+                        )
+                except IntegrityError:
+                    messages.error(request, "Could not save this plan due to a conflict — please try again.")
+                    return render(request, "plans/create.html", {
+                        "form": form,
+                        "submitted_duration": duration_bucket,
+                        "is_edit": True,
+                        "edit_plan": plan,
+                        "current_duration_days": plan.duration_days,
+                    })
+
+                updated = MembershipPlan.objects.get(pk=plan.pk)
+                messages.success(request, f'Membership plan "{updated.name}" was updated successfully.')
+                return redirect('plans')
+
+            # Add path (no pk) — unchanged from SMM2-151.
             slug = PlanForm.generate_slug(data['name'])
             try:
                 # Raw INSERT naming only the real columns this form collects —
@@ -126,16 +170,42 @@ def plan_create_view(request):
                     new_id = cursor.fetchone()[0]
             except IntegrityError:
                 messages.error(request, "Could not save this plan due to a conflict — please try again.")
-                return render(request, "plans/create.html", {"form": form, "submitted_duration": duration_bucket})
+                return render(request, "plans/create.html", {"form": form, "submitted_duration": duration_bucket, "is_edit": False})
 
-            plan = MembershipPlan.objects.get(pk=new_id)
-            messages.success(request, f'Membership plan "{plan.name}" was created successfully.')
+            created = MembershipPlan.objects.get(pk=new_id)
+            messages.success(request, f'Membership plan "{created.name}" was created successfully.')
             return redirect('plans')
 
-        return render(request, "plans/create.html", {"form": form, "submitted_duration": duration_bucket})
+        return render(request, "plans/create.html", {
+            "form": form,
+            "submitted_duration": duration_bucket,
+            "is_edit": plan is not None,
+            "edit_plan": plan,
+            "current_duration_days": plan.duration_days if plan is not None else None,
+        })
 
-    form = PlanForm()
-    return render(request, "plans/create.html", {"form": form, "submitted_duration": ""})
+    # GET
+    initial = None
+    submitted_duration = ""
+    current_duration_days = None
+    if plan is not None:
+        reverse_bucket_map = {days: bucket for bucket, days in PLAN_DURATION_DAYS_BY_BUCKET.items()}
+        submitted_duration = reverse_bucket_map.get(plan.duration_days, '__current__')
+        if submitted_duration == '__current__':
+            current_duration_days = plan.duration_days
+        initial = {
+            'name': plan.name,
+            'price': plan.price,
+            'status': 'active' if plan.is_active else 'inactive',
+        }
+    form = PlanForm(initial=initial, instance_plan=plan)
+    return render(request, "plans/create.html", {
+        "form": form,
+        "submitted_duration": submitted_duration,
+        "is_edit": plan is not None,
+        "edit_plan": plan,
+        "current_duration_days": current_duration_days,
+    })
 
 def plan_custom_view(request):
     return render(request, "plans/custom.html")
