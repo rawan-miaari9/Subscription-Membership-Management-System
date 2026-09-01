@@ -2,6 +2,7 @@ from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db import IntegrityError, connection
 from django.db.models import Q
+from django.http import HttpResponseNotAllowed
 from django.shortcuts import get_object_or_404, redirect, render
 
 from .forms import MemberForm
@@ -171,6 +172,55 @@ def member_add_view(request, pk=None):
         "is_edit": member is not None,
         "edit_member": member,
     })
+
+def member_delete_view(request, pk):
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+
+    member = get_object_or_404(Member, pk=pk)
+
+    # attendance/subscriptions/payments/member_services all have ON DELETE CASCADE
+    # to members in the live schema (confirmed via pg_constraint) — a hard DELETE
+    # there wouldn't raise anything to catch, it would just silently wipe that
+    # member's real attendance and financial history. Pre-check those specific
+    # tables and refuse the delete if any rows exist, rather than relying on an
+    # IntegrityError that CASCADE will never actually raise.
+    with connection.cursor() as cursor:
+        cursor.execute(
+            "SELECT "
+            "(SELECT count(*) FROM attendance WHERE member_id = %s) + "
+            "(SELECT count(*) FROM subscriptions WHERE member_id = %s) + "
+            "(SELECT count(*) FROM payments WHERE member_id = %s) + "
+            "(SELECT count(*) FROM member_services WHERE member_id = %s)",
+            [member.pk, member.pk, member.pk, member.pk],
+        )
+        related_count = cursor.fetchone()[0]
+
+    if related_count > 0:
+        messages.error(
+            request,
+            f'Cannot delete "{member.full_name}" — this member has existing attendance, '
+            'subscription, or payment records. Set their status to Suspended instead if '
+            'you need to disable them without losing that history.',
+        )
+        return redirect('members')
+
+    try:
+        member.delete()
+    except IntegrityError:
+        # Safety net for invoices/refunds, which use ON DELETE NO ACTION (i.e.
+        # Postgres itself blocks the delete with a real FK violation when rows
+        # exist there) — the pre-check above doesn't cover these since the DB
+        # already protects them; this just turns that into a clean message
+        # instead of a 500.
+        messages.error(
+            request,
+            f'Cannot delete "{member.full_name}" — this member has existing payment/attendance records.',
+        )
+        return redirect('members')
+
+    messages.success(request, f'Member "{member.full_name}" was deleted.')
+    return redirect('members')
 
 def services_view(request):
     return render(request, "services/list.html")

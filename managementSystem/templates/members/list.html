@@ -81,7 +81,10 @@
 <div data-action-menu class="hidden absolute right-6 top-10 z-20 w-56 bg-surface-container border border-outline-variant rounded shadow-xl flex flex-col py-1">
 <a href="/members/detail/?member={{ member.full_name|urlencode }}" class="px-4 py-2.5 font-label-caps text-[11px] text-on-surface hover:bg-surface-container-high flex items-center gap-2"><span class="material-symbols-outlined text-[16px]">visibility</span> View</a>
 <a href="{% url 'member-edit' member.id %}" class="px-4 py-2.5 font-label-caps text-[11px] text-on-surface hover:bg-surface-container-high flex items-center gap-2"><span class="material-symbols-outlined text-[16px]">edit</span> Edit</a>
-<button data-confirm="Delete member {{ member.full_name }}?" data-confirm-title="Delete Member" data-confirm-text="Are you sure you want to delete {{ member.full_name }}? This cannot be undone." class="px-4 py-2.5 font-label-caps text-[11px] text-error hover:bg-surface-container-high flex items-center gap-2 text-left w-full"><span class="material-symbols-outlined text-[16px]">delete</span> Delete</button>
+<form method="post" action="{% url 'member-delete' member.id %}" onsubmit="return confirm('Are you sure you want to delete {{ member.full_name|escapejs }}? This cannot be undone.');">
+{% csrf_token %}
+<button type="submit" class="px-4 py-2.5 font-label-caps text-[11px] text-error hover:bg-surface-container-high flex items-center gap-2 text-left w-full"><span class="material-symbols-outlined text-[16px]">delete</span> Delete</button>
+</form>
 <div class="border-t border-outline-variant my-1"></div>
 <button data-action="suspend" data-member="{{ member.full_name }}" data-status="{{ member.status|upper }}" class="{% if member.status == 'suspended' %}hidden {% endif %}px-4 py-2.5 font-label-caps text-[11px] text-on-surface hover:bg-surface-container-high flex items-center gap-2 text-left w-full"><span class="material-symbols-outlined text-[16px]">block</span> Suspend</button>
 <button data-action="activate" data-member="{{ member.full_name }}" data-status="{{ member.status|upper }}" class="{% if member.status != 'suspended' %}hidden {% endif %}px-4 py-2.5 font-label-caps text-[11px] text-tertiary hover:bg-surface-container-high flex items-center gap-2 text-left w-full"><span class="material-symbols-outlined text-[16px]">check_circle</span> Activate</button>
