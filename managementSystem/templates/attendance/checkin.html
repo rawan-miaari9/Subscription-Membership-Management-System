@@ -256,7 +256,7 @@
     successState.classList.remove('hidden');
   }
 
-  function postAttendance(url, onSuccess, onError){
+  function postAttendance(url, onSuccess, onError, onBlocked){
     fetch(url, {
       method: 'POST',
       headers: { 'X-CSRFToken': csrfToken, 'X-Requested-With': 'XMLHttpRequest' },
@@ -264,10 +264,11 @@
     })
     .then(async (res) => {
       const data = await res.json().catch(() => ({}));
+      if(data.blocked && onBlocked){ onBlocked(data); return null; }
       if(!res.ok || !data.success) throw new Error(data.error || 'Request failed.');
       return data;
     })
-    .then(onSuccess)
+    .then((data) => { if(data) onSuccess(data); })
     .catch(onError);
   }
 
@@ -275,6 +276,7 @@
     checkinBtn.disabled = true;
     checkinText.textContent = 'Checking in…';
     postAttendance("{% url 'attendance-checkin-save' %}", (data) => {
+      blockedState.classList.add('hidden');
       showStatus({
         label: data.already_checked_in ? 'Already Checked In' : 'Checked In',
         verb: data.already_checked_in ? 'was already checked in at' : 'checked in at',
@@ -291,6 +293,16 @@
       checkinIcon.textContent = 'login';
       checkinText.textContent = 'Check In';
       toast(err.message || 'Check-in failed.', 'error');
+    }, (data) => {
+      // Real server-side subscription validation blocked this check-in.
+      successState.classList.add('hidden');
+      blockedState.classList.remove('hidden');
+      blockedMsg.textContent = data.reason || 'Cannot check in.';
+      mode = 'checkin';
+      checkinBtn.disabled = true;
+      checkinIcon.textContent = 'login';
+      checkinText.textContent = 'Cannot Check In';
+      toast(data.reason || 'Cannot check in.', 'error');
     });
   }
 

@@ -3,7 +3,42 @@ from django.http import HttpResponseNotAllowed, JsonResponse
 from django.shortcuts import render
 from django.utils import timezone
 
-from .models import Attendance, Member
+from .models import Attendance, Member, Subscription
+
+
+def _checkin_block_reason(member, today):
+    """Return (reason, subscription_status). reason is None when check-in is allowed.
+
+    "Current" subscription = the one with the latest end_date for this member —
+    picking by furthest-out end_date (rather than requiring start_date <= today
+    <= end_date) means a member whose latest subscription has already lapsed still
+    gets a specific "expired on <date>" reason instead of a generic "not found",
+    and it tolerates early renewals where the newest row hasn't started yet.
+    """
+    subscription = Subscription.objects.filter(member=member).order_by('-end_date').first()
+
+    if subscription is None:
+        return "No active subscription found.", None
+
+    status = subscription.status
+    end_date_display = subscription.end_date.strftime('%b %d, %Y') if subscription.end_date else 'an unknown date'
+
+    if status == 'suspended':
+        return "Subscription is suspended, contact admin.", status
+
+    if status == 'cancelled':
+        return "Subscription was cancelled.", status
+
+    if status == 'expired' or (subscription.end_date and subscription.end_date < today):
+        # Covers an explicit 'expired' status AND stale data where status still
+        # says active/expiring but end_date has already passed — don't trust
+        # the status field blindly.
+        return f"Subscription expired on {end_date_display}.", status
+
+    if status in ('active', 'expiring'):
+        return None, status
+
+    return "Subscription status could not be verified.", status
 
 def login_view(request):
     return render(request, "auth/login.html")
@@ -103,6 +138,18 @@ def attendance_checkin_save_view(request):
         return JsonResponse({"success": False, "error": "Member not found."}, status=404)
 
     today = timezone.localdate()
+
+    block_reason, subscription_status = _checkin_block_reason(member, today)
+    if block_reason:
+        return JsonResponse({
+            "success": False,
+            "blocked": True,
+            "reason": block_reason,
+            "subscription_status": subscription_status,
+            "member_id": member.pk,
+            "member_name": member.full_name,
+        })
+
     attendance = Attendance.objects.filter(member=member, date=today).first()
     already_checked_in = attendance is not None
 
