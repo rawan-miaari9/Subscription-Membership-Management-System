@@ -31,6 +31,7 @@ urlpatterns = [
     path("refunds/history/", views.refund_history_view, name="refund-history"),
     path("statement/", views.statement_view, name="statement"),
     path("attendance/checkin/", views.attendance_checkin_view, name="attendance-checkin"),
+    path("attendance/checkin/save/", views.attendance_checkin_save_view, name="attendance-checkin-save"),
     path("expenses/add/", views.expense_add_view, name="expense-add"),
     path("users/add/", views.user_add_view, name="user-add"),
     path("reports/generate/", views.reports_generate_view, name="reports-generate"),

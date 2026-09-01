@@ -1,4 +1,9 @@
+from django.db import IntegrityError, connection
+from django.http import HttpResponseNotAllowed, JsonResponse
 from django.shortcuts import render
+from django.utils import timezone
+
+from .models import Attendance, Member
 
 def login_view(request):
     return render(request, "auth/login.html")
@@ -83,6 +88,56 @@ def statement_view(request):
 
 def attendance_checkin_view(request):
     return render(request, "attendance/checkin.html")
+
+def attendance_checkin_save_view(request):
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+
+    member_id = request.POST.get('member_id')
+    if not member_id:
+        return JsonResponse({"success": False, "error": "member_id is required."}, status=400)
+
+    try:
+        member = Member.objects.get(pk=member_id)
+    except (Member.DoesNotExist, ValueError):
+        return JsonResponse({"success": False, "error": "Member not found."}, status=404)
+
+    today = timezone.localdate()
+    attendance = Attendance.objects.filter(member=member, date=today).first()
+    already_checked_in = attendance is not None
+
+    if attendance is None:
+        # duration_min is a Postgres GENERATED column — it can never appear in an
+        # INSERT column list, so the ORM's normal create()/get_or_create() fails
+        # against it. Insert only the real columns directly, then re-fetch via the ORM.
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "INSERT INTO attendance (member_id, date, check_in) VALUES (%s, %s, %s) RETURNING id",
+                    [member.pk, today, timezone.localtime().time()],
+                )
+                new_id = cursor.fetchone()[0]
+            attendance = Attendance.objects.get(pk=new_id)
+        except IntegrityError:
+            # Lost a race with a concurrent check-in for the same member+day.
+            already_checked_in = True
+            attendance = Attendance.objects.get(member=member, date=today)
+
+    check_in_display = attendance.check_in.strftime('%I:%M %p') if attendance.check_in else None
+
+    if already_checked_in:
+        message = f"{member.full_name} was already checked in today at {check_in_display}."
+    else:
+        message = f"{member.full_name} checked in at {check_in_display}."
+
+    return JsonResponse({
+        "success": True,
+        "already_checked_in": already_checked_in,
+        "member_id": member.pk,
+        "member_name": member.full_name,
+        "check_in": check_in_display,
+        "message": message,
+    })
 
 def expense_add_view(request):
     return render(request, "expenses/add.html")

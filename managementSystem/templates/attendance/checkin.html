@@ -1,12 +1,13 @@
 {% extends "layouts/dashboard.html" %}
 {% block title %}Check-In - Iron Core{% endblock %}
 {% block dashboard_content %}
+{% csrf_token %}
 <div class="flex flex-col gap-6 max-w-5xl mx-auto">
   <!-- Header -->
   <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-outline-variant pb-4">
     <div>
       <h2 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface uppercase tracking-tight">Member Check-In</h2>
-      <p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Search member and record attendance. Frontend demo.</p>
+      <p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Search member and record attendance. Member search below is a temporary placeholder (SMM2-221) — append <span class="font-mono">?member_id=&lt;id&gt;</span> to this page's URL to check in a real member.</p>
     </div>
     <a href="{% url 'attendance' %}" class="inline-flex items-center gap-2 px-4 py-2 border border-outline-variant text-on-surface-variant font-label-caps text-[11px] uppercase hover:bg-surface-container-high transition-colors">
       <span class="material-symbols-outlined text-[16px]">arrow_back</span> Back to Attendance
@@ -132,6 +133,11 @@
 
   let selected = null;
 
+  // Temporary (SMM2-221 will replace this): the fake search array above has no
+  // real DB ids, so the real Member.id to check in is taken from the URL instead.
+  const csrfToken = document.querySelector('input[name=csrfmiddlewaretoken]').value;
+  const realMemberId = new URLSearchParams(window.location.search).get('member_id');
+
   function toast(msg,type='info'){
     if(window.toast) return window.toast(msg,type);
     let c=document.getElementById('toast-container'); if(!c){c=document.createElement('div'); c.id='toast-container'; c.className='fixed bottom-4 right-4 z-50 flex flex-col gap-2'; document.body.appendChild(c);}
@@ -236,17 +242,35 @@
   checkinBtn.addEventListener('click',()=>{
     if(!selected) return;
     if(checkinBtn.disabled){ toast('Cannot check in — subscription expired','error'); return; }
+    if(!realMemberId){
+      toast('Real member search isn\'t wired up yet (SMM2-221) — add ?member_id=<id> to this page\'s URL to check in a real member.','error');
+      return;
+    }
     checkinBtn.disabled = true;
     checkinText.textContent = 'Checking in…';
-    setTimeout(()=>{
-      const now = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-      successName.textContent = selected.name;
-      successTime.textContent = now;
+    fetch("{% url 'attendance-checkin-save' %}", {
+      method: 'POST',
+      headers: { 'X-CSRFToken': csrfToken, 'X-Requested-With': 'XMLHttpRequest' },
+      body: new URLSearchParams({ member_id: realMemberId }),
+    })
+    .then(async (res) => {
+      const data = await res.json().catch(() => ({}));
+      if(!res.ok || !data.success) throw new Error(data.error || 'Check-in failed.');
+      return data;
+    })
+    .then((data) => {
+      successName.textContent = data.member_name;
+      successTime.textContent = data.check_in;
       successState.classList.remove('hidden');
       checkinBtn.disabled = true;
-      checkinText.textContent = 'Checked In';
-      toast(selected.name+' checked in at '+now,'success');
-    }, 600);
+      checkinText.textContent = data.already_checked_in ? 'Already Checked In' : 'Checked In';
+      toast(data.message, data.already_checked_in ? 'info' : 'success');
+    })
+    .catch((err) => {
+      checkinBtn.disabled = false;
+      checkinText.textContent = 'Check In';
+      toast(err.message || 'Check-in failed.', 'error');
+    });
   });
   document.querySelector('[data-dismiss-success]')?.addEventListener('click',()=> successState.classList.add('hidden'));
 })();
