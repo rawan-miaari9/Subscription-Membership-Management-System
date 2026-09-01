@@ -3,6 +3,16 @@
 
 {% block dashboard_content %}
 <div class="max-w-3xl mx-auto">
+  {% if messages %}
+  <div class="space-y-2 mb-4">
+  {% for message in messages %}
+  <div class="p-4 rounded border flex items-center gap-2 font-body-sm text-sm {% if message.tags == 'success' %}bg-tertiary-container border-tertiary text-on-tertiary-container{% elif message.tags == 'error' %}bg-error-container border-error text-on-error-container{% else %}bg-surface-container-high border-outline-variant text-on-surface{% endif %}">
+  <span class="material-symbols-outlined text-[18px]">{% if message.tags == 'success' %}check_circle{% elif message.tags == 'error' %}error{% else %}info{% endif %}</span>
+  {{ message }}
+  </div>
+  {% endfor %}
+  </div>
+  {% endif %}
   <!-- Header -->
   <div class="flex items-center gap-2 mb-4">
     <a href="{% url 'plans' %}" class="inline-flex items-center gap-1.5 font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant hover:text-primary transition-colors">
@@ -111,5 +121,57 @@
       </a>
     </div>
   </form>
+
+  {% if is_edit %}
+  <!-- Services / Benefits assignment (SMM2-158) -->
+  <div class="bg-surface-container border border-outline-variant rounded-lg p-6 md:p-8 mt-6">
+    <h2 class="font-headline-md text-headline-md text-on-surface uppercase tracking-tight mb-1">Services / Benefits</h2>
+    <p class="font-body-sm text-body-sm text-on-surface-variant mb-6">Choose which services and benefits are included with this plan.</p>
+
+    <div class="mb-6">
+      <h3 class="font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-3">Assigned ({{ assigned_services|length }})</h3>
+      {% if assigned_services %}
+      <div class="flex flex-col divide-y divide-outline-variant border border-outline-variant rounded">
+        {% for service in assigned_services %}
+        <div class="flex items-center justify-between gap-3 px-4 py-3">
+          <div class="min-w-0">
+            <p class="font-data-md text-body-sm text-on-surface">{{ service.name }}</p>
+            {% if service.description %}<p class="font-body-sm text-[11px] text-on-surface-variant">{{ service.description }}</p>{% endif %}
+          </div>
+          <form method="post" action="{% url 'plan-unassign-service' edit_plan.id service.id %}" onsubmit="return confirm('Remove \'{{ service.name|escapejs }}\' from \'{{ edit_plan.name|escapejs }}\'?');" class="shrink-0">
+            {% csrf_token %}
+            <button type="submit" class="text-error font-label-caps text-[11px] uppercase hover:underline">Remove</button>
+          </form>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="font-body-sm text-[12px] text-on-surface-variant">No services assigned yet.</p>
+      {% endif %}
+    </div>
+
+    <div>
+      <h3 class="font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-3">Add a Service</h3>
+      {% if available_services %}
+      <form method="post" action="{% url 'plan-assign-service' edit_plan.id %}" class="flex flex-col sm:flex-row gap-3">
+        {% csrf_token %}
+        <div class="relative flex-1">
+          <select name="service_id" required class="w-full appearance-none bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 pr-10 font-body-sm text-body-sm text-on-surface focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all">
+            {% for service in available_services %}
+            <option value="{{ service.id }}">{{ service.name }}</option>
+            {% endfor %}
+          </select>
+          <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none text-[20px]">expand_more</span>
+        </div>
+        <button type="submit" class="inline-flex items-center justify-center gap-2 px-6 py-3 bg-primary-container text-on-primary-container border border-primary-container font-label-caps text-[11px] uppercase tracking-widest font-bold rounded hover:bg-primary-container/90 transition-colors shrink-0">
+          Add
+        </button>
+      </form>
+      {% else %}
+      <p class="font-body-sm text-[12px] text-on-surface-variant">{% if assigned_services %}All existing services are already assigned to this plan.{% else %}No services exist yet — <a href="{% url 'services' %}" class="text-primary hover:underline">add one first</a>.{% endif %}</p>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
 </div>
 {% endblock %}

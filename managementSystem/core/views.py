@@ -5,7 +5,7 @@ from django.http import HttpResponseNotAllowed
 from django.shortcuts import get_object_or_404, redirect, render
 
 from .forms import PlanForm, ServiceForm
-from .models import MembershipPlan, Service
+from .models import MembershipPlan, PlanService, Service
 
 def login_view(request):
     return render(request, "auth/login.html")
@@ -162,6 +162,65 @@ PLAN_DURATION_DAYS_BY_BUCKET = {
     '12_months': 365,
 }
 
+def _plan_service_context(plan):
+    """Assigned vs. available Service records for the Services/Benefits section
+    on the Edit Plan page — only meaningful once a plan actually exists (has a
+    pk), so callers only include this when is_edit is True.
+    """
+    if plan is None:
+        return {}
+    assigned_services = Service.objects.filter(plan_services__plan=plan).order_by('name')
+    available_services = Service.objects.exclude(
+        id__in=assigned_services.values_list('id', flat=True)
+    ).order_by('name')
+    return {
+        'assigned_services': assigned_services,
+        'available_services': available_services,
+    }
+
+def plan_assign_service_view(request, pk):
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+
+    plan = get_object_or_404(MembershipPlan, pk=pk)
+    # service_id comes from the POST body (a single dropdown of available
+    # services), not the URL — unlike unassign below, there's no single
+    # "which service" implied by the page itself, since the add control has
+    # to let the admin pick from N available ones.
+    service_id = request.POST.get('service_id')
+    if not service_id:
+        messages.error(request, "Select a service to add.")
+        return redirect('plan-edit', pk=plan.pk)
+    service = get_object_or_404(Service, pk=service_id)
+
+    try:
+        _, created = PlanService.objects.get_or_create(plan=plan, service=service)
+    except IntegrityError:
+        # Lost a race with a concurrent assign of the same plan+service pair.
+        created = False
+
+    if created:
+        messages.success(request, f'"{service.name}" was added to "{plan.name}".')
+    else:
+        messages.info(request, f'"{service.name}" is already assigned to "{plan.name}".')
+
+    return redirect('plan-edit', pk=plan.pk)
+
+def plan_unassign_service_view(request, pk, service_pk):
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+
+    plan = get_object_or_404(MembershipPlan, pk=pk)
+    service = get_object_or_404(Service, pk=service_pk)
+
+    deleted_count, _ = PlanService.objects.filter(plan=plan, service=service).delete()
+    if deleted_count:
+        messages.success(request, f'"{service.name}" was removed from "{plan.name}".')
+    else:
+        messages.info(request, f'"{service.name}" was not assigned to "{plan.name}".')
+
+    return redirect('plan-edit', pk=plan.pk)
+
 def plan_create_view(request, pk=None):
     plan = None
     if pk is not None:
@@ -226,6 +285,7 @@ def plan_create_view(request, pk=None):
                         "is_edit": True,
                         "edit_plan": plan,
                         "current_duration_days": plan.duration_days,
+                        **_plan_service_context(plan),
                     })
 
                 updated = MembershipPlan.objects.get(pk=plan.pk)
@@ -261,6 +321,7 @@ def plan_create_view(request, pk=None):
             "is_edit": plan is not None,
             "edit_plan": plan,
             "current_duration_days": plan.duration_days if plan is not None else None,
+            **_plan_service_context(plan),
         })
 
     # GET
@@ -284,6 +345,7 @@ def plan_create_view(request, pk=None):
         "is_edit": plan is not None,
         "edit_plan": plan,
         "current_duration_days": current_duration_days,
+        **_plan_service_context(plan),
     })
 
 def plan_custom_view(request):
