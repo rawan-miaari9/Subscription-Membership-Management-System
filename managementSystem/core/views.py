@@ -239,7 +239,62 @@ def plan_create_view(request, pk=None):
     })
 
 def plan_custom_view(request):
-    return render(request, "plans/custom.html")
+    if request.method == "POST":
+        duration_bucket = request.POST.get('duration', '')
+        post_data = request.POST.copy()
+
+        # Unlike the standard Create Plan flow, "custom" duration here has
+        # nowhere further to redirect to — this page IS the custom-plan flow.
+        # The existing template had no real day-count input backing that
+        # option, so I added one (custom_duration_days, required only in this
+        # branch) rather than silently picking an arbitrary default. Leaving
+        # it blank simply fails PlanForm's normal "required" validation on
+        # duration_days.
+        if duration_bucket == 'custom':
+            post_data['duration_days'] = post_data.get('custom_duration_days', '')
+        else:
+            post_data['duration_days'] = str(PLAN_DURATION_DAYS_BY_BUCKET.get(duration_bucket, ''))
+
+        # Template field is "custom_plan_name", not "name" — map it onto the
+        # PlanForm field it actually corresponds to.
+        post_data['name'] = post_data.get('custom_plan_name', '')
+
+        # Deliberately do NOT set post_data['is_fixed'] here (unlike the
+        # standard Create Plan view, which forces it to 'on'). This template
+        # has no is_fixed checkbox either, so PlanForm's
+        # BooleanField(required=False) resolves its absence to False — the
+        # correct value for a custom plan, the explicit non-fixed counterpart
+        # to the standard flow.
+
+        # The 10 "services" checkboxes on this page are read here but there is
+        # no MembershipPlan column to store them in yet — that's SMM2-156+
+        # (Services/Benefits) territory. They are intentionally NOT persisted
+        # anywhere; nothing selected here survives this request.
+
+        form = PlanForm(post_data)
+        if form.is_valid():
+            data = form.cleaned_data
+            slug = PlanForm.generate_slug(data['name'])
+            try:
+                with connection.cursor() as cursor:
+                    cursor.execute(
+                        "INSERT INTO membership_plans (name, slug, duration_days, price, is_fixed, is_active) "
+                        "VALUES (%s, %s, %s, %s, %s, %s) RETURNING id",
+                        [data['name'], slug, data['duration_days'], data['price'], data['is_fixed'], data['status'] == 'active'],
+                    )
+                    new_id = cursor.fetchone()[0]
+            except IntegrityError:
+                messages.error(request, "Could not save this custom plan due to a conflict — please try again.")
+                return render(request, "plans/custom.html", {"form": form, "submitted_duration": duration_bucket})
+
+            plan = MembershipPlan.objects.get(pk=new_id)
+            messages.success(request, f'Custom plan "{plan.name}" was created successfully.')
+            return redirect('plans')
+
+        return render(request, "plans/custom.html", {"form": form, "submitted_duration": duration_bucket})
+
+    form = PlanForm()
+    return render(request, "plans/custom.html", {"form": form, "submitted_duration": ""})
 
 def subscription_detail_view(request):
     return render(request, "subscriptions/detail.html")
