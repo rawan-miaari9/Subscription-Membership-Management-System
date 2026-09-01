@@ -269,3 +269,34 @@ class Receipt(models.Model):
 
     def __str__(self):
         return self.receipt_no or f"Receipt #{self.pk}"
+
+
+class Financial(models.Model):
+    """Global financial settings (single row) — maps to existing 'financial' table.
+
+    The tax rate configured here is the fixed rate applied to invoices & receipts.
+    """
+
+    currency = models.CharField(max_length=50, null=True, blank=True)
+    tax_rate = models.DecimalField(
+        max_digits=5, decimal_places=2, null=True, blank=True
+    )
+    updated_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        managed = False
+        db_table = 'financial'
+
+    @classmethod
+    def get_tax_rate(cls):
+        """Return the persisted global tax rate, defaulting to 0.00."""
+        try:
+            obj = cls.objects.first()
+            if obj and obj.tax_rate is not None:
+                return obj.tax_rate
+        except Exception:
+            pass
+        return Decimal('0.00')
+
+    def __str__(self):
+        return f"Financial (id={self.pk})"

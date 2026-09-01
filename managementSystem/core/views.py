@@ -24,7 +24,7 @@ def _decimal(value, default=Decimal('0.00')):
         return default
 
 
-from .models import Attendance, Invoice, Member, Receipt, Subscription
+from .models import Attendance, Financial, Invoice, Member, Receipt, Subscription
 
 
 def _checkin_block_reason(member, today):
@@ -182,7 +182,7 @@ def invoice_create_view(request):
         amount = _decimal(request.POST.get('amount'))
         discount_type = request.POST.get('discount_type', 'flat').strip()
         discount_value = _decimal(request.POST.get('discount_value'))
-        tax_rate = _decimal(request.POST.get('tax_rate'))
+        tax_rate = Financial.get_tax_rate()
         payment_terms = request.POST.get('payment_terms', 'due_on_receipt').strip()
         issued_date = _parse_date(request.POST.get('issued_date')) or timezone.localdate()
         due_date = _parse_date(request.POST.get('due_date'))
@@ -235,8 +235,10 @@ def invoice_create_view(request):
 
     context = {
         'terms': Invoice.TERM_CHOICES,
+        'status_choices': Invoice.STATUS_CHOICES,
         'next_invoice_no': _next_invoice_no(),
         'today': timezone.localdate(),
+        'settings_tax_rate': Financial.get_tax_rate(),
     }
     return render(request, "invoices/create.html", context)
 
@@ -251,7 +253,7 @@ def invoice_edit_view(request, pk):
         amount = _decimal(request.POST.get('amount'))
         discount_type = request.POST.get('discount_type', 'flat').strip()
         discount_value = _decimal(request.POST.get('discount_value'))
-        tax_rate = _decimal(request.POST.get('tax_rate'))
+        tax_rate = Financial.get_tax_rate()
         payment_terms = request.POST.get('payment_terms', 'due_on_receipt').strip()
         issued_date = _parse_date(request.POST.get('issued_date')) or timezone.localdate()
         due_date = _parse_date(request.POST.get('due_date'))
@@ -305,6 +307,7 @@ def invoice_edit_view(request, pk):
         'status_choices': Invoice.STATUS_CHOICES,
         'next_invoice_no': _next_invoice_no(),
         'today': timezone.localdate(),
+        'settings_tax_rate': Financial.get_tax_rate(),
     }
     return render(request, "invoices/create.html", context)
 
@@ -705,7 +708,7 @@ def receipt_create_view(request):
         amount = _decimal(request.POST.get('amount'))
         discount_type = request.POST.get('discount_type', 'flat').strip()
         discount_value = _decimal(request.POST.get('discount_value'))
-        tax_rate = _decimal(request.POST.get('tax_rate'))
+        tax_rate = Financial.get_tax_rate()
         method = request.POST.get('method', 'cash').strip()
         paid_date = _parse_date(request.POST.get('paid_date')) or timezone.localdate()
         notes = request.POST.get('notes', '').strip()
@@ -764,6 +767,7 @@ def receipt_create_view(request):
         'methods': Receipt.METHOD_CHOICES,
         'next_receipt_no': _next_receipt_no(),
         'today': timezone.localdate(),
+        'settings_tax_rate': Financial.get_tax_rate(),
     }
     return render(request, "receipts/create.html", context)
 
@@ -778,7 +782,7 @@ def receipt_edit_view(request, pk):
         amount = _decimal(request.POST.get('amount'))
         discount_type = request.POST.get('discount_type', 'flat').strip()
         discount_value = _decimal(request.POST.get('discount_value'))
-        tax_rate = _decimal(request.POST.get('tax_rate'))
+        tax_rate = Financial.get_tax_rate()
         method = request.POST.get('method', 'cash').strip()
         paid_date = _parse_date(request.POST.get('paid_date')) or timezone.localdate()
         receipt_no = request.POST.get('receipt_no', '').strip() or receipt.receipt_no
@@ -832,6 +836,7 @@ def receipt_edit_view(request, pk):
         'methods': Receipt.METHOD_CHOICES,
         'next_receipt_no': _next_receipt_no(),
         'today': timezone.localdate(),
+        'settings_tax_rate': Financial.get_tax_rate(),
     }
     return render(request, "receipts/create.html", context)
 
