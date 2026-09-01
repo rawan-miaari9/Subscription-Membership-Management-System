@@ -73,12 +73,12 @@
       </div>
     </div>
 
-    <!-- Success State -->
+    <!-- Success State (check-in or check-out) -->
     <div data-checkin-success class="hidden mx-6 mb-6 bg-tertiary-container/20 border border-tertiary rounded p-4 flex items-start gap-3">
       <span class="material-symbols-outlined text-tertiary text-[22px] shrink-0">check_circle</span>
       <div>
-        <p class="font-label-caps text-[11px] text-tertiary uppercase">Checked In</p>
-        <p class="font-body-sm text-[12px] text-on-surface mt-1"><span data-success-name class="font-bold"></span> checked in at <span data-success-time class="font-mono"></span>.</p>
+        <p data-success-label class="font-label-caps text-[11px] text-tertiary uppercase">Checked In</p>
+        <p class="font-body-sm text-[12px] text-on-surface mt-1"><span data-success-name class="font-bold"></span> <span data-success-verb>checked in at</span> <span data-success-time class="font-mono"></span><span data-success-duration class="text-on-surface-variant"></span>.</p>
       </div>
       <button type="button" data-dismiss-success class="ml-auto text-on-surface-variant hover:text-on-surface"><span class="material-symbols-outlined text-[18px]">close</span></button>
     </div>
@@ -86,7 +86,7 @@
     <!-- Actions -->
     <div class="px-6 py-4 border-t border-outline-variant bg-background flex justify-end">
       <button data-checkin-btn class="inline-flex items-center justify-center gap-2 px-8 py-3 bg-primary-container text-on-primary-container font-label-caps text-[11px] font-bold uppercase hover:bg-primary transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-primary-container">
-        <span class="material-symbols-outlined text-[16px]">login</span> <span data-checkin-text>Check In</span>
+        <span data-checkin-icon class="material-symbols-outlined text-[16px]">login</span> <span data-checkin-text>Check In</span>
       </button>
     </div>
   </div>
@@ -124,14 +124,20 @@
   const statusEl = document.querySelector('[data-member-status]');
   const expiryEl = document.querySelector('[data-member-expiry]');
   const checkinBtn = document.querySelector('[data-checkin-btn]');
+  const checkinIcon = document.querySelector('[data-checkin-icon]');
   const checkinText = document.querySelector('[data-checkin-text]');
   const blockedState = document.querySelector('[data-blocked-state]');
   const blockedMsg = document.querySelector('[data-blocked-msg]');
   const successState = document.querySelector('[data-checkin-success]');
+  const successLabel = document.querySelector('[data-success-label]');
   const successName = document.querySelector('[data-success-name]');
+  const successVerb = document.querySelector('[data-success-verb]');
   const successTime = document.querySelector('[data-success-time]');
+  const successDuration = document.querySelector('[data-success-duration]');
 
   let selected = null;
+  // 'checkin' -> not checked in yet today; 'checkout' -> checked in, not out yet; 'done' -> both recorded.
+  let mode = 'checkin';
 
   // Temporary (SMM2-221 will replace this): the fake search array above has no
   // real DB ids, so the real Member.id to check in is taken from the URL instead.
@@ -172,6 +178,8 @@
     expiryEl.textContent = m.expiry;
     // Reset states
     successState.classList.add('hidden');
+    mode = 'checkin';
+    checkinIcon.textContent = 'login';
     const isBlocked = (m.status==='expired' || m.status==='suspended');
     if(isBlocked){
       blockedState.classList.remove('hidden');
@@ -239,38 +247,88 @@
     b.addEventListener('click',()=>{ searchInput.value=b.getAttribute('data-preset'); doSearch(); });
   });
 
-  checkinBtn.addEventListener('click',()=>{
-    if(!selected) return;
-    if(checkinBtn.disabled){ toast('Cannot check in — subscription expired','error'); return; }
-    if(!realMemberId){
-      toast('Real member search isn\'t wired up yet (SMM2-221) — add ?member_id=<id> to this page\'s URL to check in a real member.','error');
-      return;
-    }
-    checkinBtn.disabled = true;
-    checkinText.textContent = 'Checking in…';
-    fetch("{% url 'attendance-checkin-save' %}", {
+  function showStatus({label, verb, time, durationMin}){
+    successLabel.textContent = label;
+    successName.textContent = selected ? selected.name : '';
+    successVerb.textContent = verb;
+    successTime.textContent = time || '—';
+    successDuration.textContent = (durationMin === null || durationMin === undefined) ? '' : ` — ${durationMin} min`;
+    successState.classList.remove('hidden');
+  }
+
+  function postAttendance(url, onSuccess, onError){
+    fetch(url, {
       method: 'POST',
       headers: { 'X-CSRFToken': csrfToken, 'X-Requested-With': 'XMLHttpRequest' },
       body: new URLSearchParams({ member_id: realMemberId }),
     })
     .then(async (res) => {
       const data = await res.json().catch(() => ({}));
-      if(!res.ok || !data.success) throw new Error(data.error || 'Check-in failed.');
+      if(!res.ok || !data.success) throw new Error(data.error || 'Request failed.');
       return data;
     })
-    .then((data) => {
-      successName.textContent = data.member_name;
-      successTime.textContent = data.check_in;
-      successState.classList.remove('hidden');
-      checkinBtn.disabled = true;
-      checkinText.textContent = data.already_checked_in ? 'Already Checked In' : 'Checked In';
-      toast(data.message, data.already_checked_in ? 'info' : 'success');
-    })
-    .catch((err) => {
+    .then(onSuccess)
+    .catch(onError);
+  }
+
+  function doCheckin(){
+    checkinBtn.disabled = true;
+    checkinText.textContent = 'Checking in…';
+    postAttendance("{% url 'attendance-checkin-save' %}", (data) => {
+      showStatus({
+        label: data.already_checked_in ? 'Already Checked In' : 'Checked In',
+        verb: data.already_checked_in ? 'was already checked in at' : 'checked in at',
+        time: data.check_in,
+      });
+      // Either way there's no check-out yet — move the button into check-out mode.
+      mode = 'checkout';
       checkinBtn.disabled = false;
+      checkinIcon.textContent = 'logout';
+      checkinText.textContent = 'Check Out';
+      toast(data.message, data.already_checked_in ? 'info' : 'success');
+    }, (err) => {
+      checkinBtn.disabled = false;
+      checkinIcon.textContent = 'login';
       checkinText.textContent = 'Check In';
       toast(err.message || 'Check-in failed.', 'error');
     });
+  }
+
+  function doCheckout(){
+    checkinBtn.disabled = true;
+    checkinText.textContent = 'Checking out…';
+    postAttendance("{% url 'attendance-checkout-save' %}", (data) => {
+      showStatus({
+        label: data.already_checked_out ? 'Already Checked Out' : 'Checked Out',
+        verb: data.already_checked_out ? 'was already checked out at' : 'checked out at',
+        time: data.check_out,
+        durationMin: data.duration_min,
+      });
+      mode = 'done';
+      checkinBtn.disabled = true;
+      checkinIcon.textContent = 'task_alt';
+      checkinText.textContent = 'Checked Out';
+      toast(data.message, data.already_checked_out ? 'info' : 'success');
+    }, (err) => {
+      checkinBtn.disabled = false;
+      checkinIcon.textContent = 'logout';
+      checkinText.textContent = 'Check Out';
+      toast(err.message || 'Check-out failed.', 'error');
+    });
+  }
+
+  checkinBtn.addEventListener('click',()=>{
+    if(!selected) return;
+    if(checkinBtn.disabled){
+      if(mode === 'checkin') toast('Cannot check in — subscription expired','error');
+      return;
+    }
+    if(!realMemberId){
+      toast('Real member search isn\'t wired up yet (SMM2-221) — add ?member_id=<id> to this page\'s URL to check in/out a real member.','error');
+      return;
+    }
+    if(mode === 'checkin') doCheckin();
+    else if(mode === 'checkout') doCheckout();
   });
   document.querySelector('[data-dismiss-success]')?.addEventListener('click',()=> successState.classList.add('hidden'));
 })();

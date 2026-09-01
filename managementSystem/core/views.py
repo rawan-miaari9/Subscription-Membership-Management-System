@@ -139,6 +139,59 @@ def attendance_checkin_save_view(request):
         "message": message,
     })
 
+def attendance_checkout_save_view(request):
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+
+    member_id = request.POST.get('member_id')
+    if not member_id:
+        return JsonResponse({"success": False, "error": "member_id is required."}, status=400)
+
+    try:
+        member = Member.objects.get(pk=member_id)
+    except (Member.DoesNotExist, ValueError):
+        return JsonResponse({"success": False, "error": "Member not found."}, status=404)
+
+    today = timezone.localdate()
+    attendance = Attendance.objects.filter(member=member, date=today).first()
+    if attendance is None:
+        return JsonResponse({
+            "success": False,
+            "error": f"{member.full_name} hasn't checked in today — check in before checking out.",
+        }, status=404)
+
+    already_checked_out = attendance.check_out is not None
+
+    if not already_checked_out:
+        # Same reasoning as check-in: duration_min is a Postgres GENERATED column
+        # (check_out - check_in), so update only the real columns directly. Postgres
+        # recomputes GENERATED columns as part of the row write itself, so this
+        # UPDATE (issued via a raw cursor, same as the check-in raw INSERT) makes
+        # duration_min correct immediately — no separate recompute step needed.
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "UPDATE attendance SET check_out = %s WHERE id = %s",
+                [timezone.localtime().time(), attendance.pk],
+            )
+        attendance = Attendance.objects.get(pk=attendance.pk)
+
+    check_out_display = attendance.check_out.strftime('%I:%M %p') if attendance.check_out else None
+
+    if already_checked_out:
+        message = f"{member.full_name} was already checked out today at {check_out_display}."
+    else:
+        message = f"{member.full_name} checked out at {check_out_display}."
+
+    return JsonResponse({
+        "success": True,
+        "already_checked_out": already_checked_out,
+        "member_id": member.pk,
+        "member_name": member.full_name,
+        "check_out": check_out_display,
+        "duration_min": attendance.duration_min,
+        "message": message,
+    })
+
 def expense_add_view(request):
     return render(request, "expenses/add.html")
 
