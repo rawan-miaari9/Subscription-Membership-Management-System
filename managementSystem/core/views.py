@@ -1,5 +1,6 @@
 from django.core.paginator import Paginator
 from django.db import IntegrityError, connection
+from django.db.models import Q
 from django.http import HttpResponseNotAllowed, JsonResponse
 from django.shortcuts import render
 from django.utils import timezone
@@ -131,6 +132,32 @@ def statement_view(request):
 
 def attendance_checkin_view(request):
     return render(request, "attendance/checkin.html")
+
+def member_search_api_view(request):
+    if request.method != "GET":
+        return HttpResponseNotAllowed(["GET"])
+
+    query = request.GET.get('q', '').strip()
+    if not query:
+        return JsonResponse([], safe=False)
+
+    members = Member.objects.filter(
+        Q(full_name__icontains=query) | Q(member_code__icontains=query) | Q(phone__icontains=query)
+    )[:10]
+
+    results = [
+        {
+            "id": m.pk,
+            "member_code": m.member_code,
+            "full_name": m.full_name,
+            "phone": m.phone,
+            "email": m.email,
+            "initials": m.initials,
+            "status": m.status,
+        }
+        for m in members
+    ]
+    return JsonResponse(results, safe=False)
 
 def attendance_checkin_save_view(request):
     if request.method != "POST":

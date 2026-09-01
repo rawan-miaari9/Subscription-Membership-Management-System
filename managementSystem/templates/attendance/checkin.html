@@ -7,7 +7,7 @@
   <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-outline-variant pb-4">
     <div>
       <h2 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface uppercase tracking-tight">Member Check-In</h2>
-      <p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Search member and record attendance. Member search below is a temporary placeholder (SMM2-221) — append <span class="font-mono">?member_id=&lt;id&gt;</span> to this page's URL to check in a real member.</p>
+      <p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Search a member by name, member ID or phone to record their attendance.</p>
     </div>
     <a href="{% url 'attendance' %}" class="inline-flex items-center gap-2 px-4 py-2 border border-outline-variant text-on-surface-variant font-label-caps text-[11px] uppercase hover:bg-surface-container-high transition-colors">
       <span class="material-symbols-outlined text-[16px]">arrow_back</span> Back to Attendance
@@ -29,7 +29,7 @@
         <span class="material-symbols-outlined text-[16px]">person_search</span> Search
       </button>
     </div>
-    <p class="font-body-sm text-[11px] text-on-surface-variant">Try: <button data-preset="Marcus" class="text-primary hover:underline">Marcus</button> • <button data-preset="Sarah" class="text-primary hover:underline">Sarah</button> • <button data-preset="Evan" class="text-primary hover:underline">Evan (expired)</button> • <button data-preset="John Doe" class="text-primary hover:underline">John Doe</button></p>
+    <p class="font-body-sm text-[11px] text-on-surface-variant">Type at least 2 characters to search.</p>
   </div>
 
   <!-- Member Information Card -->
@@ -103,14 +103,6 @@
 
 <script>
 (function(){
-  const members = [
-    { id:'MBR-8421', name:'Marcus Vance', phone:'555-0144', email:'marcus.v@example.com', plan:'Elite Powerlifting', status:'active', expiry:'2024-12-15', avatar:'MV' },
-    { id:'MBR-9042', name:'John Doe', phone:'555-0192', email:'john.doe@example.com', plan:'Elite Power', status:'active', expiry:'2024-10-01', avatar:'JD' },
-    { id:'MBR-7381', name:'Sarah Connor', phone:'555-0188', email:'sarah.c@example.com', plan:'Basic Lift', status:'active', expiry:'2024-11-20', avatar:'SC' },
-    { id:'MBR-6129', name:'Evan Wright', phone:'555-0112', email:'evan.w@example.com', plan:'Drop-In', status:'expired', expiry:'2023-09-15', avatar:'EW' },
-    { id:'MBR-5290', name:'David Chen', phone:'555-0167', email:'david.c@example.com', plan:'Pro Strength', status:'suspended', expiry:'2024-09-30', avatar:'DC' },
-  ];
-
   const searchInput = document.querySelector('[data-member-search]');
   const searchBtn = document.querySelector('[data-search-btn]');
   const resultsBox = document.querySelector('[data-search-results]');
@@ -138,11 +130,13 @@
   let selected = null;
   // 'checkin' -> not checked in yet today; 'checkout' -> checked in, not out yet; 'done' -> both recorded.
   let mode = 'checkin';
+  // The real Member.id of whoever is currently selected — set by renderMember()
+  // once a real search result is picked.
+  let realMemberId = null;
+  let lastResults = [];
+  let searchDebounceTimer = null;
 
-  // Temporary (SMM2-221 will replace this): the fake search array above has no
-  // real DB ids, so the real Member.id to check in is taken from the URL instead.
   const csrfToken = document.querySelector('input[name=csrfmiddlewaretoken]').value;
-  const realMemberId = new URLSearchParams(window.location.search).get('member_id');
 
   function toast(msg,type='info'){
     if(window.toast) return window.toast(msg,type);
@@ -151,105 +145,94 @@
     el.className=`px-4 py-3 rounded border text-sm font-label-caps shadow-lg ${bg}`; el.textContent=msg; c.appendChild(el); setTimeout(()=>{el.style.opacity='0'; setTimeout(()=>el.remove(),300);},2500);
   }
 
-  function statusBadge(status){
-    const s=(status||'').toLowerCase();
-    if(s==='active') return '<span class="inline-flex items-center gap-1.5 bg-tertiary-container/20 border border-tertiary px-2 py-1 rounded-sm font-label-caps text-[10px] text-tertiary uppercase"><span class="w-1.5 h-1.5 bg-tertiary rounded-full"></span>Active</span>';
-    if(s==='expired') return '<span class="inline-flex items-center gap-1.5 bg-error-container border border-error px-2 py-1 rounded-sm font-label-caps text-[10px] text-error uppercase"><span class="w-1.5 h-1.5 bg-error rounded-full"></span>Expired</span>';
-    if(s==='suspended') return '<span class="inline-flex items-center gap-1.5 bg-error-container border border-error px-2 py-1 rounded-sm font-label-caps text-[10px] text-error uppercase"><span class="w-1.5 h-1.5 bg-error rounded-full"></span>Suspended</span>';
-    return '<span class="font-label-caps text-[10px]">'+status+'</span>';
+  function memberInitials(m){
+    if(m.initials) return m.initials;
+    return m.full_name ? m.full_name.slice(0,1).toUpperCase() : '?';
   }
 
   function renderMember(m){
     selected = m;
+    realMemberId = m.id;
     card.classList.remove('hidden');
     prompt.classList.add('hidden');
-    avatarEl.textContent = m.avatar;
-    nameEl.textContent = m.name;
-    contactEl.textContent = m.phone + ' • ' + m.email;
-    idEl.textContent = m.id;
-    planEl.textContent = m.plan;
-    // status badge inject
-    const badge = statusBadge(m.status);
-    // Use wrapper to parse badge html safely
-    statusEl.outerHTML = `<span data-member-status class="inline-flex items-center mt-1">${badge}</span>`;
-    // re-query after replace
-    const newStatus = document.querySelector('[data-member-status]');
-    // need to keep reference for next render; reassign variable behavior via closure capture not needed — next render will replace again
-    expiryEl.textContent = m.expiry;
-    // Reset states
+    avatarEl.textContent = memberInitials(m);
+    nameEl.textContent = m.full_name;
+    contactEl.textContent = [m.phone, m.email].filter(Boolean).join(' • ') || '—';
+    idEl.textContent = m.member_code || ('#'+m.id);
+    // Real plan name / subscription status aren't available from the search
+    // result — rather than re-guess subscription validity on the frontend,
+    // leave these as placeholders and let the actual Check In click hit the
+    // server (SMM2-219's validation), which returns the real, authoritative
+    // blocked/allowed state.
+    planEl.textContent = '—';
+    statusEl.textContent = '—';
+    expiryEl.textContent = '—';
+    // Reset states — nothing is known to be blocked until check-in is attempted.
     successState.classList.add('hidden');
+    blockedState.classList.add('hidden');
     mode = 'checkin';
     checkinIcon.textContent = 'login';
-    const isBlocked = (m.status==='expired' || m.status==='suspended');
-    if(isBlocked){
-      blockedState.classList.remove('hidden');
-      blockedMsg.textContent = m.status==='suspended' ? 'Account is suspended. Contact admin to restore access.' : 'Subscription expired on '+m.expiry+'. Please renew to allow check-in.';
-      checkinBtn.disabled = true;
-      checkinText.textContent = 'Cannot Check In';
-      toast('Cannot check in — '+m.status,'error');
-    } else {
-      blockedState.classList.add('hidden');
-      checkinBtn.disabled = false;
-      checkinText.textContent = 'Check In';
-    }
+    checkinBtn.disabled = false;
+    checkinText.textContent = 'Check In';
   }
 
-  function filterMembers(q){
-    const query = (q||'').toLowerCase().trim();
-    if(!query) return [];
-    return members.filter(m=> m.name.toLowerCase().includes(query) || m.id.toLowerCase().includes(query) || m.phone.includes(query) );
+  function renderResultItem(m){
+    return `
+      <button type="button" data-select="${m.id}" class="w-full text-left px-4 py-3 hover:bg-surface-container-high border-b border-outline-variant last:border-0 flex items-center gap-3 transition-colors">
+        <span class="w-8 h-8 rounded bg-background border border-outline-variant flex items-center justify-center font-data-md text-[12px] text-on-surface">${memberInitials(m)}</span>
+        <span class="flex-1 min-w-0">
+          <span class="font-data-md text-[12px] text-on-surface block">${m.full_name}</span>
+          <span class="font-body-sm text-[11px] text-on-surface-variant">${m.member_code || ''}${m.phone ? ' • '+m.phone : ''}</span>
+        </span>
+        <span class="material-symbols-outlined text-on-surface-variant text-[16px]">chevron_right</span>
+      </button>
+    `;
   }
 
   function showResults(list){
     if(!list.length){ resultsBox.classList.add('hidden'); resultsBox.innerHTML=''; return; }
-    resultsBox.innerHTML = list.map(m=>`
-      <button type="button" data-select="${m.id}" class="w-full text-left px-4 py-3 hover:bg-surface-container-high border-b border-outline-variant last:border-0 flex items-center gap-3 transition-colors">
-        <span class="w-8 h-8 rounded bg-background border border-outline-variant flex items-center justify-center font-data-md text-[12px] text-on-surface">${m.avatar}</span>
-        <span class="flex-1 min-w-0">
-          <span class="font-data-md text-[12px] text-on-surface block">${m.name}</span>
-          <span class="font-body-sm text-[11px] text-on-surface-variant">${m.id} • ${m.plan} • ${m.status}</span>
-        </span>
-        <span class="material-symbols-outlined text-on-surface-variant text-[16px]">chevron_right</span>
-      </button>
-    `).join('');
+    resultsBox.innerHTML = list.map(renderResultItem).join('');
     resultsBox.classList.remove('hidden');
     resultsBox.querySelectorAll('[data-select]').forEach(btn=>{
       btn.addEventListener('click',()=>{
         const id = btn.getAttribute('data-select');
-        const m = members.find(x=>x.id===id);
-        if(m){ renderMember(m); resultsBox.classList.add('hidden'); searchInput.value = m.name; toast('Member selected: '+m.name,'info'); }
+        const m = lastResults.find(x=>String(x.id)===id);
+        if(m){ renderMember(m); resultsBox.classList.add('hidden'); searchInput.value = m.full_name; }
       });
     });
   }
 
+  function searchMembers(query){
+    if(!query){ lastResults = []; showResults([]); return; }
+    fetch(`{% url 'member-search-api' %}?q=${encodeURIComponent(query)}`, {
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+    })
+    .then(res => res.json())
+    .then(data => {
+      lastResults = Array.isArray(data) ? data : [];
+      showResults(lastResults);
+      if(!lastResults.length) toast('No member found for "'+query+'"','error');
+    })
+    .catch(() => toast('Search failed — try again','error'));
+  }
+
   searchInput.addEventListener('input',()=>{
-    const list = filterMembers(searchInput.value);
-    showResults(list);
+    clearTimeout(searchDebounceTimer);
+    const q = searchInput.value.trim();
+    searchDebounceTimer = setTimeout(()=> searchMembers(q), 280);
   });
   searchInput.addEventListener('keydown',(e)=>{
-    if(e.key==='Enter'){ e.preventDefault(); doSearch(); }
+    if(e.key==='Enter'){ e.preventDefault(); clearTimeout(searchDebounceTimer); searchMembers(searchInput.value.trim()); }
     if(e.key==='Escape'){ resultsBox.classList.add('hidden'); }
   });
   document.addEventListener('click',(e)=>{
     if(!resultsBox.contains(e.target) && e.target!==searchInput) resultsBox.classList.add('hidden');
   });
-
-  function doSearch(){
-    const q = searchInput.value.trim();
-    if(!q){ toast('Enter a name or ID to search','error'); return; }
-    const list = filterMembers(q);
-    if(list.length===1){ renderMember(list[0]); resultsBox.classList.add('hidden'); }
-    else if(list.length>1){ showResults(list); toast(list.length+' members found — select one','info'); }
-    else { toast('No member found for "'+q+'"','error'); }
-  }
-  searchBtn.addEventListener('click', doSearch);
-  document.querySelectorAll('[data-preset]').forEach(b=>{
-    b.addEventListener('click',()=>{ searchInput.value=b.getAttribute('data-preset'); doSearch(); });
-  });
+  searchBtn.addEventListener('click', ()=>{ clearTimeout(searchDebounceTimer); searchMembers(searchInput.value.trim()); });
 
   function showStatus({label, verb, time, durationMin}){
     successLabel.textContent = label;
-    successName.textContent = selected ? selected.name : '';
+    successName.textContent = selected ? selected.full_name : '';
     successVerb.textContent = verb;
     successTime.textContent = time || '—';
     successDuration.textContent = (durationMin === null || durationMin === undefined) ? '' : ` — ${durationMin} min`;
@@ -330,15 +313,7 @@
   }
 
   checkinBtn.addEventListener('click',()=>{
-    if(!selected) return;
-    if(checkinBtn.disabled){
-      if(mode === 'checkin') toast('Cannot check in — subscription expired','error');
-      return;
-    }
-    if(!realMemberId){
-      toast('Real member search isn\'t wired up yet (SMM2-221) — add ?member_id=<id> to this page\'s URL to check in/out a real member.','error');
-      return;
-    }
+    if(!selected || !realMemberId || checkinBtn.disabled) return;
     if(mode === 'checkin') doCheckin();
     else if(mode === 'checkout') doCheckout();
   });
