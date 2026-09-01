@@ -5,49 +5,68 @@ from django.shortcuts import get_object_or_404, redirect, render
 
 from .forms import UserAddForm
 from .models import UserProfile
+from .permissions import role_required
+
+ADMIN = UserProfile.ROLE_ADMIN
+ACCOUNTANT = UserProfile.ROLE_ACCOUNTANT
+STAFF = UserProfile.ROLE_STAFF
 
 def login_view(request):
     return render(request, "auth/login.html")
 
+@role_required(ADMIN, ACCOUNTANT, STAFF)
 def dashboard_view(request):
     return render(request, "dashboard/index.html")
 
+@role_required(ADMIN, STAFF)
 def members_view(request):
     return render(request, "members/list.html")
 
+@role_required(ADMIN)
 def plans_view(request):
     return render(request, "plans/list.html")
 
+@role_required(ADMIN)
 def subscriptions_view(request):
     return render(request, "subscriptions/list.html")
 
+@role_required(ADMIN)
 def pricing_view(request):
     return render(request, "pricing/list.html")
 
+@role_required(ADMIN, ACCOUNTANT)
 def payments_view(request):
     return render(request, "payments/list.html")
 
+@role_required(ADMIN, ACCOUNTANT)
 def invoices_view(request):
     return render(request, "invoices/detail.html")
 
+@role_required(ADMIN, ACCOUNTANT)
 def renewals_view(request):
     return render(request, "renewals/list.html")
 
+@role_required(ADMIN, ACCOUNTANT)
 def refunds_view(request):
     return render(request, "refunds/list.html")
 
+@role_required(ADMIN, STAFF)
 def attendance_view(request):
     return render(request, "attendance/index.html")
 
+@role_required(ADMIN, ACCOUNTANT)
 def expenses_view(request):
     return render(request, "expenses/list.html")
 
+@role_required(ADMIN, ACCOUNTANT, STAFF)
 def notifications_view(request):
     return render(request, "notifications/index.html")
 
+@role_required(ADMIN, ACCOUNTANT)
 def reports_view(request):
     return render(request, "reports/index.html")
 
+@role_required(ADMIN)
 def users_view(request):
     user_profiles = UserProfile.objects.select_related('user').order_by(
         'user__first_name', 'user__last_name'
@@ -61,48 +80,63 @@ def users_view(request):
     }
     return render(request, "users/list.html", context)
 
+@role_required(ADMIN)
 def settings_view(request):
     return render(request, "settings/index.html")
 
+@role_required(ADMIN, STAFF)
 def member_detail_view(request):
     return render(request, "members/detail.html")
 
+@role_required(ADMIN, STAFF)
 def member_add_view(request):
     return render(request, "members/add.html")
 
+@role_required(ADMIN)
 def services_view(request):
     return render(request, "services/list.html")
 
+@role_required(ADMIN)
 def plan_create_view(request):
     return render(request, "plans/create.html")
 
+@role_required(ADMIN)
 def plan_custom_view(request):
     return render(request, "plans/custom.html")
 
+@role_required(ADMIN)
 def subscription_detail_view(request):
     return render(request, "subscriptions/detail.html")
 
+@role_required(ADMIN)
 def subscription_create_view(request):
     return render(request, "subscriptions/create.html")
 
+@role_required(ADMIN, ACCOUNTANT)
 def payment_detail_view(request):
     return render(request, "payments/detail.html")
 
+@role_required(ADMIN, ACCOUNTANT)
 def refund_detail_view(request):
     return render(request, "refunds/detail.html")
 
+@role_required(ADMIN, ACCOUNTANT)
 def refund_history_view(request):
     return render(request, "refunds/history.html")
 
+@role_required(ADMIN, ACCOUNTANT)
 def statement_view(request):
     return render(request, "statement/list.html")
 
+@role_required(ADMIN, STAFF)
 def attendance_checkin_view(request):
     return render(request, "attendance/checkin.html")
 
+@role_required(ADMIN, ACCOUNTANT)
 def expense_add_view(request):
     return render(request, "expenses/add.html")
 
+@role_required(ADMIN)
 def user_add_view(request, pk=None):
     profile = None
     instance_user = None
@@ -164,6 +198,7 @@ def user_add_view(request, pk=None):
         "edit_profile": profile,
     })
 
+@role_required(ADMIN)
 def user_toggle_status_view(request, pk):
     if request.method != "POST":
         return HttpResponseNotAllowed(["POST"])
@@ -176,6 +211,7 @@ def user_toggle_status_view(request, pk):
     messages.success(request, "User enabled." if user.is_active else "User disabled.")
     return redirect('users')
 
+@role_required(ADMIN)
 def user_change_role_view(request, pk):
     if request.method != "POST":
         return HttpResponseNotAllowed(["POST"])
@@ -194,8 +230,10 @@ def user_change_role_view(request, pk):
     messages.success(request, f"Role updated to {valid_roles[new_role]}.")
     return redirect('users')
 
+@role_required(ADMIN, ACCOUNTANT)
 def reports_generate_view(request):
     return render(request, "reports/generate.html")
 
+@role_required(ADMIN, ACCOUNTANT)
 def receipt_custom_view(request):
     return render(request, "receipts/custom.html")
