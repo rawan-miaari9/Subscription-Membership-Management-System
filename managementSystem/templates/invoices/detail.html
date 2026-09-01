@@ -1,156 +1,197 @@
 {% extends "layouts/dashboard.html" %}
-{% block title %}Invoice & Receipt - Iron Core{% endblock %}
+{% block title %}{{ invoice.invoice_no }} - Iron Core{% endblock %}
 
 {% block dashboard_content %}
 <div class="max-w-7xl mx-auto space-y-6">
-<!-- Page Header -->
-<div class="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-outline-variant pb-4">
-<div>
-<h2 class="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface uppercase tracking-tight">INVOICING &amp; RECEIPTS</h2>
-<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Transaction Details &amp; Documentation</p>
+  <!-- Page Header -->
+  <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-outline-variant pb-4">
+    <div>
+      <div class="flex items-center gap-3">
+        <h2 class="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface uppercase tracking-tight">{{ invoice.invoice_no }}</h2>
+        {% if invoice.effective_status == 'paid' %}
+        <div class="bg-surface-container-highest border border-outline-variant px-3 py-1.5 rounded flex items-center gap-2"><div class="w-1.5 h-1.5 bg-tertiary"></div><span class="font-label-caps text-label-caps text-slate-50 uppercase">PAID</span></div>
+        {% elif invoice.effective_status == 'overdue' %}
+        <div class="bg-surface-container-highest border border-outline-variant px-3 py-1.5 rounded flex items-center gap-2"><div class="w-1.5 h-1.5 bg-error"></div><span class="font-label-caps text-label-caps text-slate-50 uppercase">OVERDUE</span></div>
+        {% elif invoice.effective_status == 'partial' %}
+        <div class="bg-surface-container-highest border border-outline-variant px-3 py-1.5 rounded flex items-center gap-2"><div class="w-1.5 h-1.5 bg-secondary"></div><span class="font-label-caps text-label-caps text-slate-50 uppercase">PARTIAL</span></div>
+        {% elif invoice.effective_status == 'void' %}
+        <div class="bg-surface-container-highest border border-outline-variant px-3 py-1.5 rounded flex items-center gap-2"><div class="w-1.5 h-1.5 bg-on-surface-variant"></div><span class="font-label-caps text-label-caps text-slate-50 uppercase">VOID</span></div>
+        {% elif invoice.effective_status == 'draft' %}
+        <div class="bg-surface-container-highest border border-outline-variant px-3 py-1.5 rounded flex items-center gap-2"><div class="w-1.5 h-1.5 bg-on-surface-variant"></div><span class="font-label-caps text-label-caps text-slate-50 uppercase">DRAFT</span></div>
+        {% else %}
+        <div class="bg-surface-container-highest border border-outline-variant px-3 py-1.5 rounded flex items-center gap-2"><div class="w-1.5 h-1.5 bg-primary"></div><span class="font-label-caps text-label-caps text-slate-50 uppercase">SENT</span></div>
+        {% endif %}
+      </div>
+      <p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Issued {{ invoice.issued_date|date:"M j, Y" }} · Due {{ invoice.due_date|date:"M j, Y" }}</p>
+    </div>
+    <div class="flex flex-wrap gap-3">
+      <a href="{% url 'invoices' %}" class="px-5 py-2.5 bg-transparent border border-[#334155] text-slate-50 font-label-caps text-label-caps uppercase hover:bg-slate-800 transition-colors flex items-center gap-2"><span class="material-symbols-outlined text-[16px]">arrow_back</span> Back</a>
+      <a href="{% url 'invoice-pdf' invoice.pk %}" class="px-5 py-2.5 bg-transparent border border-[#334155] text-slate-50 font-label-caps text-label-caps uppercase hover:bg-slate-800 transition-colors flex items-center gap-2"><span class="material-symbols-outlined text-[16px]">visibility</span> View PDF</a>
+      <a href="?print=1" data-print-trigger class="px-5 py-2.5 bg-transparent border border-[#334155] text-slate-50 font-label-caps text-label-caps uppercase hover:bg-slate-800 transition-colors flex items-center gap-2"><span class="material-symbols-outlined text-[16px]">print</span> Print</a>
+      <a href="{% url 'invoice-pdf' invoice.pk %}?download=1" class="px-5 py-2.5 bg-primary-container text-[#0F172A] font-label-caps text-label-caps uppercase font-bold hover:bg-amber-600 transition-colors flex items-center gap-2"><span class="material-symbols-outlined text-[16px]">download</span> Download PDF</a>
+      <a href="{% url 'invoice-edit' invoice.pk %}" class="px-5 py-2.5 bg-transparent border border-[#334155] text-slate-50 font-label-caps text-label-caps uppercase hover:bg-slate-800 transition-colors flex items-center gap-2"><span class="material-symbols-outlined text-[16px]">edit</span> Edit</a>
+    </div>
+  </div>
+
+  <!-- Split Layout -->
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-bento-gap">
+    <!-- Invoice Document -->
+    <div class="lg:col-span-8 bg-background border border-outline-variant p-8 relative overflow-hidden">
+      <div class="absolute inset-0 opacity-10 pointer-events-none" style="background-image: radial-gradient(#334155 1px, transparent 1px); background-size: 16px 16px;"></div>
+      <div class="bg-[#1E293B] border border-[#334155] w-full p-8 relative shadow-[0_0_15px_rgba(0,0,0,0.5)]">
+        <div class="flex flex-col sm:flex-row justify-between items-start gap-6 border-b border-[#334155] pb-6 mb-6">
+          <div>
+            <h2 class="font-display text-2xl uppercase tracking-widest text-on-surface">IRON CORE</h2>
+            <p class="font-label-caps text-[10px] text-on-surface-variant mt-1">784 Industrial Pkwy, Sector 4</p>
+            <p class="font-label-caps text-[10px] text-on-surface-variant">info@ironcore.gym · +1 555-0199</p>
+          </div>
+          <div class="text-right">
+            <p class="font-label-caps text-[10px] text-primary uppercase tracking-widest">Invoice</p>
+            <p class="font-data-lg text-data-lg text-on-surface mt-1">{{ invoice.invoice_no }}</p>
+            <p class="font-label-caps text-[10px] text-on-surface-variant mt-1">Issued: {{ invoice.issued_date|date:"M j, Y" }}</p>
+            <p class="font-label-caps text-[10px] text-on-surface-variant">Due: {{ invoice.due_date|date:"M j, Y" }}</p>
+            <p class="font-label-caps text-[10px] text-on-surface-variant">Terms: {{ invoice.get_payment_terms_display }}</p>
+          </div>
+        </div>
+
+        <div class="flex justify-between items-start gap-6 mb-8">
+          <div class="border border-[#334155] p-4 bg-background flex-1">
+            <h4 class="font-label-caps text-label-caps text-on-surface-variant mb-2">BILLED TO</h4>
+            <p class="font-body-lg text-body-lg text-on-surface font-semibold">{{ invoice.billed_to }}</p>
+            {% if invoice.member.email %}<p class="font-body-sm text-body-sm text-on-surface-variant">{{ invoice.member.email }}</p>{% endif %}
+            {% if invoice.member.phone %}<p class="font-body-sm text-body-sm text-on-surface-variant">{{ invoice.member.phone }}</p>{% endif %}
+            {% if invoice.member.member_code %}<p class="font-label-caps text-label-caps text-on-surface-variant mt-1">{{ invoice.member.member_code }}</p>{% endif %}
+          </div>
+          <div class="border border-[#334155] p-4 bg-background max-w-[240px]">
+            <h4 class="font-label-caps text-label-caps text-on-surface-variant mb-2">SERVICE</h4>
+            <p class="font-body-sm text-body-sm text-on-surface">{{ invoice.description|default:"—" }}</p>
+          </div>
+        </div>
+
+        <!-- Amounts -->
+        <div class="w-full max-w-sm ml-auto space-y-3 font-data-md text-data-md">
+          <div class="flex justify-between text-on-surface-variant"><span>Subtotal</span><span>${{ invoice.subtotal|floatformat:2 }}</span></div>
+          {% if invoice.discount_amount > 0 %}
+          <div class="flex justify-between text-on-surface-variant">
+            <span>Discount{% if invoice.discount_type == 'percent' %} ({{ invoice.discount|floatformat:2 }}%){% endif %}</span>
+            <span class="text-emerald-400">-${{ invoice.discount_amount|floatformat:2 }}</span>
+          </div>
+          {% endif %}
+          {% if invoice.tax_amount > 0 %}
+          <div class="flex justify-between text-on-surface-variant"><span>Tax ({{ invoice.tax_rate|floatformat:2 }}%)</span><span>+${{ invoice.tax_amount|floatformat:2 }}</span></div>
+          {% endif %}
+          <div class="flex justify-between items-center pt-3 border-t border-[#334155]">
+            <span class="font-headline-md text-headline-md text-on-surface">Total</span>
+            <span class="font-headline-md text-headline-md text-primary-container">${{ invoice.total|floatformat:2 }}</span>
+          </div>
+          <div class="flex justify-between pt-3 border-t border-outline-variant">
+            <span class="text-on-surface-variant">Amount Paid</span>
+            <span class="text-emerald-400">${{ invoice.amount_paid|floatformat:2 }}</span>
+          </div>
+          <div class="flex justify-between items-center pt-3 border-t border-[#334155]">
+            <span class="font-headline-md text-headline-md text-on-surface">Balance Due</span>
+            <span class="font-headline-md text-headline-md {% if invoice.effective_status == 'overdue' %}text-error{% else %}text-primary-container{% endif %}">${{ invoice.balance|floatformat:2 }}</span>
+          </div>
+        </div>
+
+        {% if invoice.notes %}
+        <div class="mt-8 pt-6 border-t border-[#334155]">
+          <h4 class="font-label-caps text-label-caps text-on-surface-variant mb-2">NOTES</h4>
+          <p class="font-body-sm text-body-sm text-on-surface text-sm">{{ invoice.notes|linebreaksbr }}</p>
+        </div>
+        {% endif %}
+        <div class="text-center font-label-caps text-[10px] text-on-surface-variant mt-8 pt-4 border-t border-dashed border-[#334155]">
+          <p>NO REFUNDS. NO EXCUSES. THANK YOU</p>
+          <p class="mt-1">Created {{ invoice.created_at|date:"M j, Y H:i" }}</p>
+        </div>
+
+        <!-- Status Stamp Overlay -->
+        {% if invoice.effective_status == 'paid' %}
+        <div class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-80"><div class="border-4 border-tertiary text-tertiary font-display text-4xl uppercase tracking-widest px-4 py-2 transform -rotate-12 rounded">PAID</div></div>
+        {% elif invoice.effective_status == 'overdue' %}
+        <div class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-60"><div class="border-4 border-error text-error font-display text-4xl uppercase tracking-widest px-4 py-2 transform -rotate-12 rounded">OVERDUE</div></div>
+        {% elif invoice.effective_status == 'void' %}
+        <div class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-60"><div class="border-4 border-on-surface-variant text-on-surface-variant font-display text-4xl uppercase tracking-widest px-4 py-2 transform -rotate-12 rounded">VOID</div></div>
+        {% elif invoice.effective_status == 'draft' %}
+        <div class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-40"><div class="border-4 border-on-surface-variant text-on-surface-variant font-display text-4xl uppercase tracking-widest px-4 py-2 transform -rotate-12 rounded">DRAFT</div></div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Actions / Summary -->
+    <div class="lg:col-span-4 flex flex-col gap-4 invoice-actions-panel">
+      <div class="bg-surface-container border border-outline-variant rounded-lg p-6">
+        <h3 class="font-label-caps text-label-caps text-on-surface uppercase tracking-wider mb-4">Invoice Actions</h3>
+        <div class="flex flex-col gap-2">
+          {% if invoice.status == 'draft' %}
+          <form method="post" action="{% url 'invoice-status' invoice.pk %}">
+            {% csrf_token %}<input type="hidden" name="action" value="mark_sent">
+            <button type="submit" class="w-full bg-transparent border border-outline-variant font-label-caps text-label-caps uppercase px-4 py-3 rounded hover:bg-surface-container-high transition-colors flex items-center justify-center gap-2 text-on-surface-variant"><span class="material-symbols-outlined text-[18px]">send</span> Mark as Sent</button>
+          </form>
+          {% endif %}
+          {% if invoice.status not in 'paid,void' %}
+          <form method="post" action="{% url 'invoice-status' invoice.pk %}">
+            {% csrf_token %}<input type="hidden" name="action" value="mark_paid">
+            <button type="submit" class="w-full bg-tertiary-container/20 border border-tertiary text-tertiary font-label-caps text-label-caps uppercase px-4 py-3 rounded hover:bg-tertiary-container/40 transition-colors flex items-center justify-center gap-2"><span class="material-symbols-outlined text-[18px]">check_circle</span> Mark as Paid</button>
+          </form>
+          {% endif %}
+          {% if invoice.status != 'void' %}
+          <form method="post" action="{% url 'invoice-status' invoice.pk %}" data-void-form>
+            {% csrf_token %}<input type="hidden" name="action" value="void">
+            <button type="submit" class="w-full bg-transparent border border-error/50 text-error font-label-caps text-label-caps uppercase px-4 py-3 rounded hover:bg-error/10 transition-colors flex items-center justify-center gap-2"><span class="material-symbols-outlined text-[18px]">block</span> Void Invoice</button>
+          </form>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="bg-surface-container border border-outline-variant rounded-lg p-6">
+        <h3 class="font-label-caps text-label-caps text-on-surface uppercase tracking-wider mb-4">Payment Summary</h3>
+        <div class="space-y-3 font-data-md text-data-md">
+          <div class="flex justify-between text-on-surface-variant"><span>Subtotal</span><span>${{ invoice.subtotal|floatformat:2 }}</span></div>
+          {% if invoice.discount_amount > 0 %}
+          <div class="flex justify-between text-on-surface-variant"><span>Discount</span><span class="text-emerald-400">-${{ invoice.discount_amount|floatformat:2 }}</span></div>
+          {% endif %}
+          {% if invoice.tax_amount > 0 %}
+          <div class="flex justify-between text-on-surface-variant"><span>Tax</span><span>+${{ invoice.tax_amount|floatformat:2 }}</span></div>
+          {% endif %}
+          <div class="flex justify-between items-center pt-3 border-t border-outline-variant"><span class="text-on-surface">Total</span><span class="text-primary">${{ invoice.total|floatformat:2 }}</span></div>
+          <div class="flex justify-between text-on-surface-variant"><span>Amount Paid</span><span class="text-emerald-400">${{ invoice.amount_paid|floatformat:2 }}</span></div>
+          <div class="flex justify-between items-center pt-3 border-t border-outline-variant">
+            <span class="text-on-surface font-bold">Balance Due</span>
+            <span class="text-on-surface font-bold {% if invoice.effective_status == 'overdue' %}text-error{% endif %}">${{ invoice.balance|floatformat:2 }}</span>
+          </div>
+        </div>
+        <div class="mt-4 pt-4 border-t border-outline-variant space-y-2 font-label-caps text-label-caps text-on-surface-variant uppercase">
+          <div class="flex justify-between"><span>Issued</span><span>{{ invoice.issued_date|date:"M j, Y" }}</span></div>
+          <div class="flex justify-between"><span>Due</span><span>{{ invoice.due_date|date:"M j, Y" }}</span></div>
+          <div class="flex justify-between"><span>Terms</span><span>{{ invoice.get_payment_terms_display }}</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
-<div class="flex gap-3">
-<button class="px-5 py-2.5 bg-transparent border border-[#334155] text-slate-50 font-label-caps text-label-caps uppercase hover:bg-slate-800 transition-colors flex items-center gap-2">
-<span class="material-symbols-outlined text-[16px]" data-icon="visibility">visibility</span> View
-                    </button>
-<button class="px-5 py-2.5 bg-transparent border border-[#334155] text-slate-50 font-label-caps text-label-caps uppercase hover:bg-slate-800 transition-colors flex items-center gap-2">
-<span class="material-symbols-outlined text-[16px]" data-icon="print">print</span> Print
-                    </button>
-<button class="px-5 py-2.5 bg-primary-container text-[#0F172A] font-label-caps text-label-caps uppercase font-bold hover:bg-amber-600 transition-colors flex items-center gap-2">
-<span class="material-symbols-outlined text-[16px]" data-icon="download">download</span> PDF
-                    </button>
-</div>
-</div>
-<!-- Split Layout -->
-<div class="grid grid-cols-1 lg:grid-cols-12 gap-bento-gap">
-<!-- Left: Invoice Details -->
-<div class="lg:col-span-7 bg-[#1E293B] border border-[#334155] rounded p-6 flex flex-col">
-<div class="flex justify-between items-start mb-8">
-<div>
-<h3 class="font-data-lg text-data-lg text-on-surface">INV-2023-089</h3>
-<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Issued: Oct 24, 2023</p>
-</div>
-<div class="bg-slate-800 px-3 py-1.5 rounded flex items-center gap-2 border border-[#334155]">
-<div class="w-1.5 h-1.5 bg-emerald-500"></div>
-<span class="font-label-caps text-label-caps text-slate-50 uppercase">PAID</span>
-</div>
-</div>
-<div class="space-y-6 flex-1">
-<!-- Bill To -->
-<div class="border border-[#334155] p-4 bg-background">
-<h4 class="font-label-caps text-label-caps text-on-surface-variant mb-2">BILLED TO</h4>
-<p class="font-body-lg text-body-lg text-on-surface font-semibold">Marcus Vance</p>
-<p class="font-body-sm text-body-sm text-on-surface-variant">marcus.v@example.com</p>
-<p class="font-body-sm text-body-sm text-on-surface-variant">Annual Elite Membership</p>
-</div>
-<!-- Line Items -->
-<div class="border border-[#334155] overflow-hidden">
-<table class="w-full text-left border-collapse">
-<thead class="bg-slate-800 border-b border-[#334155]">
-<tr>
-<th class="p-3 font-label-caps text-label-caps text-on-surface-variant">DESCRIPTION</th>
-<th class="p-3 font-label-caps text-label-caps text-on-surface-variant text-right">AMOUNT</th>
-</tr>
-</thead>
-<tbody class="font-data-md text-data-md">
-<tr class="border-b border-[#334155] bg-background">
-<td class="p-4 text-on-surface">Annual Elite Membership (12 Mo)</td>
-<td class="p-4 text-on-surface text-right">$450.00</td>
-</tr>
-<tr class="border-b border-[#334155] bg-background">
-<td class="p-4 text-on-surface">Locker Rental</td>
-<td class="p-4 text-on-surface text-right">$50.00</td>
-</tr>
-</tbody>
-</table>
-</div>
-<!-- Summary -->
-<div class="w-full max-w-sm ml-auto space-y-3 font-data-md text-data-md pt-4 border-t border-outline-variant">
-<div class="flex justify-between text-on-surface-variant">
-<span>Subtotal</span>
-<span>$500.00</span>
-</div>
-<div class="flex justify-between text-on-surface-variant">
-<span>Discount (Loyalty 10%)</span>
-<span class="text-emerald-400">-$50.00</span>
-</div>
-<div class="flex justify-between items-center pt-3 border-t border-[#334155]">
-<span class="font-headline-md text-headline-md text-on-surface">Total</span>
-<span class="font-headline-md text-headline-md text-primary-container">$450.00</span>
-</div>
-<div class="flex justify-between text-on-surface-variant mt-2">
-<span>Applied Credits</span>
-<span class="text-emerald-400">-$100.00</span>
-</div>
-<div class="flex justify-between items-center pt-3 border-t border-[#334155]">
-<span class="font-headline-md text-headline-md text-on-surface">Amount Paid</span>
-<span class="font-headline-md text-headline-md text-primary-container">$350.00</span>
-</div>
-</div>
-</div>
-</div>
-<!-- Right: Receipt Preview -->
-<div class="lg:col-span-5 bg-background border border-[#334155] p-8 flex flex-col items-center justify-center relative overflow-hidden h-[600px] lg:h-auto">
-<!-- Texture/Grid Overlay -->
-<div class="absolute inset-0 opacity-10 pointer-events-none" style="background-image: radial-gradient(#334155 1px, transparent 1px); background-size: 16px 16px;"></div>
-<!-- Paper Receipt -->
-<div class="bg-[#1E293B] border border-[#334155] w-full max-w-sm p-6 relative shadow-[0_0_15px_rgba(0,0,0,0.5)] transform -rotate-1">
-<!-- Jagged Top -->
-<div class="absolute top-0 left-0 w-full h-2 bg-background" style="clip-path: polygon(0 0, 5% 100%, 10% 0, 15% 100%, 20% 0, 25% 100%, 30% 0, 35% 100%, 40% 0, 45% 100%, 50% 0, 55% 100%, 60% 0, 65% 100%, 70% 0, 75% 100%, 80% 0, 85% 100%, 90% 0, 95% 100%, 100% 0);"></div>
-<!-- Receipt Content -->
-<div class="text-center mt-4 border-b border-dashed border-[#334155] pb-4 mb-4">
-<h2 class="font-display text-2xl uppercase tracking-widest text-on-surface">IRON CORE</h2>
-<p class="font-label-caps text-[10px] text-on-surface-variant mt-1">784 Industrial Pkwy, Sector 4</p>
-<p class="font-label-caps text-[10px] text-on-surface-variant">Receipt #RC-1001</p>
-</div>
-<div class="font-data-md text-xs text-on-surface space-y-2 mb-6 border-b border-dashed border-[#334155] pb-4">
-<div class="flex justify-between">
-<span>DATE:</span>
-<span>10/24/2023 14:32</span>
-</div>
-<div class="flex justify-between">
-<span>TERM:</span>
-<span>POS-04</span>
-</div>
-<div class="flex justify-between">
-<span>AUTH:</span>
-<span>99245A</span>
-</div>
-</div>
-<div class="font-data-md text-xs text-on-surface mb-6 border-b border-dashed border-[#334155] pb-4">
-<table class="w-full text-left">
-<tbody>
-<tr>
-<td class="py-1">INV-2023-089 Pymt</td>
-<td class="py-1 text-right">$350.00</td>
-</tr>
-</tbody>
-</table>
-</div>
-<div class="font-data-md text-sm text-on-surface mb-8">
-<div class="flex justify-between items-center">
-<span class="font-bold">TOTAL PAID</span>
-<span class="font-bold text-lg">$350.00</span>
-</div>
-<div class="flex justify-between items-center mt-2 text-xs text-on-surface-variant">
-<span>METHOD:</span>
-<span>VISA ****4242</span>
-</div>
-</div>
-<div class="text-center font-label-caps text-[10px] text-on-surface-variant">
-<p>NO REFUNDS. NO EXCUSES.</p>
-<p class="mt-1">THANK YOU</p>
-</div>
-<!-- Jagged Bottom -->
-<div class="absolute bottom-0 left-0 w-full h-2 bg-background" style="clip-path: polygon(0 100%, 5% 0, 10% 100%, 15% 0, 20% 100%, 25% 0, 30% 100%, 35% 0, 40% 100%, 45% 0, 50% 100%, 55% 0, 60% 100%, 65% 0, 70% 100%, 75% 0, 80% 100%, 85% 0, 90% 100%, 95% 0, 100% 100%);"></div>
-<!-- PAID Stamp Overlay -->
-<div class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-80">
-<div class="border-4 border-primary-container text-primary-container font-display text-4xl uppercase tracking-widest px-4 py-2 transform -rotate-12 rounded">
-                                PAID
-                            </div>
-</div>
-</div>
-</div>
-</div>
-</div>
+{% endblock %}
+
+{% block extra_js %}
+<style>
+@media print {
+  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+  aside, header, .invoice-actions-panel, .invoice-header-actions, #toast-container,
+  .confirm-modal-overlay, .lg\:col-span-4 { display: none !important; }
+  main { padding: 0 !important; }
+  .max-w-7xl { max-width: 100% !important; }
+  .lg\:col-span-8 { width: 100% !important; }
+  .print-error-highlight { display: none !important; }
+}
+</style>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('[data-print-trigger]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      window.print();
+    });
+  });
+});
+</script>
 {% endblock %}

@@ -8,34 +8,34 @@
 
 <div class="grid grid-cols-12 gap-bento-gap">
     <!-- Stat Cards -->
-    <div data-filter-card class="col-span-12 md:col-span-3 bg-surface-container border border-outline-variant rounded-lg p-6 flex flex-col justify-between hover:border-primary transition-colors duration-300">
+    <a href="{% url 'members' %}" data-filter-card class="col-span-12 md:col-span-3 bg-surface-container border border-outline-variant rounded-lg p-6 flex flex-col justify-between hover:border-primary transition-colors duration-300 group">
         <div class="flex justify-between items-start">
             <span class="font-label-caps text-label-caps text-on-surface-variant uppercase">Active Members</span>
             <span class="material-symbols-outlined text-primary">group</span>
         </div>
-        <div class="mt-8 font-display text-display text-on-surface tracking-tighter">1,248</div>
-    </div>
-    <div data-filter-card class="col-span-12 md:col-span-3 bg-surface-container border border-outline-variant rounded-lg p-6 flex flex-col justify-between hover:border-primary transition-colors duration-300">
+        <div class="mt-8 font-display text-display text-on-surface tracking-tighter">{{ active_members|default:0 }}</div>
+    </a>
+    <a href="{% url 'receipts' %}" data-filter-card class="col-span-12 md:col-span-3 bg-surface-container border border-outline-variant rounded-lg p-6 flex flex-col justify-between hover:border-primary transition-colors duration-300 group">
         <div class="flex justify-between items-start">
-            <span class="font-label-caps text-label-caps text-on-surface-variant uppercase">Monthly Revenue</span>
+            <span class="font-label-caps text-label-caps text-on-surface-variant uppercase">Monthly Received</span>
             <span class="material-symbols-outlined text-primary">payments</span>
         </div>
-        <div class="mt-8 font-display text-display text-on-surface tracking-tighter">$24,580</div>
-    </div>
-    <div data-filter-card class="col-span-12 md:col-span-3 bg-surface-container border border-outline-variant rounded-lg p-6 flex flex-col justify-between hover:border-primary transition-colors duration-300">
+        <div class="mt-8 font-display text-display text-on-surface tracking-tighter">${{ monthly_revenue|floatformat:0 }}</div>
+    </a>
+    <a href="{% url 'renewals' %}" data-filter-card class="col-span-12 md:col-span-3 bg-surface-container border border-outline-variant rounded-lg p-6 flex flex-col justify-between hover:border-primary transition-colors duration-300 group">
         <div class="flex justify-between items-start">
             <span class="font-label-caps text-label-caps text-on-surface-variant uppercase">Expiring Soon</span>
             <span class="material-symbols-outlined text-error">warning</span>
         </div>
-        <div class="mt-8 font-display text-display text-on-surface tracking-tighter">42</div>
-    </div>
-    <div data-filter-card class="col-span-12 md:col-span-3 bg-surface-container border border-outline-variant rounded-lg p-6 flex flex-col justify-between hover:border-primary transition-colors duration-300">
+        <div class="mt-8 font-display text-display text-on-surface tracking-tighter">{{ expiring_soon|default:0 }}</div>
+    </a>
+    <a href="{% url 'attendance' %}" data-filter-card class="col-span-12 md:col-span-3 bg-surface-container border border-outline-variant rounded-lg p-6 flex flex-col justify-between hover:border-primary transition-colors duration-300 group">
         <div class="flex justify-between items-start">
             <span class="font-label-caps text-label-caps text-on-surface-variant uppercase">Today's Attendance</span>
             <span class="material-symbols-outlined text-primary">event_available</span>
         </div>
-        <div class="mt-8 font-display text-display text-on-surface tracking-tighter">86</div>
-    </div>
+        <div class="mt-8 font-display text-display text-on-surface tracking-tighter">{{ today_attendance|default:0 }}</div>
+    </a>
 
     <!-- Revenue Overview -->
     <div class="col-span-12 md:col-span-8 bg-surface-container border border-outline-variant rounded-lg p-6 min-h-[360px] flex flex-col">

@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>{{ receipt.receipt_no }}</title>
+<style>
+  @page {
+    size: A4;
+    margin: 24mm 20mm 22mm 20mm;
+    @bottom-center {
+      content: "IRON CORE GYM — {{ receipt.receipt_no }} · Page " counter(page) " of " counter(pages);
+      font-family: "Courier New", monospace;
+      font-size: 8px;
+      color: #64748b;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: "Helvetica", "Arial", sans-serif;
+    color: #0f172a;
+    font-size: 12px;
+    line-height: 1.5;
+    margin: 0;
+  }
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    border-bottom: 2px solid #0f172a;
+    padding-bottom: 16px;
+    margin-bottom: 20px;
+  }
+  .brand { font-size: 22px; font-weight: 800; letter-spacing: 4px; text-transform: uppercase; }
+  .brand .logo { display: block; height: 46px; width: auto; margin-bottom: 6px; object-fit: contain; }
+  .brand small { display: block; font-size: 9px; letter-spacing: 1px; color: #475569; font-weight: 400; margin-top: 2px; }
+  .doc-title { text-align: right; text-transform: uppercase; font-weight: 800; font-size: 18px; letter-spacing: 3px; color: #16a34a; }
+  .doc-meta { margin-top: 6px; font-family: "Courier New", monospace; font-size: 10px; color: #475569; line-height: 1.6; }
+  .meta {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 24px;
+  }
+  .box {
+    border: 1px solid #cbd5e1;
+    padding: 12px 14px;
+    width: 48%;
+  }
+  .box label { font-size: 9px; letter-spacing: 1.2px; text-transform: uppercase; color: #64748b; display: block; margin-bottom: 4px; font-weight: 600; }
+  .box .value { font-weight: 600; color: #0f172a; }
+  .box .sub { font-size: 11px; color: #475569; }
+  .desc {
+    border: 1px solid #cbd5e1;
+    padding: 12px 14px;
+    margin-bottom: 22px;
+  }
+  .desc label { font-size: 9px; letter-spacing: 1.2px; text-transform: uppercase; color: #64748b; display: block; margin-bottom: 4px; font-weight: 600; }
+  .totals { width: 62%; margin-left: auto; }
+  .totals .row { display: flex; justify-content: space-between; padding: 7px 10px; font-size: 12px; }
+  .totals .row .k { color: #475569; }
+  .totals .row .v { font-family: "Courier New", monospace; font-weight: 600; }
+  .totals .row.total {
+    border-top: 2px solid #0f172a;
+    margin-top: 4px;
+    font-size: 15px; font-weight: 800;
+    padding-top: 10px;
+  }
+  .totals .row.total .v { color: #16a34a; font-size: 16px; }
+  .notes { margin-top: 26px; padding-top: 14px; border-top: 1px solid #e2e8f0; font-size: 11px; color: #475569; }
+  .footer {
+    position: absolute;
+    bottom: -14mm;
+    left: 0; right: 0;
+    text-align: center;
+    font-family: "Courier New", monospace;
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: #94a3b8;
+    text-transform: uppercase;
+    padding-top: 10px;
+    border-top: 1px dashed #cbd5e1;
+  }
+  .stamp {
+    position: absolute;
+    top: 30mm; left: 0; right: 0;
+    text-align: center;
+    transform: rotate(-14deg);
+  }
+  .stamp span {
+    display: inline-block;
+    border: 3px solid #16a34a;
+    color: #16a34a;
+    font-weight: 800;
+    font-size: 30px;
+    letter-spacing: 6px;
+    padding: 6px 22px;
+    border-radius: 6px;
+    opacity: 0.85;
+  }
+</style>
+</head>
+<body>
+
+  <div class="stamp"><span>PAID</span></div>
+
+  <div class="header">
+    <div class="brand">{% if receipt.logo %}<img src="{{ receipt.logo }}" class="logo" alt="Logo">{% endif %}IRON CORE<small>784 Industrial Pkwy, Sector 4 · info@ironcore.gym · +1 555-0199</small></div>
+    <div class="doc-title">Receipt
+      <div class="doc-meta">
+        No. {{ receipt.receipt_no }}<br>
+        Received: {{ receipt.paid_date|date:"M d, Y" }}<br>
+        Method: {{ receipt.get_method_display }}
+      </div>
+    </div>
+  </div>
+
+  <div class="meta">
+    <div class="box">
+      <label>Received From</label>
+      <div class="value">{{ receipt.received_from }}</div>
+      {% if receipt.member %}{% if receipt.member.member_code %}<div class="sub">ID: {{ receipt.member.member_code }}</div>{% endif %}
+      {% if receipt.member.email %}<div class="sub">{{ receipt.member.email }}</div>{% endif %}
+      {% if receipt.member.phone %}<div class="sub">{{ receipt.member.phone }}</div>{% endif %}{% endif %}
+    </div>
+    <div class="box">
+      <label>Payment For</label>
+      <div class="value">{{ receipt.description|default:"—" }}</div>
+    </div>
+  </div>
+
+  <div class="totals">
+    <div class="row"><span class="k">Subtotal</span><span class="v">${{ receipt.subtotal|floatformat:2 }}</span></div>
+    {% if receipt.discount_amount > 0 %}
+    <div class="row"><span class="k">Discount{% if receipt.discount_type == 'percent' %} ({{ receipt.discount|floatformat:2 }}%){% endif %}</span><span class="v">-${{ receipt.discount_amount|floatformat:2 }}</span></div>
+    {% endif %}
+    {% if receipt.tax_amount > 0 %}
+    <div class="row"><span class="k">Tax ({{ receipt.tax_rate|floatformat:2 }}%)</span><span class="v">+${{ receipt.tax_amount|floatformat:2 }}</span></div>
+    {% endif %}
+    <div class="row total"><span class="k">TOTAL RECEIVED</span><span class="v">${{ receipt.total|floatformat:2 }}</span></div>
+  </div>
+
+  {% if receipt.notes %}
+  <div class="notes"><strong>Notes:</strong> {{ receipt.notes }}</div>
+  {% endif %}
+
+  <div class="footer">NO REFUNDS. NO EXCUSES. · THANK YOU</div>
+
+</body>
+</html>

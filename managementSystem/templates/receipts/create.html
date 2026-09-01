@@ -1,0 +1,247 @@
+{% extends "layouts/dashboard.html" %}
+{% block title %}New Receipt - Iron Core{% endblock %}
+
+{% block dashboard_content %}
+<div class="max-w-7xl mx-auto">
+  <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-outline-variant pb-4 mb-6">
+    <div>
+      <h1 class="font-headline-lg text-headline-lg text-on-surface uppercase tracking-tight">{% if receipt %}EDIT RECEIPT{% else %}NEW RECEIPT{% endif %}</h1>
+      <p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Record money received from a member or walk-in.</p>
+    </div>
+    <a href="{% url 'receipts' %}" class="px-4 py-2 border border-outline-variant font-label-caps text-[11px] text-on-surface-variant hover:bg-surface-container-high transition-colors inline-flex items-center gap-2">
+      <span class="material-symbols-outlined text-[16px]">arrow_back</span> Back to Receipts
+    </a>
+  </div>
+
+  {% if error %}
+  <div class="mb-6 px-4 py-3 bg-error-container/30 border border-error text-error font-label-caps text-label-caps rounded flex items-center gap-2">
+    <span class="material-symbols-outlined text-[18px]">error</span> {{ error }}
+  </div>
+  {% endif %}
+
+  <div class="grid grid-cols-12 gap-bento-gap">
+    <!-- Form -->
+    <div class="col-span-12 lg:col-span-7 bg-surface-container border border-outline-variant p-6 rounded space-y-6">
+      <form method="post" action="{% if receipt %}{% url 'receipt-edit' receipt.pk %}{% else %}{% url 'receipt-create' %}{% endif %}" data-receipt-form class="space-y-6" novalidate>
+        {% csrf_token %}
+
+        <!-- Receiving -->
+        <div class="border border-outline-variant bg-background p-4 rounded">
+          <h3 class="font-label-caps text-[11px] text-primary mb-3">A. RECEIVED FROM</h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="md:col-span-2">
+              <label class="block font-label-caps text-[11px] text-on-surface-variant mb-2">Name *</label>
+              <input name="bill_to" data-field-billto placeholder="Who is this receipt given to?" value="{{ receipt.bill_to|default:'' }}" class="w-full bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 text-[13px]">
+              <p class="text-[11px] text-on-surface-variant mt-1">Auto-fills from the selected member, or type a name (e.g. a walk-in or company).</p>
+            </div>
+            <div>
+              <label class="block font-label-caps text-[11px] text-on-surface-variant mb-2">Member</label>
+              {% include "components/member_search.html" with preload_id=receipt.member_id preload_name=receipt.member.full_name %}
+            </div>
+            <div>
+              <label class="block font-label-caps text-[11px] text-on-surface-variant mb-2">Receipt Number</label>
+              <input name="receipt_no" data-field-receiptno value="{{ receipt.receipt_no|default:next_receipt_no }}" class="w-full bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 text-[13px]">
+            </div>
+            <div>
+              <label class="block font-label-caps text-[11px] text-on-surface-variant mb-2">Date</label>
+              <input name="paid_date" type="date" value="{{ receipt.paid_date|date:'Y-m-d'|default:today|date:'Y-m-d' }}" data-field-date class="w-full bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 text-[13px]">
+            </div>
+            <div>
+              <label class="block font-label-caps text-[11px] text-on-surface-variant mb-2">Payment Method</label>
+              <select name="method" data-field-method class="w-full bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 text-[13px]">
+                {% for value, label in methods %}
+                <option value="{{ value }}" {% if receipt.method == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="md:col-span-2">
+              <label class="block font-label-caps text-[11px] text-on-surface-variant mb-2">Logo <span class="normal-case">(optional)</span></label>
+              <div class="flex items-center gap-4">
+                <input type="file" name="logo" accept="image/*" data-logo-input class="text-[12px] text-on-surface-variant file:mr-3 file:px-3 file:py-2 file:rounded file:border file:border-outline-variant file:bg-surface-container-high file:text-on-surface file:text-[12px] file:font-label-caps">
+                <div data-logo-preview class="w-12 h-12 bg-surface-container-high border border-outline-variant rounded flex items-center justify-center overflow-hidden {% if not receipt.logo %}hidden{% endif %}">
+                  <img data-logo-img src="{{ receipt.logo|default:'' }}" alt="Logo preview" class="w-full h-full object-contain">
+                </div>
+              </div>
+              {% if receipt and receipt.logo %}
+              <label class="flex items-center gap-2 mt-2 cursor-pointer text-[12px] text-on-surface-variant"><input type="checkbox" name="remove_logo" value="1" class="accent-[#ffc174]"> Remove current logo</label>
+              {% endif %}
+              <p class="text-[11px] text-on-surface-variant mt-1">Optional — shown on the printed PDF above the business name.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Charge -->
+        <div class="border border-outline-variant bg-background p-4 rounded">
+          <h3 class="font-label-caps text-[11px] text-primary mb-3">B. CHARGE</h3>
+          <div>
+            <label class="block font-label-caps text-[11px] text-on-surface-variant mb-2">Description</label>
+            <textarea name="description" data-field-desc rows="2" class="w-full bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 text-[13px]" placeholder="Annual Elite Membership (12 Mo), Personal Training Session, Locker Rental…">{{ receipt.description|default:'' }}</textarea>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
+            <div>
+              <label class="block font-label-caps text-[11px] text-on-surface-variant mb-2">Amount *</label>
+              <input name="amount" type="number" step="0.01" min="0" data-field-subtotal value="{{ receipt.subtotal|default:'0.00' }}" class="w-full bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 text-[13px]">
+            </div>
+            <div>
+              <label class="block font-label-caps text-[11px] text-on-surface-variant mb-2">Discount</label>
+              <div class="flex gap-2">
+                <select name="discount_type" data-field-discount-type class="bg-surface-container-lowest border border-outline-variant rounded px-3 py-3 text-[12px]">
+                  <option value="flat" {% if receipt.discount_type == 'flat' %}selected{% endif %}>$ Flat</option>
+                  <option value="percent" {% if receipt.discount_type == 'percent' %}selected{% endif %}>% Off</option>
+                </select>
+                <input name="discount_value" type="number" step="0.01" min="0" data-field-discount value="{{ receipt.discount|default:'0.00' }}" class="flex-1 bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 text-[13px]">
+              </div>
+            </div>
+            <div>
+              <label class="block font-label-caps text-[11px] text-on-surface-variant mb-2">Tax Rate %</label>
+              <input name="tax_rate" type="number" step="0.01" min="0" data-field-tax value="{{ receipt.tax_rate|default:'0.00' }}" class="w-full bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 text-[13px]">
+            </div>
+          </div>
+        </div>
+
+        <div class="border border-outline-variant bg-background p-4 rounded">
+          <h3 class="font-label-caps text-[11px] text-primary mb-3">C. NOTES</h3>
+          <textarea name="notes" rows="2" data-field-notes class="w-full bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 text-[13px]" placeholder="Optional note shown on the receipt…">{{ receipt.notes|default:'' }}</textarea>
+        </div>
+
+        <div class="flex flex-wrap gap-3">
+          <button type="submit" class="px-6 py-3 bg-primary-container text-on-primary-container font-label-caps text-[11px] uppercase border border-primary hover:bg-primary-fixed-dim transition-colors flex items-center gap-2">
+            <span class="material-symbols-outlined text-[18px]">save</span> {% if receipt %}Save Changes{% else %}Save Receipt{% endif %}
+          </button>
+          {% if receipt %}<a href="{% url 'receipt-detail' receipt.pk %}" class="px-6 py-3 border border-outline-variant font-label-caps text-[11px] text-on-surface-variant hover:bg-surface-container-high transition-colors">Cancel</a>
+          {% else %}<button type="reset" data-reset-form class="px-6 py-3 border border-outline-variant font-label-caps text-[11px] text-on-surface-variant hover:bg-surface-container-high transition-colors">Reset</button>{% endif %}
+        </div>
+      </form>
+    </div>
+
+    <!-- Live Preview -->
+    <div class="col-span-12 lg:col-span-5 bg-background border border-outline-variant p-8 flex flex-col items-center justify-start">
+      <div class="w-full max-w-sm relative">
+        <div class="bg-[#1E293B] border border-[#334155] p-6 shadow-xl">
+          <div class="flex justify-between items-start border-b border-[#334155] pb-4 mb-4">
+            <div>
+              <h2 class="font-display text-xl uppercase tracking-widest text-on-surface">IRON CORE</h2>
+              <p class="font-label-caps text-[10px] text-on-surface-variant mt-1">784 Industrial Pkwy, Sector 4</p>
+            </div>
+            <div class="text-right">
+              <p class="font-label-caps text-[10px] text-primary uppercase">RECEIPT</p>
+              <p class="font-data-md text-[12px] text-on-surface mt-1" data-preview-receiptno>{{ next_receipt_no }}</p>
+            </div>
+          </div>
+
+          <div class="font-data-md text-xs text-on-surface space-y-2 mb-4 border-b border-dashed border-[#334155] pb-4">
+            <div class="flex justify-between">
+              <span class="text-on-surface-variant">RECEIVED FROM:</span>
+              <span data-preview-member>Walk-in / Guest</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-on-surface-variant">DATE:</span>
+              <span data-preview-date>{{ today|date:"M d, Y" }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-on-surface-variant">METHOD:</span>
+              <span data-preview-method>Cash</span>
+            </div>
+          </div>
+
+          <div class="font-data-md text-xs mb-4 border-b border-dashed border-[#334155] pb-4">
+            <p class="text-on-surface" data-preview-desc>Annual Elite Membership (12 Mo)</p>
+          </div>
+
+          <div class="font-data-md text-sm mb-4">
+            <div class="flex justify-between text-on-surface-variant"><span>Subtotal</span><span data-preview-subtotal>$0.00</span></div>
+            <div class="flex justify-between text-error" data-preview-discount-row><span>Discount</span><span data-preview-discount>-$0.00</span></div>
+            <div class="flex justify-between text-on-surface-variant hidden" data-preview-tax-row><span>Tax</span><span data-preview-tax>+$0.00</span></div>
+            <div class="flex justify-between font-bold text-primary border-t border-[#334155] pt-2 mt-2"><span>TOTAL</span><span data-preview-total>$0.00</span></div>
+          </div>
+
+          <p class="font-label-caps text-[10px] text-on-surface-variant text-center" data-preview-notes>—</p>
+          <p class="font-label-caps text-[10px] text-on-surface-variant text-center mt-2 border-t border-dashed border-[#334155] pt-2">NO REFUNDS. NO EXCUSES. THANK YOU</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const $ = s => document.querySelector(s);
+
+  const fmt = v => '$' + Number(v||0).toFixed(2);
+  const num = el => parseFloat(el.value) || 0;
+
+  function calc(){
+    const subtotal = num($('[data-field-subtotal]'));
+    const discountRaw = num($('[data-field-discount]'));
+    const discountType = $('[data-field-discount-type]').value;
+    const taxRate = num($('[data-field-tax]'));
+    let discountAmt = discountType === 'percent' ? (subtotal * discountRaw / 100) : discountRaw;
+    if (discountAmt < 0) discountAmt = 0;
+    if (discountAmt > subtotal) discountAmt = subtotal;
+    const tax = taxRate > 0 ? (subtotal - discountAmt) * taxRate / 100 : 0;
+    const total = subtotal - discountAmt + tax;
+
+    $('[data-preview-subtotal]').textContent = fmt(subtotal);
+    const discRow = $('[data-preview-discount-row]');
+    if (discountAmt > 0) {
+      discRow.style.display = 'flex';
+      $('[data-preview-discount]').textContent = discountType === 'percent'
+        ? discountRaw.toFixed(2) + '% (' + fmt(-discountAmt) + ')'
+        : fmt(-discountAmt);
+    } else {
+      discRow.style.display = 'none';
+      $('[data-preview-discount]').textContent = '-$0.00';
+    }
+    const taxRow = $('[data-preview-tax-row]');
+    if (tax > 0) { taxRow.classList.remove('hidden'); $('[data-preview-tax]').textContent = '+'+fmt(tax); }
+    else taxRow.classList.add('hidden');
+    $('[data-preview-total]').textContent = fmt(total);
+  }
+
+  ['[data-field-subtotal]','[data-field-discount]','[data-field-tax]','[data-field-discount-type]'].forEach(sel => {
+    const el = $(sel);
+    if (el) el.addEventListener('input', calc);
+    if (el && el.tagName === 'SELECT') el.addEventListener('change', calc);
+  });
+
+  $('[data-field-receiptno]').addEventListener('input', e => $('[data-preview-receiptno]').textContent = e.target.value || '—');
+  {% if receipt %}
+  $('[data-preview-receiptno]').textContent = "{{ receipt.receipt_no }}";
+  $('[data-preview-member]').textContent = "{{ receipt.received_from }}";
+  $('[data-preview-date]').textContent = "{{ receipt.paid_date|date:'M d, Y' }}";
+  $('[data-preview-desc]').textContent = "{{ receipt.description|default:'No description' }}";
+  $('[data-preview-notes]').textContent = "{{ receipt.notes|default:'—' }}";
+  const methodMap = { cash:'Cash', card:'Card', bank_transfer:'Bank Transfer', other:'Other' };
+  $('[data-preview-method]').textContent = methodMap["{{ receipt.method }}"] || "{{ receipt.method }}";
+  {% endif %}
+  $('[data-field-billto]').addEventListener('input', e => {
+    $('[data-preview-member]').textContent = e.target.value || 'Walk-in / Guest';
+    e.target.removeAttribute('data-filled-by-member');
+  });
+  $('[data-field-date]').addEventListener('input', e => {
+    const d = e.target.value;
+    $('[data-preview-date]').textContent = d ? new Date(d+'T00:00:00').toLocaleDateString('en-US',{year:'numeric',month:'short',day:'2-digit'}) : '—';
+  });
+  $('[data-field-method]').addEventListener('change', e => {
+    const map = { cash:'Cash', card:'Card', bank_transfer:'Bank Transfer', other:'Other' };
+    $('[data-preview-method]').textContent = map[e.target.value] || e.target.value;
+  });
+  $('[data-field-desc]').addEventListener('input', e => { $('[data-preview-desc]').textContent = e.target.value || 'No description'; });
+  $('[data-field-notes]').addEventListener('input', e => { $('[data-preview-notes]').textContent = e.target.value || '—'; });
+  const logoInput = $('[data-logo-input]');
+  const logoImg = $('[data-logo-img]');
+  const logoPreview = $('[data-logo-preview]');
+  if (logoInput) logoInput.addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (logoImg) logoImg.src = reader.result;
+      if (logoPreview) logoPreview.classList.remove('hidden');
+    };
+    reader.readAsDataURL(file);
+  });
+  calc();
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,285 @@
+{% extends "layouts/dashboard.html" %}
+{% block title %}New Invoice - Iron Core{% endblock %}
+
+{% block dashboard_content %}
+<div class="max-w-7xl mx-auto">
+  <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-outline-variant pb-4 mb-6">
+    <div>
+      <h1 class="font-headline-lg text-headline-lg text-on-surface uppercase tracking-tight">{% if invoice %}EDIT INVOICE{% else %}NEW INVOICE{% endif %}</h1>
+      <p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Create an invoice for a member or walk-in sale.</p>
+    </div>
+    <a href="{% url 'invoices' %}" class="px-4 py-2 border border-outline-variant font-label-caps text-[11px] text-on-surface-variant hover:bg-surface-container-high transition-colors inline-flex items-center gap-2">
+      <span class="material-symbols-outlined text-[16px]">arrow_back</span> Back to Invoices
+    </a>
+  </div>
+
+  {% if error %}
+  <div class="mb-6 px-4 py-3 bg-error-container/30 border border-error text-error font-label-caps text-label-caps rounded flex items-center gap-2">
+    <span class="material-symbols-outlined text-[18px]">error</span> {{ error }}
+  </div>
+  {% endif %}
+
+  <div class="grid grid-cols-12 gap-bento-gap">
+    <!-- Form -->
+    <div class="col-span-12 lg:col-span-7 bg-surface-container border border-outline-variant p-6 rounded space-y-6">
+      <form method="post" action="{% if invoice %}{% url 'invoice-edit' invoice.pk %}{% else %}{% url 'invoice-create' %}{% endif %}" data-invoice-form class="space-y-6" novalidate>
+        {% csrf_token %}
+
+        <!-- Receiving -->
+        <div class="border border-outline-variant bg-background p-4 rounded">
+          <h3 class="font-label-caps text-[11px] text-primary mb-3">A. BILL TO &amp; REFERENCE</h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="md:col-span-2">
+              <label class="block font-label-caps text-[11px] text-on-surface-variant mb-2">Bill To / Name *</label>
+              <input name="bill_to" data-field-billto placeholder="Who is this invoice issued to?" value="{{ invoice.bill_to|default:'' }}" class="w-full bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 text-[13px]">
+              <p class="text-[11px] text-on-surface-variant mt-1">Auto-fills from the selected member, or type a name (e.g. a walk-in or company).</p>
+            </div>
+            <div>
+              <label class="block font-label-caps text-[11px] text-on-surface-variant mb-2">Member</label>
+              {% include "components/member_search.html" with preload_id=invoice.member_id preload_name=invoice.member.full_name %}
+            </div>
+            <div>
+              <label class="block font-label-caps text-[11px] text-on-surface-variant mb-2">Invoice Number</label>
+              <input name="invoice_no" data-field-invno value="{{ invoice.invoice_no|default:next_invoice_no }}" class="w-full bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 text-[13px]">
+            </div>
+            <div>
+              <label class="block font-label-caps text-[11px] text-on-surface-variant mb-2">Issue Date</label>
+              <input name="issued_date" type="date" value="{{ invoice.issued_date|date:'Y-m-d'|default:today|date:'Y-m-d' }}" data-field-date class="w-full bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 text-[13px]">
+            </div>
+            <div>
+              <label class="block font-label-caps text-[11px] text-on-surface-variant mb-2">Due Date</label>
+              <input name="due_date" type="date" value="{{ invoice.due_date|date:'Y-m-d'|default:'' }}" data-field-due class="w-full bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 text-[13px]">
+            </div>
+            <div class="md:col-span-2">
+              <label class="block font-label-caps text-[11px] text-on-surface-variant mb-2">Payment Terms</label>
+              <div class="grid grid-cols-2 sm:grid-cols-3 gap-2" data-terms-group>
+                {% for value, label in terms %}
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input type="radio" name="payment_terms" value="{{ value }}" {% if invoice.payment_terms == value %}checked{% elif forloop.first and not invoice %}checked{% endif %} class="accent-[#ffc174]">
+                  <span class="font-label-caps text-[11px] text-on-surface-variant">{{ label }}</span>
+                </label>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Services / Line -->
+        <div class="border border-outline-variant bg-background p-4 rounded">
+          <h3 class="font-label-caps text-[11px] text-primary mb-3">B. CHARGE</h3>
+          <div>
+            <label class="block font-label-caps text-[11px] text-on-surface-variant mb-2">Description</label>
+            <textarea name="description" data-field-desc rows="2" class="w-full bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 text-[13px]" placeholder="Annual Elite Membership (12 Mo), Personal Training Session, Locker Rental…">{{ invoice.description|default:'' }}</textarea>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
+            <div>
+              <label class="block font-label-caps text-[11px] text-on-surface-variant mb-2">Amount *</label>
+              <input name="amount" type="number" step="0.01" min="0" data-field-subtotal value="{{ invoice.subtotal|default:'0.00' }}" class="w-full bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 text-[13px]">
+            </div>
+            <div>
+              <label class="block font-label-caps text-[11px] text-on-surface-variant mb-2">Discount</label>
+              <div class="flex gap-2">
+                <select name="discount_type" data-field-discount-type class="bg-surface-container-lowest border border-outline-variant rounded px-3 py-3 text-[12px]">
+                  <option value="flat" {% if invoice.discount_type == 'flat' %}selected{% endif %}>$ Flat</option>
+                  <option value="percent" {% if invoice.discount_type == 'percent' %}selected{% endif %}>% Off</option>
+                </select>
+                <input name="discount_value" type="number" step="0.01" min="0" data-field-discount value="{{ invoice.discount|default:'0.00' }}" class="flex-1 bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 text-[13px]">
+              </div>
+            </div>
+            <div>
+              <label class="block font-label-caps text-[11px] text-on-surface-variant mb-2">Tax Rate %</label>
+              <input name="tax_rate" type="number" step="0.01" min="0" data-field-tax value="{{ invoice.tax_rate|default:'0.00' }}" class="w-full bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 text-[13px]">
+            </div>
+          </div>
+        </div>
+
+        <!-- Payment & status -->
+        <div class="border border-outline-variant bg-background p-4 rounded">
+          <h3 class="font-label-caps text-[11px] text-primary mb-3">C. STATUS &amp; PAYMENT</h3>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block font-label-caps text-[11px] text-on-surface-variant mb-2">Status</label>
+              <select name="status" data-field-status class="w-full bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 text-[13px]">
+                {% for value, label in status_choices %}
+                <option value="{{ value }}" {% if invoice.status == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+              <p class="text-[11px] text-on-surface-variant mt-1">Amount paid only applies to a Paid invoice.</p>
+            </div>
+            <div>
+              <label class="block font-label-caps text-[11px] text-on-surface-variant mb-2">Amount Paid</label>
+              <input name="amount_paid" type="number" step="0.01" min="0" data-field-paid value="0.00" {% if invoice and invoice.status != 'paid' %}disabled{% elif not invoice %}disabled{% endif %} class="w-full bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 text-[13px] disabled:opacity-50 disabled:cursor-not-allowed">
+            </div>
+          </div>
+          <div class="mt-4">
+            <label class="block font-label-caps text-[11px] text-on-surface-variant mb-2">Notes</label>
+            <textarea name="notes" rows="2" data-field-notes class="w-full bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 text-[13px]" placeholder="Internal notes shown on the invoice…">{{ invoice.notes|default:'' }}</textarea>
+          </div>
+        </div>
+
+        <div class="flex flex-wrap gap-3">
+          <button type="submit" class="px-6 py-3 bg-primary-container text-on-primary-container font-label-caps text-[11px] uppercase border border-primary hover:bg-primary-fixed-dim transition-colors flex items-center gap-2">
+            <span class="material-symbols-outlined text-[18px]">save</span> {% if invoice %}Save Changes{% else %}Save Invoice{% endif %}
+          </button>
+          {% if invoice %}<a href="{% url 'invoice-detail' invoice.pk %}" class="px-6 py-3 border border-outline-variant font-label-caps text-[11px] text-on-surface-variant hover:bg-surface-container-high transition-colors">Cancel</a>
+          {% else %}<button type="reset" data-reset-form class="px-6 py-3 border border-outline-variant font-label-caps text-[11px] text-on-surface-variant hover:bg-surface-container-high transition-colors">Reset</button>{% endif %}
+        </div>
+      </form>
+    </div>
+
+    <!-- Live Preview -->
+    <div class="col-span-12 lg:col-span-5 bg-background border border-outline-variant p-8 flex flex-col items-center justify-start">
+      <div class="w-full max-w-sm relative">
+        <div class="bg-[#1E293B] border border-[#334155] p-6 shadow-xl">
+          <div class="flex justify-between items-start border-b border-[#334155] pb-4 mb-4">
+            <div>
+              <h2 class="font-display text-xl uppercase tracking-widest text-on-surface">IRON CORE</h2>
+              <p class="font-label-caps text-[10px] text-on-surface-variant mt-1">784 Industrial Pkwy, Sector 4</p>
+            </div>
+            <div class="text-right">
+              <p class="font-label-caps text-[10px] text-primary uppercase" data-preview-doc>INVOICE</p>
+              <p class="font-data-md text-[12px] text-on-surface mt-1" data-preview-invno>{{ next_invoice_no }}</p>
+            </div>
+          </div>
+
+          <div class="font-data-md text-xs text-on-surface space-y-2 mb-4 border-b border-dashed border-[#334155] pb-4">
+            <div class="flex justify-between">
+              <span class="text-on-surface-variant">BILLED TO:</span>
+              <span data-preview-member>Walk-in / Guest</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-on-surface-variant">ISSUED:</span>
+              <span data-preview-date>{{ today|date:"M d, Y" }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-on-surface-variant">DUE:</span>
+              <span data-preview-due>—</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-on-surface-variant">TERMS:</span>
+              <span data-preview-terms>Due on Receipt</span>
+            </div>
+          </div>
+
+          <div class="font-data-md text-xs mb-4 border-b border-dashed border-[#334155] pb-4">
+            <p class="text-on-surface" data-preview-desc>Annual Elite Membership (12 Mo)</p>
+          </div>
+
+          <div class="font-data-md text-sm mb-4">
+            <div class="flex justify-between text-on-surface-variant"><span>Subtotal</span><span data-preview-subtotal>$0.00</span></div>
+            <div class="flex justify-between text-error" data-preview-discount-row><span>Discount</span><span data-preview-discount>-$0.00</span></div>
+            <div class="flex justify-between text-on-surface-variant hidden" data-preview-tax-row><span>Tax</span><span data-preview-tax>+$0.00</span></div>
+            <div class="flex justify-between font-bold text-primary border-t border-[#334155] pt-2 mt-2"><span>TOTAL</span><span data-preview-total>$0.00</span></div>
+            <div class="flex justify-between text-on-surface-variant mt-2"><span>Amount Paid</span><span data-preview-paid>$0.00</span></div>
+            <div class="flex justify-between font-bold border-t border-[#334155] pt-2 mt-2 text-on-surface"><span>BALANCE DUE</span><span data-preview-balance>$0.00</span></div>
+          </div>
+
+          <p class="font-label-caps text-[10px] text-on-surface-variant text-center" data-preview-notes>—</p>
+          <p class="font-label-caps text-[10px] text-on-surface-variant text-center mt-2 border-t border-dashed border-[#334155] pt-2">NO REFUNDS. NO EXCUSES. THANK YOU</p>
+
+          <div class="absolute top-4 right-4 pointer-events-none opacity-80" data-preview-stamp style="display:none">
+            <div class="border-4 border-tertiary text-tertiary font-display text-lg uppercase tracking-widest px-3 py-1 transform -rotate-12 rounded">PAID</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const $ = s => document.querySelector(s);
+
+  const fmt = v => '$' + Number(v||0).toFixed(2);
+  const num = el => parseFloat(el.value) || 0;
+
+  function calc(){
+    const subtotal = num($('[data-field-subtotal]'));
+    const discountRaw = num($('[data-field-discount]'));
+    const discountType = $('[data-field-discount-type]').value;
+    const taxRate = num($('[data-field-tax]'));
+    let discountAmt = discountType === 'percent' ? (subtotal * discountRaw / 100) : discountRaw;
+    if (discountAmt < 0) discountAmt = 0;
+    if (discountAmt > subtotal) discountAmt = subtotal;
+    const tax = taxRate > 0 ? (subtotal - discountAmt) * taxRate / 100 : 0;
+    const total = subtotal - discountAmt + tax;
+
+    const status = $('[data-field-status]').value;
+    const paidInput = $('[data-field-paid]');
+    let paid = num(paidInput);
+    if (status === 'paid') {
+      paidInput.disabled = false;
+      paid = total;
+      paidInput.value = total.toFixed(2);
+    } else {
+      paidInput.disabled = true;
+      paid = 0;
+      paidInput.value = '0.00';
+    }
+    const balance = total - paid;
+
+    $('[data-preview-subtotal]').textContent = fmt(subtotal);
+    const discRow = $('[data-preview-discount-row]');
+    if (discountAmt > 0) {
+      discRow.style.display = 'flex';
+      $('[data-preview-discount]').textContent = discountType === 'percent'
+        ? discountRaw.toFixed(2) + '% (' + fmt(-discountAmt) + ')'
+        : fmt(-discountAmt);
+    } else {
+      discRow.style.display = 'none';
+      $('[data-preview-discount]').textContent = '-$0.00';
+    }
+    const taxRow = $('[data-preview-tax-row]');
+    if (tax > 0) { taxRow.classList.remove('hidden'); $('[data-preview-tax]').textContent = '+'+fmt(tax); }
+    else taxRow.classList.add('hidden');
+    $('[data-preview-total]').textContent = fmt(total);
+    $('[data-preview-paid]').textContent = fmt(paid);
+    $('[data-preview-balance]').textContent = fmt(balance);
+    $('[data-preview-stamp]').style.display = status === 'paid' ? 'block' : 'none';
+  }
+
+  ['[data-field-subtotal]','[data-field-discount]','[data-field-tax]','[data-field-paid]','[data-field-status]','[data-field-discount-type]'].forEach(sel => {
+    const el = $(sel);
+    if (el) el.addEventListener('input', calc);
+    if (el && el.tagName === 'SELECT') el.addEventListener('change', calc);
+  });
+
+  $('[data-field-invno]').addEventListener('input', e => $('[data-preview-invno]').textContent = e.target.value || '—');
+  {% if invoice %}
+  if ($('[data-preview-member]')) $('[data-preview-member]').textContent = "{{ invoice.billed_to }}";
+  $('[data-preview-date]').textContent = "{{ invoice.issued_date|date:'M d, Y' }}";
+  {% if invoice.due_date %}
+  $('[data-preview-due]').textContent = "{{ invoice.due_date|date:'M d, Y' }}";
+  {% endif %}
+  $('[data-preview-terms]').textContent = "{{ invoice.get_payment_terms_display }}";
+  {% endif %}
+  $('[data-preview-desc]').textContent = "{{ invoice.description|default:'No description' }}";
+  $('[data-preview-notes]').textContent = "{{ invoice.notes|default:'—' }}";
+  $('[data-field-billto]').addEventListener('input', e => {
+    $('[data-preview-member]').textContent = e.target.value || 'Walk-in / Guest';
+    e.target.removeAttribute('data-filled-by-member');
+  });
+  $('[data-field-date]').addEventListener('input', e => {
+    const d = e.target.value;
+    $('[data-preview-date]').textContent = d ? new Date(d+'T00:00:00').toLocaleDateString('en-US',{year:'numeric',month:'short',day:'2-digit'}) : '—';
+  });
+  $('[data-field-due]').addEventListener('input', e => {
+    const d = e.target.value;
+    $('[data-preview-due]').textContent = d ? new Date(d+'T00:00:00').toLocaleDateString('en-US',{year:'numeric',month:'short',day:'2-digit'}) : '—';
+  });
+  $('[data-field-desc]').addEventListener('input', e => { $('[data-preview-desc]').textContent = e.target.value || 'No description'; });
+  $('[data-field-notes]').addEventListener('input', e => { $('[data-preview-notes]').textContent = e.target.value || '—'; });
+  document.querySelectorAll('[data-terms-group] input').forEach(r => r.addEventListener('change', () => {
+    const labels = { due_on_receipt:'Due on Receipt', net_7:'Net 7', net_15:'Net 15', net_30:'Net 30', net_60:'Net 60', custom:'Custom' };
+    $('[data-preview-terms]').textContent = labels[document.querySelector('[data-terms-group] input:checked').value] || '—';
+  }));
+  const form = $('[data-invoice-form]');
+  form.addEventListener('submit', () => {
+    // Disabled inputs aren't submitted — ensure amount_paid reflects the locked value when paid.
+    const paidInput = $('[data-field-paid]');
+    if (paidInput.disabled) paidInput.value = '0';
+  });
+  calc();
+})();
+</script>
+{% endblock %}

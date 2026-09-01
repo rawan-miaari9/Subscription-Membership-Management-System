@@ -182,7 +182,14 @@ document.addEventListener('DOMContentLoaded', () => {
       const title = btn.dataset.confirmTitle || 'Are you sure?';
       const msg = btn.dataset.confirm || btn.getAttribute('data-confirm') || 'This action cannot be undone.';
       const confirmText = btn.dataset.confirmText || 'Confirm';
-      pendingAction = ()=>{};
+      const formSel = btn.dataset.confirmForm;
+      pendingAction = ()=>{
+        if (formSel) {
+          const f = document.querySelector(formSel);
+          if (f) { f.requestSubmit(); return; }
+        }
+        toast('Confirmed (frontend demo)','success');
+      };
       openConfirm(title, msg, confirmText, 'error');
     });
   });
@@ -231,8 +238,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ── Generic fallback: every remaining static button becomes functional via toast (frontend-only) ──
   document.querySelectorAll('main button, main a').forEach(el => {
-    if (el.hasAttribute('data-toast') || el.hasAttribute('data-role') || el.hasAttribute('data-close-drawer') || el.hasAttribute('data-add-member') || el.hasAttribute('data-page') || el.hasAttribute('data-action-toggle') || el.hasAttribute('data-action') || el.hasAttribute('data-confirm') || el.hasAttribute('data-sidebar-group-toggle') || el.closest('[data-open-drawer]') || el.closest('[data-action-menu]')) return;
-    if (el.tagName === 'A' && el.getAttribute('href') && el.getAttribute('href').startsWith('/')) return;
+    if (el.hasAttribute('data-toast') || el.hasAttribute('data-role') || el.hasAttribute('data-close-drawer') || el.hasAttribute('data-add-member') || el.hasAttribute('data-page') || el.hasAttribute('data-action-toggle') || el.hasAttribute('data-action') || el.hasAttribute('data-confirm') || el.hasAttribute('data-sidebar-group-toggle') || el.hasAttribute('data-print-trigger') || el.closest('[data-open-drawer]') || el.closest('[data-action-menu]')) return;
+    if (el.tagName === 'A') {
+      const href = el.getAttribute('href') || '';
+      if (href.startsWith('/') || href.includes('?') || href.startsWith('#') || href.startsWith('javascript:')) return;
+    }
+    if (el.type === 'reset') return;
     if (el.closest('nav') || el.closest('header')) return;
     el.addEventListener('click', (e) => {
       if (el.type === 'submit') return;
