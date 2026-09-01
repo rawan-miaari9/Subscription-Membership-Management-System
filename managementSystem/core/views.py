@@ -1,9 +1,18 @@
+import datetime
+
 from django.core.paginator import Paginator
 from django.db import IntegrityError, connection
 from django.db.models import Q
 from django.http import HttpResponseNotAllowed, JsonResponse
 from django.shortcuts import render
 from django.utils import timezone
+
+
+def _parse_date(value):
+    try:
+        return datetime.date.fromisoformat(value)
+    except (TypeError, ValueError):
+        return None
 
 from .models import Attendance, Member, Subscription
 
@@ -74,11 +83,45 @@ def refunds_view(request):
 
 def attendance_view(request):
     attendance_qs = Attendance.objects.select_related('member').order_by('-date', '-check_in')
+
+    date_from_raw = request.GET.get('date_from', '').strip()
+    date_to_raw = request.GET.get('date_to', '').strip()
+    status = request.GET.get('status', '').strip()
+    member_query = request.GET.get('member', '').strip()
+
+    date_from = _parse_date(date_from_raw)
+    date_to = _parse_date(date_to_raw)
+
+    if date_from:
+        attendance_qs = attendance_qs.filter(date__gte=date_from)
+    if date_to:
+        attendance_qs = attendance_qs.filter(date__lte=date_to)
+    if status == 'checked_in':
+        attendance_qs = attendance_qs.filter(check_out__isnull=True)
+    elif status == 'checked_out':
+        attendance_qs = attendance_qs.filter(check_out__isnull=False)
+    if member_query:
+        attendance_qs = attendance_qs.filter(
+            Q(member__full_name__icontains=member_query) | Q(member__member_code__icontains=member_query)
+        )
+
     paginator = Paginator(attendance_qs, 20)
     page_obj = paginator.get_page(request.GET.get('page'))
+
+    # Preserve active filters across Previous/Next links (drop 'page' — the link supplies its own).
+    filters_querydict = request.GET.copy()
+    filters_querydict.pop('page', None)
+    filters_querystring = filters_querydict.urlencode()
+
     context = {
         'attendance_records': page_obj.object_list,
         'page_obj': page_obj,
+        'filters_querystring': filters_querystring,
+        'filter_date_from': date_from_raw,
+        'filter_date_to': date_to_raw,
+        'filter_status': status,
+        'filter_member': member_query,
+        'filters_active': bool(date_from_raw or date_to_raw or status or member_query),
     }
     return render(request, "attendance/index.html", context)
 
