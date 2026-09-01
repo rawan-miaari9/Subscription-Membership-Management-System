@@ -2,6 +2,16 @@
 {% block title %}Members - Iron Core{% endblock %}
 
 {% block dashboard_content %}
+{% if messages %}
+<div class="space-y-2 mb-4">
+{% for message in messages %}
+<div class="p-4 rounded border flex items-center gap-2 font-body-sm text-sm {% if message.tags == 'success' %}bg-tertiary-container border-tertiary text-on-tertiary-container{% elif message.tags == 'error' %}bg-error-container border-error text-on-error-container{% else %}bg-surface-container-high border-outline-variant text-on-surface{% endif %}">
+<span class="material-symbols-outlined text-[18px]">{% if message.tags == 'success' %}check_circle{% elif message.tags == 'error' %}error{% else %}info{% endif %}</span>
+{{ message }}
+</div>
+{% endfor %}
+</div>
+{% endif %}
 <!-- Left Side: Data Table Canvas (Grid Col Span 8 roughly) -->
 <div class="w-full flex flex-col gap-6">
 <!-- Page Header & Action Bar -->

@@ -1,4 +1,9 @@
-from django.shortcuts import render
+from django.contrib import messages
+from django.db import IntegrityError, connection
+from django.shortcuts import redirect, render
+
+from .forms import MemberForm
+from .models import Member
 
 def login_view(request):
     return render(request, "auth/login.html")
@@ -51,8 +56,49 @@ def settings_view(request):
 def member_detail_view(request):
     return render(request, "members/detail.html")
 
+def _create_member(data, attempt=1):
+    """Insert a Member with a freshly generated member_code.
+
+    Raw INSERT (not Member.objects.create()) so we only supply the columns the
+    form actually collects — balance/initials are left out entirely so Postgres
+    applies its own column defaults (0.00 / NULL) instead of Django writing
+    explicit NULLs for fields we never touched.
+
+    member_code is an app-level generated sequence (see MemberForm.generate_member_code),
+    not an atomic DB one, so two concurrent submissions could compute the same next
+    code. On a UNIQUE violation, retry once with a freshly regenerated code before
+    giving up — same pattern used for the Attendance check-in race.
+    """
+    member_code = MemberForm.generate_member_code()
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "INSERT INTO members (member_code, full_name, phone, email, join_date, status) "
+                "VALUES (%s, %s, %s, %s, %s, %s) RETURNING id",
+                [member_code, data['full_name'], data['phone'], data['email'] or None, data['join_date'], data['status']],
+            )
+            new_id = cursor.fetchone()[0]
+        return Member.objects.get(pk=new_id)
+    except IntegrityError:
+        if attempt >= 2:
+            return None
+        return _create_member(data, attempt=attempt + 1)
+
 def member_add_view(request):
-    return render(request, "members/add.html")
+    if request.method == "POST":
+        form = MemberForm(request.POST)
+        if form.is_valid():
+            member = _create_member(form.cleaned_data)
+            if member is None:
+                messages.error(request, "Could not save this member due to a conflict — please try again.")
+                return render(request, "members/add.html", {"form": form})
+
+            messages.success(request, f'Member "{member.full_name}" was added successfully ({member.member_code}).')
+            return redirect('members')
+    else:
+        form = MemberForm()
+
+    return render(request, "members/add.html", {"form": form})
 
 def services_view(request):
     return render(request, "services/list.html")
