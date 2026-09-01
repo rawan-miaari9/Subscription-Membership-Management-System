@@ -1,4 +1,5 @@
 from django.contrib import messages
+from django.core.paginator import Paginator
 from django.db import IntegrityError, connection
 from django.shortcuts import redirect, render
 
@@ -12,7 +13,16 @@ def dashboard_view(request):
     return render(request, "dashboard/index.html")
 
 def members_view(request):
-    return render(request, "members/list.html")
+    # Newest members first — the most useful default for an admin glancing at
+    # who just joined; '-id' breaks ties for same-day joins deterministically.
+    members_qs = Member.objects.all().order_by('-join_date', '-id')
+    paginator = Paginator(members_qs, 20)
+    page_obj = paginator.get_page(request.GET.get('page'))
+    context = {
+        'members': page_obj.object_list,
+        'page_obj': page_obj,
+    }
+    return render(request, "members/list.html", context)
 
 def plans_view(request):
     return render(request, "plans/list.html")
