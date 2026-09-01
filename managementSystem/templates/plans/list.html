@@ -56,9 +56,12 @@
 {% endif %}
 </div>
 {% if plan.is_active %}
-<button data-toast="Deactivate plan (not yet available)" class="w-full bg-transparent border border-outline-variant text-on-surface font-label-caps text-label-caps uppercase py-3 rounded hover:bg-surface-container transition-colors">
+<form method="post" action="{% url 'plan-deactivate' plan.id %}" onsubmit="return confirm('Deactivate \'{{ plan.name|escapejs }}\'? It will be hidden from new subscriptions.');">
+{% csrf_token %}
+<button type="submit" class="w-full bg-transparent border border-outline-variant text-on-surface font-label-caps text-label-caps uppercase py-3 rounded hover:bg-surface-container transition-colors">
 Deactivate Plan
 </button>
+</form>
 {% else %}
 <form method="post" action="{% url 'plan-activate' plan.id %}" onsubmit="return confirm('Activate \'{{ plan.name|escapejs }}\'? It will become available for new subscriptions.');">
 {% csrf_token %}

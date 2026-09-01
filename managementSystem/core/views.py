@@ -41,6 +41,21 @@ def plan_activate_view(request, pk):
 
     return redirect('plans')
 
+def plan_deactivate_view(request, pk):
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+
+    plan = get_object_or_404(MembershipPlan, pk=pk)
+
+    if not plan.is_active:
+        messages.info(request, f'"{plan.name}" is already inactive.')
+    else:
+        plan.is_active = False
+        plan.save(update_fields=['is_active'])
+        messages.success(request, f'"{plan.name}" was deactivated.')
+
+    return redirect('plans')
+
 def subscriptions_view(request):
     return render(request, "subscriptions/list.html")
 
