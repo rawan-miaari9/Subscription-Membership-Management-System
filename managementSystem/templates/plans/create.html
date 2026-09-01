@@ -21,16 +21,18 @@
   </div>
 
   <!-- Form Card - bento-card style -->
-  <form data-create-plan-form class="bg-surface-container border border-outline-variant rounded-lg p-6 md:p-8 space-y-6" novalidate>
+  <form method="post" action="{% url 'plan-create' %}" class="bg-surface-container border border-outline-variant rounded-lg p-6 md:p-8 space-y-6" novalidate>
     {% csrf_token %}
-    <div data-form-msg class="hidden p-3 rounded border border-error bg-error-container text-on-error-container font-body-sm text-sm"></div>
+    {% if form.errors %}
+    <div class="p-3 rounded border border-error bg-error-container text-on-error-container font-body-sm text-sm">Please fix the highlighted fields before saving.</div>
+    {% endif %}
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
       <!-- Plan Name -->
       <div class="md:col-span-2">
         <label class="block font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">Plan Name *</label>
-        <input name="plan_name" required placeholder="e.g. Gold, Premium, Elite Power" class="w-full bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 font-body-sm text-body-sm text-on-surface placeholder:text-on-surface-variant/60 focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all" />
-        <p class="hidden text-error text-xs mt-1.5 font-body-sm" data-error="plan_name">Plan name is required.</p>
+        <input name="name" required value="{{ form.name.value|default:'' }}" placeholder="e.g. Gold, Premium, Elite Power" class="w-full bg-surface-container-lowest border {% if form.name.errors %}border-error{% else %}border-outline-variant{% endif %} rounded px-4 py-3 font-body-sm text-body-sm text-on-surface placeholder:text-on-surface-variant/60 focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all" />
+        <p class="{% if not form.name.errors %}hidden{% endif %} text-error text-xs mt-1.5 font-body-sm">{{ form.name.errors.0 }}</p>
       </div>
 
       <!-- Description -->
@@ -43,17 +45,18 @@
       <div>
         <label class="block font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">Duration *</label>
         <div class="relative">
-          <select name="duration" required class="w-full appearance-none bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 pr-10 font-body-sm text-body-sm text-on-surface focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all">
-            <option value="" disabled selected>Select duration</option>
-            <option value="1_month">1 Month</option>
-            <option value="3_months">3 Months</option>
-            <option value="6_months">6 Months</option>
-            <option value="12_months">12 Months / Yearly</option>
-            <option value="custom">Custom</option>
+          <select name="duration" required class="w-full appearance-none bg-surface-container-lowest border {% if form.duration_days.errors %}border-error{% else %}border-outline-variant{% endif %} rounded px-4 py-3 pr-10 font-body-sm text-body-sm text-on-surface focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all">
+            <option value="" disabled {% if not submitted_duration %}selected{% endif %}>Select duration</option>
+            <option value="1_month" {% if submitted_duration == "1_month" %}selected{% endif %}>1 Month</option>
+            <option value="3_months" {% if submitted_duration == "3_months" %}selected{% endif %}>3 Months</option>
+            <option value="6_months" {% if submitted_duration == "6_months" %}selected{% endif %}>6 Months</option>
+            <option value="12_months" {% if submitted_duration == "12_months" %}selected{% endif %}>12 Months / Yearly</option>
+            <option value="custom" {% if submitted_duration == "custom" %}selected{% endif %}>Custom</option>
           </select>
           <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none text-[20px]">expand_more</span>
         </div>
-        <p class="hidden text-error text-xs mt-1.5 font-body-sm" data-error="duration">Please select a duration.</p>
+        <p class="{% if not form.duration_days.errors %}hidden{% endif %} text-error text-xs mt-1.5 font-body-sm">{{ form.duration_days.errors.0 }}</p>
+        <p class="font-body-sm text-[11px] text-on-surface-variant mt-1.5">Selecting "Custom" takes you to Create Custom Plan instead.</p>
       </div>
 
       <!-- Price -->
@@ -61,30 +64,29 @@
         <label class="block font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">Price *</label>
         <div class="relative">
           <span class="absolute left-3 top-1/2 -translate-y-1/2 font-data-md text-data-md text-on-surface-variant">$</span>
-          <input name="price" type="number" min="0" step="0.01" required placeholder="0.00" class="w-full bg-surface-container-lowest border border-outline-variant rounded pl-8 pr-4 py-3 font-body-sm text-body-sm text-on-surface placeholder:text-on-surface-variant/60 focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all" />
+          <input name="price" type="number" min="0" step="0.01" required value="{{ form.price.value|default:'' }}" placeholder="0.00" class="w-full bg-surface-container-lowest border {% if form.price.errors %}border-error{% else %}border-outline-variant{% endif %} rounded pl-8 pr-4 py-3 font-body-sm text-body-sm text-on-surface placeholder:text-on-surface-variant/60 focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all" />
         </div>
-        <p class="hidden text-error text-xs mt-1.5 font-body-sm" data-error="price">Valid price is required (&gt; 0).</p>
+        <p class="{% if not form.price.errors %}hidden{% endif %} text-error text-xs mt-1.5 font-body-sm">{{ form.price.errors.0 }}</p>
       </div>
 
       <!-- Benefits -->
       <div class="md:col-span-2">
-        <label class="block font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">Benefits *</label>
-        <textarea name="benefits" required rows="4" placeholder="List benefits, one per line — e.g.&#10;24/7 Facility Access&#10;Standard Equipment Usage&#10;2 Guest Passes / Month" class="w-full bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 font-body-sm text-body-sm text-on-surface placeholder:text-on-surface-variant/60 focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all resize-none"></textarea>
-        <p class="hidden text-error text-xs mt-1.5 font-body-sm" data-error="benefits">Please add at least one benefit.</p>
-        <p class="font-body-sm text-[11px] text-on-surface-variant mt-1.5">One benefit per line. Displayed as checklist on plan card.</p>
+        <label class="block font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">Benefits</label>
+        <textarea name="benefits" rows="4" placeholder="List benefits, one per line — e.g.&#10;24/7 Facility Access&#10;Standard Equipment Usage&#10;2 Guest Passes / Month" class="w-full bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 font-body-sm text-body-sm text-on-surface placeholder:text-on-surface-variant/60 focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all resize-none"></textarea>
+        <p class="font-body-sm text-[11px] text-on-surface-variant mt-1.5">One benefit per line. Not saved yet — benefit assignment is a separate upcoming feature.</p>
       </div>
 
       <!-- Status -->
       <div>
         <label class="block font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">Status *</label>
         <div class="relative">
-          <select name="status" required class="w-full appearance-none bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 pr-10 font-body-sm text-body-sm text-on-surface focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all">
-            <option value="active" selected>Active</option>
-            <option value="inactive">Inactive</option>
+          <select name="status" required class="w-full appearance-none bg-surface-container-lowest border {% if form.status.errors %}border-error{% else %}border-outline-variant{% endif %} rounded px-4 py-3 pr-10 font-body-sm text-body-sm text-on-surface focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all">
+            <option value="active" {% if form.status.value != "inactive" %}selected{% endif %}>Active</option>
+            <option value="inactive" {% if form.status.value == "inactive" %}selected{% endif %}>Inactive</option>
           </select>
           <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none text-[20px]">expand_more</span>
         </div>
-        <p class="hidden text-error text-xs mt-1.5 font-body-sm" data-error="status">Status is required.</p>
+        <p class="{% if not form.status.errors %}hidden{% endif %} text-error text-xs mt-1.5 font-body-sm">{{ form.status.errors.0 }}</p>
       </div>
 
       <!-- Info hint -->
@@ -102,104 +104,7 @@
       <a href="{% url 'plans' %}" class="inline-flex items-center justify-center px-8 py-3 border border-outline-variant bg-transparent text-on-surface font-label-caps text-[11px] uppercase tracking-widest rounded hover:bg-surface-container-high transition-colors">
         Cancel
       </a>
-      <span data-loading class="hidden ml-2 inline-flex items-center gap-2 font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant">
-        <span class="w-4 h-4 border-2 border-primary-container border-t-transparent rounded-full animate-spin"></span> Saving...
-      </span>
-    </div>
-
-    <div data-success class="hidden p-4 bg-tertiary-container border border-tertiary text-on-tertiary-container rounded font-body-sm text-sm flex items-center gap-2">
-      <span class="material-symbols-outlined text-[18px]">check_circle</span> Membership plan created successfully (frontend demo).
-    </div>
-    <div data-error-state class="hidden p-4 bg-error-container border border-error text-on-error-container rounded font-body-sm text-sm flex items-center gap-2">
-      <span class="material-symbols-outlined text-[18px]">error</span> Failed to save. Please check highlighted fields.
     </div>
   </form>
 </div>
-
-<script>
-(function(){
-  const form = document.querySelector('[data-create-plan-form]');
-  if(!form) return;
-  form.addEventListener('submit', function(e){
-    e.preventDefault();
-    let valid = true;
-    const msg = form.querySelector('[data-form-msg]');
-    // reset errors
-    form.querySelectorAll('[data-error]').forEach(el => el.classList.add('hidden'));
-    form.querySelectorAll('.border-error').forEach(el => el.classList.remove('border-error'));
-
-    function markError(name, message){
-      valid = false;
-      const input = form.querySelector(`[name="${name}"]`);
-      const err = form.querySelector(`[data-error="${name}"]`);
-      if(input) input.classList.add('border-error', '!border-error');
-      if(err){
-        if(message) err.textContent = message;
-        err.classList.remove('hidden');
-      }
-    }
-
-    const planName = form.querySelector('[name="plan_name"]');
-    const duration = form.querySelector('[name="duration"]');
-    const price = form.querySelector('[name="price"]');
-    const benefits = form.querySelector('[name="benefits"]');
-    const status = form.querySelector('[name="status"]');
-
-    if(!planName.value.trim()) markError('plan_name');
-    if(!duration.value) markError('duration');
-    if(!price.value.trim() || isNaN(parseFloat(price.value)) || parseFloat(price.value) <= 0) markError('price');
-    if(!benefits.value.trim()) markError('benefits');
-    if(!status.value) markError('status');
-
-    if(!valid){
-      msg.textContent = 'Please fix validation errors before saving.';
-      msg.classList.remove('hidden');
-      if(typeof toast === 'function') toast('Please fix validation errors', 'error');
-      else if(window.toast) window.toast('Please fix validation errors','error');
-      return;
-    }
-    msg.classList.add('hidden');
-
-    const loading = form.querySelector('[data-loading]');
-    const success = form.querySelector('[data-success]');
-    const errState = form.querySelector('[data-error-state]');
-    loading.classList.remove('hidden');
-    success.classList.add('hidden');
-    errState.classList.add('hidden');
-
-    const submitBtn = form.querySelector('button[type="submit"]');
-    if(submitBtn) submitBtn.disabled = true;
-
-    setTimeout(function(){
-      loading.classList.add('hidden');
-      if(submitBtn) submitBtn.disabled = false;
-      if(Math.random() > 0.2){
-        success.classList.remove('hidden');
-        if(typeof toast === 'function') toast('Membership plan saved (demo)', 'success');
-        else if(window.toast) window.toast('Membership plan saved (demo)','success');
-        // optional reset for demo: keep values but show success
-      } else {
-        errState.classList.remove('hidden');
-        errState.textContent = 'Failed to save. Simulated server error — try again.';
-        if(typeof toast === 'function') toast('Save failed — try again', 'error');
-        else if(window.toast) window.toast('Save failed — try again','error');
-      }
-    }, 900);
-  });
-
-  // live clear error on input
-  form.querySelectorAll('input, select, textarea').forEach(inp => {
-    inp.addEventListener('input', () => {
-      inp.classList.remove('border-error', '!border-error');
-      const err = form.querySelector(`[data-error="${inp.name}"]`);
-      if(err) err.classList.add('hidden');
-    });
-    inp.addEventListener('change', () => {
-      inp.classList.remove('border-error', '!border-error');
-      const err = form.querySelector(`[data-error="${inp.name}"]`);
-      if(err) err.classList.add('hidden');
-    });
-  });
-})();
-</script>
 {% endblock %}
