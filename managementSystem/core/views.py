@@ -2,7 +2,7 @@ from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db import IntegrityError, connection
 from django.db.models import Q
-from django.shortcuts import redirect, render
+from django.shortcuts import get_object_or_404, redirect, render
 
 from .forms import MemberForm
 from .models import Member
@@ -118,21 +118,59 @@ def _create_member(data, attempt=1):
             return None
         return _create_member(data, attempt=attempt + 1)
 
-def member_add_view(request):
-    if request.method == "POST":
-        form = MemberForm(request.POST)
-        if form.is_valid():
-            member = _create_member(form.cleaned_data)
-            if member is None:
-                messages.error(request, "Could not save this member due to a conflict — please try again.")
-                return render(request, "members/add.html", {"form": form})
+def _update_member(member, data):
+    """UPDATE an existing Member's editable fields — member_code is left untouched.
 
-            messages.success(request, f'Member "{member.full_name}" was added successfully ({member.member_code}).')
+    Same raw-SQL reasoning as _create_member: only touch the columns this form
+    actually collects, so balance/initials are never overwritten by this path.
+    """
+    with connection.cursor() as cursor:
+        cursor.execute(
+            "UPDATE members SET full_name = %s, phone = %s, email = %s, join_date = %s, status = %s WHERE id = %s",
+            [data['full_name'], data['phone'], data['email'] or None, data['join_date'], data['status'], member.pk],
+        )
+    return Member.objects.get(pk=member.pk)
+
+def member_add_view(request, pk=None):
+    member = None
+    if pk is not None:
+        member = get_object_or_404(Member, pk=pk)
+
+    if request.method == "POST":
+        form = MemberForm(request.POST, instance_member=member)
+        if form.is_valid():
+            if member is not None:
+                updated = _update_member(member, form.cleaned_data)
+                messages.success(request, f'Member "{updated.full_name}" was updated successfully.')
+            else:
+                created = _create_member(form.cleaned_data)
+                if created is None:
+                    messages.error(request, "Could not save this member due to a conflict — please try again.")
+                    return render(request, "members/add.html", {"form": form, "is_edit": False})
+                messages.success(request, f'Member "{created.full_name}" was added successfully ({created.member_code}).')
             return redirect('members')
     else:
-        form = MemberForm()
+        initial = None
+        if member is not None:
+            initial = {
+                'full_name': member.full_name,
+                'phone': member.phone,
+                'email': member.email,
+                # ISO string, not the raw date object — an unbound form's
+                # BoundField.value() renders a date object through Django's
+                # locale-aware date filter ("June 1, 2024"), which isn't a
+                # valid value for <input type="date"> and silently fails to
+                # pre-fill in the browser.
+                'join_date': member.join_date.isoformat() if member.join_date else '',
+                'status': member.status,
+            }
+        form = MemberForm(initial=initial, instance_member=member)
 
-    return render(request, "members/add.html", {"form": form})
+    return render(request, "members/add.html", {
+        "form": form,
+        "is_edit": member is not None,
+        "edit_member": member,
+    })
 
 def services_view(request):
     return render(request, "services/list.html")

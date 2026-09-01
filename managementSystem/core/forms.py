@@ -22,6 +22,21 @@ class MemberForm(forms.Form):
     join_date = forms.DateField(label='Join Date', widget=forms.DateInput(attrs={'type': 'date'}))
     status = forms.ChoiceField(choices=STATUS_CHOICES, initial='active', label='Status')
 
+    def __init__(self, *args, instance_member=None, **kwargs):
+        # Not used for a uniqueness exclusion right now — phone/email have no
+        # UNIQUE constraint in the DB, and member_code (the only unique column)
+        # isn't a form field at all. Kept for parity with the instance_user
+        # pattern used elsewhere in this project, and so __init__ has a place to
+        # widen the status choices below when editing an already-expired member.
+        self.instance_member = instance_member
+        super().__init__(*args, **kwargs)
+        if instance_member is not None and instance_member.status == 'expired':
+            # 'expired' is intentionally not offered when adding/editing a member
+            # normally (see STATUS_CHOICES comment), but if we're editing a member
+            # who's already expired, it must stay selectable — otherwise saving the
+            # form without touching the dropdown would silently flip them to Active.
+            self.fields['status'].choices = self.STATUS_CHOICES + [('expired', 'Expired')]
+
     # full_name/email "not just whitespace" / "valid if provided" are already handled
     # by CharField's default strip=True + required=True, and EmailField's built-in
     # format validation (which is skipped entirely when the field is empty and

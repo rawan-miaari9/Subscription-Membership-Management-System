@@ -21,6 +21,7 @@ urlpatterns = [
     path("settings/", views.settings_view, name="settings"),
     path("members/detail/", views.member_detail_view, name="member-detail"),
     path("members/add/", views.member_add_view, name="member-add"),
+    path("members/edit/<int:pk>/", views.member_add_view, name="member-edit"),
     path("services/", views.services_view, name="services"),
     path("plans/create/", views.plan_create_view, name="plan-create"),
     path("plans/custom/", views.plan_custom_view, name="plan-custom"),
