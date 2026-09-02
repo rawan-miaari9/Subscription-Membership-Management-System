@@ -1,0 +1,369 @@
+{% extends "layouts/dashboard.html" %}
+{% block title %}Reports & Analytics - Iron Core{% endblock %}
+
+{% block dashboard_content %}
+<!-- Header & Actions -->
+<div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-6 gap-4">
+  <div>
+    <h2 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface uppercase tracking-tight">REPORTS &amp; ANALYTICS</h2>
+    <p class="font-body-sm text-body-sm text-on-surface-variant mt-1">SYSTEM OVERVIEW // DATA WAREHOUSE — 9 Report Types • Frontend Demo</p>
+  </div>
+  <div class="flex flex-wrap gap-2">
+    <button data-reports-action="generate" class="bg-primary-container text-on-primary-container font-label-caps text-[11px] uppercase font-bold px-4 py-2 hover:bg-[#d97706] transition-colors flex items-center gap-2 border border-primary-container">
+      <span class="material-symbols-outlined text-[16px]">analytics</span> Generate
+    </button>
+    <button data-reports-action="pdf" class="bg-transparent border border-outline-variant text-on-surface font-label-caps text-[11px] uppercase px-4 py-2 hover:bg-surface-container-high transition-colors flex items-center gap-2">
+      <span class="material-symbols-outlined text-[16px]">picture_as_pdf</span> PDF
+    </button>
+    <button data-reports-action="csv" class="bg-transparent border border-outline-variant text-on-surface font-label-caps text-[11px] uppercase px-4 py-2 hover:bg-surface-container-high transition-colors flex items-center gap-2">
+      <span class="material-symbols-outlined text-[16px]">file_download</span> CSV
+    </button>
+    <button data-reports-action="print" class="bg-transparent border border-outline-variant text-on-surface font-label-caps text-[11px] uppercase px-4 py-2 hover:bg-surface-container-high transition-colors flex items-center gap-2">
+      <span class="material-symbols-outlined text-[16px]">print</span> Print
+    </button>
+  </div>
+</div>
+
+<!-- Layout Grid -->
+<div class="flex flex-col lg:flex-row gap-bento-gap h-full pb-8">
+  <!-- Sidebar Filters -->
+  <aside class="w-full lg:w-72 flex flex-col gap-bento-gap shrink-0">
+    <div class="bg-surface-container border border-outline-variant rounded-lg p-5 flex flex-col gap-5">
+      <h3 class="font-label-caps text-[11px] uppercase tracking-widest text-on-surface border-b border-outline-variant pb-2">PARAMETERS</h3>
+
+      <!-- Date Range -->
+      <div class="space-y-2">
+        <label class="font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant">DATE RANGE</label>
+        <div class="relative">
+          <select data-filter="date_range" class="w-full bg-surface-container-lowest border border-outline-variant text-on-surface font-body-sm text-body-sm p-2.5 pr-8 focus:ring-1 focus:ring-primary focus:border-primary outline-none appearance-none rounded">
+            <option value="last_30">LAST 30 DAYS</option>
+            <option value="last_7">LAST 7 DAYS</option>
+            <option value="this_month">THIS MONTH</option>
+            <option value="this_quarter">THIS QUARTER</option>
+            <option value="year_to_date">YEAR TO DATE</option>
+            <option value="custom">CUSTOM RANGE...</option>
+          </select>
+          <span class="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none text-[18px]">expand_more</span>
+        </div>
+        <div data-custom-dates class="hidden grid grid-cols-2 gap-2">
+          <input type="date" data-filter="date_from" class="bg-surface-container-lowest border border-outline-variant text-on-surface font-body-sm text-xs p-2 rounded focus:ring-1 focus:ring-primary focus:border-primary outline-none">
+          <input type="date" data-filter="date_to" class="bg-surface-container-lowest border border-outline-variant text-on-surface font-body-sm text-xs p-2 rounded focus:ring-1 focus:ring-primary focus:border-primary outline-none">
+        </div>
+      </div>
+
+      <!-- Status Filter -->
+      <div class="space-y-2">
+        <label class="font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant">STATUS</label>
+        <div class="relative">
+          <select data-filter="status" class="w-full bg-surface-container-lowest border border-outline-variant text-on-surface font-body-sm text-body-sm p-2.5 pr-8 focus:ring-1 focus:ring-primary focus:border-primary outline-none appearance-none rounded">
+            <option value="">ALL STATUSES</option>
+            <option value="active">ACTIVE</option>
+            <option value="expiring">EXPIRING</option>
+            <option value="expired">EXPIRED</option>
+            <option value="suspended">SUSPENDED</option>
+            <option value="paid">PAID</option>
+            <option value="pending">PENDING</option>
+          </select>
+          <span class="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none text-[18px]">expand_more</span>
+        </div>
+      </div>
+
+      <!-- Category Filter -->
+      <div class="space-y-2">
+        <label class="font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant">CATEGORY</label>
+        <div class="relative">
+          <select data-filter="category" class="w-full bg-surface-container-lowest border border-outline-variant text-on-surface font-body-sm text-body-sm p-2.5 pr-8 focus:ring-1 focus:ring-primary focus:border-primary outline-none appearance-none rounded">
+            <option value="">ALL CATEGORIES</option>
+            <option value="Equipment">EQUIPMENT</option>
+            <option value="Maintenance">MAINTENANCE</option>
+            <option value="Salary">SALARY</option>
+            <option value="Utility">UTILITY</option>
+            <option value="Other">OTHER</option>
+          </select>
+          <span class="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none text-[18px]">expand_more</span>
+        </div>
+      </div>
+
+      <!-- Plan Filter -->
+      <div class="space-y-2">
+        <label class="font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant">PLAN</label>
+        <div class="relative">
+          <select data-filter="plan" class="w-full bg-surface-container-lowest border border-outline-variant text-on-surface font-body-sm text-body-sm p-2.5 pr-8 focus:ring-1 focus:ring-primary focus:border-primary outline-none appearance-none rounded">
+            <option value="">ALL PLANS</option>
+            <option value="Silver">SILVER</option>
+            <option value="Gold">GOLD</option>
+            <option value="Premium">PREMIUM</option>
+            <option value="Custom">CUSTOM</option>
+          </select>
+          <span class="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none text-[18px]">expand_more</span>
+        </div>
+      </div>
+
+      <!-- Report Types: 9 types required -->
+      <div class="space-y-2 pt-4 border-t border-outline-variant">
+        <label class="font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant">REPORT TYPE *</label>
+        <div class="flex flex-col gap-1.5 max-h-[260px] overflow-y-auto pr-1">
+          <label class="flex items-center gap-2 cursor-pointer p-2 border border-outline-variant rounded bg-surface-container-lowest hover:border-primary-container transition-colors has-[input:checked]:border-primary-container has-[input:checked]:bg-surface-container-high">
+            <input type="radio" name="report_type" value="Revenue" checked class="accent-primary"> <span class="font-label-caps text-[11px] uppercase tracking-widest text-on-surface">Revenue</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer p-2 border border-outline-variant rounded bg-surface-container-lowest hover:border-primary-container transition-colors has-[input:checked]:border-primary-container has-[input:checked]:bg-surface-container-high">
+            <input type="radio" name="report_type" value="Payments" class="accent-primary"> <span class="font-label-caps text-[11px] uppercase tracking-widest text-on-surface">Payments</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer p-2 border border-outline-variant rounded bg-surface-container-lowest hover:border-primary-container transition-colors has-[input:checked]:border-primary-container has-[input:checked]:bg-surface-container-high">
+            <input type="radio" name="report_type" value="Subscriptions" class="accent-primary"> <span class="font-label-caps text-[11px] uppercase tracking-widest text-on-surface">Subscriptions</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer p-2 border border-outline-variant rounded bg-surface-container-lowest hover:border-primary-container transition-colors has-[input:checked]:border-primary-container has-[input:checked]:bg-surface-container-high">
+            <input type="radio" name="report_type" value="Expenses" class="accent-primary"> <span class="font-label-caps text-[11px] uppercase tracking-widest text-on-surface">Expenses</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer p-2 border border-outline-variant rounded bg-surface-container-lowest hover:border-primary-container transition-colors has-[input:checked]:border-primary-container has-[input:checked]:bg-surface-container-high">
+            <input type="radio" name="report_type" value="Refunds" class="accent-primary"> <span class="font-label-caps text-[11px] uppercase tracking-widest text-on-surface">Refunds</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer p-2 border border-outline-variant rounded bg-surface-container-lowest hover:border-primary-container transition-colors has-[input:checked]:border-primary-container has-[input:checked]:bg-surface-container-high">
+            <input type="radio" name="report_type" value="Members" class="accent-primary"> <span class="font-label-caps text-[11px] uppercase tracking-widest text-on-surface">Members</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer p-2 border border-outline-variant rounded bg-surface-container-lowest hover:border-primary-container transition-colors has-[input:checked]:border-primary-container has-[input:checked]:bg-surface-container-high">
+            <input type="radio" name="report_type" value="Attendance" class="accent-primary"> <span class="font-label-caps text-[11px] uppercase tracking-widest text-on-surface">Attendance</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer p-2 border border-outline-variant rounded bg-surface-container-lowest hover:border-primary-container transition-colors has-[input:checked]:border-primary-container has-[input:checked]:bg-surface-container-high">
+            <input type="radio" name="report_type" value="Expiring" class="accent-primary"> <span class="font-label-caps text-[11px] uppercase tracking-widest text-on-surface">Expiring</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer p-2 border border-outline-variant rounded bg-surface-container-lowest hover:border-primary-container transition-colors has-[input:checked]:border-primary-container has-[input:checked]:bg-surface-container-high">
+            <input type="radio" name="report_type" value="Expired" class="accent-primary"> <span class="font-label-caps text-[11px] uppercase tracking-widest text-on-surface">Expired</span>
+          </label>
+        </div>
+        <p class="hidden text-error text-xs font-body-sm" data-error="report_type">Select a report type.</p>
+      </div>
+
+      <button data-reports-action="generate" class="w-full bg-primary-container text-on-primary-container font-label-caps text-[11px] uppercase font-bold py-2.5 rounded border border-primary-container hover:bg-primary-container/90 transition-colors">
+        GENERATE REPORT
+      </button>
+      <div data-loading class="hidden flex items-center justify-center gap-2 font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant">
+        <span class="w-4 h-4 border-2 border-primary-container border-t-transparent rounded-full animate-spin"></span> Generating...
+      </div>
+      <a href="{% url 'reports' %}" onclick="event.preventDefault(); toast('Already on Reports (frontend demo)','info')" class="text-center font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant hover:text-primary transition-colors">Advanced → Generate Page</a>
+    </div>
+  </aside>
+
+  <!-- Main Data Canvas -->
+  <div class="flex-1 flex flex-col gap-bento-gap">
+    <!-- KPIs Top Row -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-bento-gap">
+      <div class="bg-surface-container border border-outline-variant rounded-lg p-5 relative overflow-hidden group">
+        <div class="absolute top-4 right-4 opacity-10 group-hover:opacity-20 transition-opacity">
+          <span class="material-symbols-outlined text-[48px]">account_balance_wallet</span>
+        </div>
+        <h4 class="font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">TOTAL VALUE</h4>
+        <div data-kpi="total" class="font-data-lg text-[28px] font-bold text-on-surface tracking-tighter">$124,500.00</div>
+        <div class="font-label-caps text-[11px] text-tertiary mt-2 flex items-center gap-1"><span class="material-symbols-outlined text-[12px]">trending_up</span> <span data-kpi-trend>+14.2% vs last period</span></div>
+      </div>
+      <div class="bg-surface-container border border-outline-variant rounded-lg p-5 relative overflow-hidden group">
+        <div class="absolute top-4 right-4 opacity-10 group-hover:opacity-20 transition-opacity">
+          <span class="material-symbols-outlined text-[48px]">groups</span>
+        </div>
+        <h4 class="font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">RECORDS</h4>
+        <div data-kpi="count" class="font-data-lg text-[28px] font-bold text-on-surface tracking-tighter">142</div>
+        <div class="font-label-caps text-[11px] text-on-surface-variant mt-2">filtered rows</div>
+      </div>
+      <div class="bg-surface-container border border-outline-variant rounded-lg p-5 relative overflow-hidden group">
+        <div class="absolute top-4 right-4 opacity-10 group-hover:opacity-20 transition-opacity">
+          <span class="material-symbols-outlined text-[48px]">model_training</span>
+        </div>
+        <h4 class="font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">TYPE</h4>
+        <div data-kpi="type" class="font-data-lg text-[20px] font-bold text-primary">Revenue</div>
+        <div class="font-label-caps text-[11px] text-on-surface-variant mt-2">current selection</div>
+      </div>
+    </div>
+
+    <!-- Main Chart Area -->
+    <div class="bg-surface-container border border-outline-variant rounded-lg p-6 flex-1 min-h-[280px] flex flex-col">
+      <div class="flex justify-between items-center mb-6">
+        <h3 class="font-label-caps text-[11px] uppercase tracking-widest text-on-surface">MONTHLY TRENDS // <span data-chart-type>Revenue</span></h3>
+        <div class="flex gap-2">
+          <span class="w-3 h-3 bg-primary-container inline-block"></span>
+          <span class="font-label-caps text-[10px] text-on-surface-variant">ACTUAL</span>
+          <span class="w-3 h-3 bg-surface-container-highest border border-outline-variant inline-block ml-2"></span>
+          <span class="font-label-caps text-[10px] text-on-surface-variant">PROJECTED</span>
+        </div>
+      </div>
+      <div class="flex-1 relative pb-6 border-b border-outline-variant border-l min-h-[180px]">
+        <div class="absolute left-[-40px] top-0 h-full flex flex-col justify-between font-label-caps text-[10px] text-on-surface-variant pb-6">
+          <span>150k</span><span>100k</span><span>50k</span><span>0</span>
+        </div>
+        <div class="h-full flex items-end gap-2 px-2">
+          <div class="flex-1 bg-surface-container-high border border-outline-variant h-[30%] hover:bg-primary transition-colors duration-200"></div>
+          <div class="flex-1 bg-surface-container-high border border-outline-variant h-[45%] hover:bg-primary transition-colors duration-200"></div>
+          <div class="flex-1 bg-surface-container-high border border-outline-variant h-[40%] hover:bg-primary transition-colors duration-200"></div>
+          <div class="flex-1 bg-surface-container-high border border-outline-variant h-[60%] hover:bg-primary transition-colors duration-200"></div>
+          <div class="flex-1 bg-surface-container-high border border-outline-variant h-[55%] hover:bg-primary transition-colors duration-200"></div>
+          <div class="flex-1 bg-primary-container h-[75%]"></div>
+          <div class="flex-1 bg-surface-container-high border border-outline-variant h-[70%] opacity-60"></div>
+          <div class="flex-1 bg-surface-container-high border border-outline-variant h-[85%] opacity-60"></div>
+        </div>
+      </div>
+      <div class="flex justify-between px-2 mt-3 font-label-caps text-[10px] text-on-surface-variant">
+        <span>JAN</span><span>FEB</span><span>MAR</span><span>APR</span><span>MAY</span><span>JUN</span><span>JUL</span><span>AUG</span>
+      </div>
+    </div>
+
+    <!-- Data Table -->
+    <div class="bg-surface-container border border-outline-variant rounded-lg overflow-hidden flex flex-col">
+      <div class="p-4 border-b border-outline-variant bg-surface-container-high flex justify-between items-center">
+        <h3 class="font-label-caps text-[11px] uppercase tracking-widest text-on-surface">RAW DATA FEED</h3>
+        <span data-preview-meta class="font-label-caps text-[10px] uppercase tracking-widest text-on-surface-variant">Showing 3 rows • Revenue</span>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left font-data-md text-data-md" id="preview-table">
+          <thead class="bg-background border-b border-outline-variant">
+            <tr>
+              <th class="p-3 font-label-caps text-[11px] text-on-surface-variant uppercase">DATE</th>
+              <th class="p-3 font-label-caps text-[11px] text-on-surface-variant uppercase">METRIC ID</th>
+              <th class="p-3 font-label-caps text-[11px] text-on-surface-variant uppercase">CATEGORY</th>
+              <th class="p-3 font-label-caps text-[11px] text-on-surface-variant uppercase text-right">VALUE</th>
+              <th class="p-3 font-label-caps text-[11px] text-on-surface-variant uppercase text-center">STATUS</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-outline-variant">
+            <tr class="hover:bg-surface-container-high transition-colors">
+              <td class="p-3 text-on-surface">2023-10-01</td>
+              <td class="p-3 text-primary">REV-9012</td>
+              <td class="p-3 text-on-surface">SUBSCRIPTIONS</td>
+              <td class="p-3 text-on-surface text-right">$45,200.00</td>
+              <td class="p-3 text-center"><span class="inline-flex items-center gap-1 px-2 py-1 bg-surface-container-highest border border-outline-variant rounded font-label-caps text-[10px] text-on-surface"><span class="w-1.5 h-1.5 bg-tertiary rounded-full"></span> VERIFIED</span></td>
+            </tr>
+            <tr class="hover:bg-surface-container-high transition-colors">
+              <td class="p-3 text-on-surface">2023-10-02</td>
+              <td class="p-3 text-primary">EXP-4021</td>
+              <td class="p-3 text-on-surface">EQUIPMENT MAINTENANCE</td>
+              <td class="p-3 text-on-surface text-right">-$1,200.00</td>
+              <td class="p-3 text-center"><span class="inline-flex items-center gap-1 px-2 py-1 bg-surface-container-highest border border-outline-variant rounded font-label-caps text-[10px] text-on-surface"><span class="w-1.5 h-1.5 bg-primary-container rounded-full"></span> PENDING</span></td>
+            </tr>
+            <tr class="hover:bg-surface-container-high transition-colors">
+              <td class="p-3 text-on-surface">2023-10-01</td>
+              <td class="p-3 text-primary">PAY-2311</td>
+              <td class="p-3 text-on-surface">PAYMENTS</td>
+              <td class="p-3 text-on-surface text-right">$3,450.00</td>
+              <td class="p-3 text-center"><span class="inline-flex items-center gap-1 px-2 py-1 bg-surface-container-highest border border-outline-variant rounded font-label-caps text-[10px] text-on-surface"><span class="w-1.5 h-1.5 bg-tertiary rounded-full"></span> PAID</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div data-success class="hidden p-3 bg-tertiary-container border-t border-tertiary text-on-tertiary-container font-body-sm text-sm flex items-center gap-2">
+        <span class="material-symbols-outlined text-[18px]">check_circle</span> Report generated successfully (frontend demo).
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  function toastLocal(msg, type){
+    if(typeof toast==='function') toast(msg,type);
+    else if(window.toast) window.toast(msg,type);
+    else {
+      let c=document.getElementById('toast-container'); if(!c){c=document.createElement('div'); c.id='toast-container'; c.className='fixed bottom-4 right-4 z-50 flex flex-col gap-2'; document.body.appendChild(c);}
+      const el=document.createElement('div'); el.className='px-4 py-3 rounded border text-sm font-label-caps shadow-lg '+(type==='error'?'bg-error text-on-error border-error':type==='success'?'bg-tertiary-container text-on-tertiary-container border-tertiary':'bg-surface-container-high border-outline-variant text-on-surface'); el.textContent=msg; c.appendChild(el); setTimeout(()=>{el.style.opacity='0'; setTimeout(()=>el.remove(),300);},2500);
+    }
+  }
+  const dateRange = document.querySelector('[data-filter="date_range"]');
+  const customDates = document.querySelector('[data-custom-dates]');
+  if(dateRange && customDates){
+    dateRange.addEventListener('change', ()=>{
+      if(dateRange.value==='custom') customDates.classList.remove('hidden');
+      else customDates.classList.add('hidden');
+    });
+  }
+  document.querySelectorAll('input[name="report_type"]').forEach(r=>{
+    r.addEventListener('change', ()=>{
+      const kpiType = document.querySelector('[data-kpi="type"]');
+      const chartType = document.querySelector('[data-chart-type]');
+      if(kpiType) kpiType.textContent = r.value;
+      if(chartType) chartType.textContent = r.value;
+    });
+  });
+  function getSelectedType(){
+    const checked = document.querySelector('input[name="report_type"]:checked');
+    return checked ? checked.value : null;
+  }
+  function generateDemoRows(type){
+    const categories = {
+      Revenue: ['SUBSCRIPTIONS','MERCHANDISE'],
+      Payments: ['CASH','CARD','TRANSFER'],
+      Subscriptions: ['SILVER','GOLD','PREMIUM'],
+      Expenses: ['EQUIPMENT','MAINTENANCE','SALARY','UTILITY'],
+      Refunds: ['REFUND-REQ','CHARGEBACK'],
+      Members: ['ACTIVE','EXPIRING','EXPIRED'],
+      Attendance: ['CHECK-IN','CHECK-OUT'],
+      Expiring: ['EXPIRING SOON'],
+      Expired: ['EXPIRED']
+    };
+    const cats = categories[type] || ['GENERAL'];
+    const now=new Date(); const rows=[];
+    for(let i=0;i<5;i++){
+      const d=new Date(now); d.setDate(d.getDate()-i);
+      const dateStr=d.toISOString().slice(0,10);
+      const cat=cats[i%cats.length];
+      const amount=(Math.random()*2000+100).toFixed(2);
+      const status=i%3===0?'VERIFIED':i%3===1?'PENDING':'PAID';
+      const id=(type.slice(0,3).toUpperCase()+'-90'+(12+i));
+      rows.push({date:dateStr,id,cat,amount,status});
+    }
+    return rows;
+  }
+  function renderTable(rows){
+    const tbody=document.querySelector('#preview-table tbody');
+    if(!tbody) return;
+    tbody.innerHTML='';
+    rows.forEach(r=>{
+      const tr=document.createElement('tr');
+      tr.className='hover:bg-surface-container-high transition-colors';
+      const color=r.status==='VERIFIED'?'bg-tertiary':r.status==='PENDING'?'bg-primary-container':'bg-on-surface';
+      tr.innerHTML=`<td class="p-3 text-on-surface">${r.date}</td><td class="p-3 text-primary">${r.id}</td><td class="p-3 text-on-surface">${r.cat}</td><td class="p-3 text-on-surface text-right">$${parseFloat(r.amount).toLocaleString('en-US',{minimumFractionDigits:2})}</td><td class="p-3 text-center"><span class="inline-flex items-center gap-1 px-2 py-1 bg-surface-container-highest border border-outline-variant rounded font-label-caps text-[10px] text-on-surface"><span class="w-1.5 h-1.5 ${color} rounded-full"></span> ${r.status}</span></td>`;
+      tbody.appendChild(tr);
+    });
+  }
+  function doGenerate(){
+    const type=getSelectedType();
+    const err=document.querySelector('[data-error="report_type"]');
+    if(!type){ if(err) err.classList.remove('hidden'); toastLocal('Please select a report type','error'); return; }
+    if(err) err.classList.add('hidden');
+    document.querySelectorAll('[data-loading]').forEach(el=>el.classList.remove('hidden'));
+    document.querySelector('[data-success]')?.classList.add('hidden');
+    setTimeout(()=>{
+      document.querySelectorAll('[data-loading]').forEach(el=>el.classList.add('hidden'));
+      const rows=generateDemoRows(type);
+      renderTable(rows);
+      const total=rows.reduce((sum,r)=>sum+parseFloat(r.amount),0);
+      const totalEl=document.querySelector('[data-kpi="total"]'); if(totalEl) totalEl.textContent='$'+total.toLocaleString('en-US',{minimumFractionDigits:2});
+      document.querySelector('[data-kpi="count"]') && (document.querySelector('[data-kpi="count"]').textContent=rows.length);
+      document.querySelector('[data-kpi-trend]') && (document.querySelector('[data-kpi-trend]').textContent=type+' • '+document.querySelector('[data-filter="date_range"]').value.replace('_',' ').toUpperCase());
+      const meta=document.querySelector('[data-preview-meta]'); if(meta) meta.textContent=rows.length+' rows • '+type+' • '+new Date().toLocaleDateString();
+      document.querySelector('[data-success]')?.classList.remove('hidden');
+      toastLocal(type+' report generated (demo)','success');
+    }, 800);
+  }
+  document.querySelectorAll('[data-reports-action="generate"]').forEach(btn=> btn.addEventListener('click', doGenerate));
+  function handleExport(kind){
+    const type=getSelectedType()||'Report';
+    const hasRows=document.querySelector('#preview-table tbody tr td[colspan]')===null;
+    if(kind==='csv'){
+      if(!hasRows){ toastLocal('Generate a report before exporting CSV','error'); return; }
+      const header=Array.from(document.querySelectorAll('#preview-table thead th')).map(th=>'"'+th.textContent.trim()+'"').join(',');
+      const rows=Array.from(document.querySelectorAll('#preview-table tbody tr')).map(tr=> Array.from(tr.querySelectorAll('td')).map(td=>'"'+td.textContent.trim().replace(/"/g,'""')+'"').join(',')).join('\n');
+      const csv=[header, rows].join('\n');
+      const blob=new Blob([csv],{type:'text/csv'});
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement('a'); a.href=url; a.download=type.toLowerCase()+'_report_'+new Date().toISOString().slice(0,10)+'.csv'; a.click(); URL.revokeObjectURL(url);
+      toastLocal('CSV downloaded (frontend demo)','success');
+    } else if(kind==='pdf'){
+      toastLocal('Exporting PDF for '+type+' — frontend demo','info');
+      window.print();
+    } else if(kind==='print'){
+      window.print(); toastLocal('Print dialog opened','info');
+    }
+  }
+  document.querySelectorAll('[data-reports-action="pdf"]').forEach(btn=> btn.addEventListener('click', ()=>handleExport('pdf')));
+  document.querySelectorAll('[data-reports-action="csv"]').forEach(btn=> btn.addEventListener('click', ()=>handleExport('csv')));
+  document.querySelectorAll('[data-reports-action="print"]').forEach(btn=> btn.addEventListener('click', ()=>handleExport('print')));
+})();
+</script>
+{% endblock %}

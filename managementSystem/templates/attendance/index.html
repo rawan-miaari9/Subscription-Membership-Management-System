@@ -1,0 +1,118 @@
+{% extends "layouts/dashboard.html" %}
+{% block title %}Attendance - Iron Core{% endblock %}
+
+{% block dashboard_content %}
+<div class="max-w-7xl mx-auto">
+<header class="mb-6 flex justify-between items-end">
+<div>
+<h2 class="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface uppercase tracking-tight">ATTENDANCE &amp; ACCESS</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Live monitoring and check-in history.</p>
+</div>
+</header>
+<!-- Bento Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-bento-gap">
+
+<!-- Right Column: Live Feed & History (Full Width) -->
+<div class="lg:col-span-12 flex flex-col gap-bento-gap">
+<!-- Live Status Alert (Logic Indicator Example) -->
+<div class="bg-surface-variant border border-outline-variant rounded p-6 flex items-center gap-4">
+<div class="w-12 h-12 rounded bg-surface-dim border border-outline-variant flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-error" data-icon="block">block</span>
+</div>
+<div class="flex-1">
+<h3 class="font-headline-md text-headline-md text-error">Access Denied - Subscription Expired</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Member ID: #9042 (John Doe) attempted entry at 08:42 AM.</p>
+</div>
+<button class="py-2 px-4 bg-transparent border border-outline-variant text-on-surface font-label-caps text-label-caps uppercase hover:bg-surface-container-highest transition-colors shrink-0">
+                            Override
+                        </button>
+</div>
+<!-- Recent Activity List -->
+<div class="bg-surface-variant border border-outline-variant rounded flex-1 flex flex-col">
+<div class="p-5 border-b border-outline-variant flex justify-between items-center">
+<span class="font-label-caps text-label-caps text-on-surface-variant uppercase">Recent Activity</span>
+<div class="flex gap-2">
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-sm" data-icon="filter_list">filter_list</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-sm" data-icon="refresh">refresh</span>
+</button>
+</div>
+</div>
+<div class="flex-1 overflow-y-auto p-0">
+<table class="w-full text-left border-collapse">
+<thead class="bg-surface-container-low border-b border-outline-variant">
+<tr>
+<th class="p-4 font-label-caps text-label-caps text-on-surface-variant font-normal">Time</th>
+<th class="p-4 font-label-caps text-label-caps text-on-surface-variant font-normal">Member</th>
+<th class="p-4 font-label-caps text-label-caps text-on-surface-variant font-normal">Type</th>
+<th class="p-4 font-label-caps text-label-caps text-on-surface-variant font-normal">Status</th>
+</tr>
+</thead>
+<tbody>
+<tr class="border-b border-outline-variant hover:bg-surface-container-highest transition-colors group">
+<td class="p-4 font-data-md text-data-md text-on-surface">08:41 AM</td>
+<td class="p-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-surface-dim overflow-hidden">
+<img class="w-full h-full object-cover mix-blend-luminosity" data-alt="Grayscale profile photo of a muscular male athlete looking focused. High contrast, dark background, stark industrial lighting. The aesthetic is strictly corporate modern fitness, emphasizing discipline." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBXUIDq3oTLcfN7DefqGL-XmpQGr-PsIDTR2E5leQp9v57U1nLO4QCqRhhWTRBBhLQQY6V_nvJDisPvtt6Z7_XPaeJcLdrTy4vWhzaS_7n2y58iJHRvERmyM3dO8UK01osX8OOtS8l4QhOpNtisLbcdmgMk-Dhg0LOwn_eGPkmnqMRwGyE8lOrDGOArzWVsrFduzw6nhF59JdOB3njQo92mzF2UCtxkhb2-D-Bg7feQn31_LK8QzSSlEw"/>
+</div>
+<span class="font-body-sm text-body-sm font-semibold">Marcus R.</span>
+</div>
+</td>
+<td class="p-4"><span class="font-label-caps text-label-caps text-on-surface-variant">CHECK-IN</span></td>
+<td class="p-4">
+<div class="flex items-center gap-2">
+<div class="w-1.5 h-1.5 bg-primary"></div>
+<span class="font-label-caps text-label-caps">Granted</span>
+</div>
+</td>
+</tr>
+<tr class="border-b border-outline-variant hover:bg-surface-container-highest transition-colors group">
+<td class="p-4 font-data-md text-data-md text-on-surface">08:35 AM</td>
+<td class="p-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-surface-dim overflow-hidden flex items-center justify-center text-on-surface-variant">
+<span class="font-data-md">S</span>
+</div>
+<span class="font-body-sm text-body-sm font-semibold">Sarah K.</span>
+</div>
+</td>
+<td class="p-4"><span class="font-label-caps text-label-caps text-on-surface-variant">CHECK-OUT</span></td>
+<td class="p-4">
+<div class="flex items-center gap-2">
+<div class="w-1.5 h-1.5 bg-on-surface-variant"></div>
+<span class="font-label-caps text-label-caps">Logged</span>
+</div>
+</td>
+</tr>
+<tr class="border-b border-outline-variant hover:bg-surface-container-highest transition-colors group">
+<td class="p-4 font-data-md text-data-md text-on-surface">08:12 AM</td>
+<td class="p-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-surface-dim overflow-hidden">
+<img class="w-full h-full object-cover mix-blend-luminosity" data-alt="A stark grayscale headshot of a serious male coach. Dramatic side lighting highlights facial structure. Background is pitch black. The style is raw, industrial, and intensely focused, matching a high-end strength facility." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBKX3fD6_x8XK7zS-lxdGwwn6257HBfjAMWGx3Lsq_L-eJrYhi-CUXo4p2LY-oKcf5ifmJWCzRZtiHQ27OapfMSY2tgIlKJvLjyxiTOtkFA1CZZeT5Po-V-UWDOm7rhY7eMUoV8Qkw9tZz9C9Wh1CFIxr4KmXEs8baZV3sNKQxSrGteokGDkg8kHTTKE-45FsKN51_CGnrz2qYb8mbdjtiicTMTqggDV5kwIZMoBlXMR2DzNbIbuA2wdQ"/>
+</div>
+<span class="font-body-sm text-body-sm font-semibold">David T.</span>
+</div>
+</td>
+<td class="p-4"><span class="font-label-caps text-label-caps text-on-surface-variant">CHECK-IN</span></td>
+<td class="p-4">
+<div class="flex items-center gap-2">
+<div class="w-1.5 h-1.5 bg-primary"></div>
+<span class="font-label-caps text-label-caps">Granted</span>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="p-4 border-t border-outline-variant flex justify-center">
+<button class="font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-colors">VIEW FULL LOG</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+{% endblock %}

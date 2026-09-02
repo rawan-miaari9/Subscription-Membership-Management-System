@@ -1,0 +1,154 @@
+{% extends "layouts/dashboard.html" %}
+{% block title %}Notifications - Iron Core{% endblock %}
+
+{% block dashboard_content %}
+<!-- Page Header -->
+<div class="px-margin-desktop py-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-outline-variant bg-background shrink-0">
+<div>
+<h2 class="font-headline-lg text-headline-lg text-on-background uppercase tracking-tight">NOTIFICATION CENTER</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Review system alerts, member expirations, and transaction logs.</p>
+</div>
+<button class="bg-primary-container text-background font-label-caps text-label-caps px-6 py-2.5 rounded-DEFAULT hover:bg-primary transition-colors border border-primary-container uppercase flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px]">done_all</span>
+        Mark all as read
+      </button>
+</div>
+<!-- Layout Grid -->
+<div class="flex-1 overflow-hidden p-margin-desktop bg-background flex flex-col md:flex-row gap-gutter">
+<!-- Inner Sidebar (Categories) -->
+<aside class="w-full md:w-64 shrink-0 flex flex-col gap-bento-gap">
+<div class="bg-surface-bright border border-outline-variant rounded-lg p-5 flex flex-col gap-2">
+<h3 class="font-label-caps text-label-caps text-on-surface-variant mb-3 px-2">CATEGORIES</h3>
+<button class="flex items-center justify-between w-full text-left px-3 py-2.5 border-l-4 border-primary-container bg-surface-container-high text-on-surface transition-colors font-label-caps text-label-caps">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-[18px] text-primary-container">inbox</span>
+<span>All Notifications</span>
+</div>
+<span class="text-primary-container">42</span>
+</button>
+<button class="flex items-center justify-between w-full text-left px-3 py-2.5 border-l-4 border-transparent hover:bg-surface-container hover:text-on-surface text-on-surface-variant transition-colors font-label-caps text-label-caps">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-[18px]">timer</span>
+<span>Expirations</span>
+</div>
+<span>28</span>
+</button>
+<button class="flex items-center justify-between w-full text-left px-3 py-2.5 border-l-4 border-transparent hover:bg-surface-container hover:text-on-surface text-on-surface-variant transition-colors font-label-caps text-label-caps">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-[18px]">autorenew</span>
+<span>Renewals</span>
+</div>
+<span>5</span>
+</button>
+<button class="flex items-center justify-between w-full text-left px-3 py-2.5 border-l-4 border-transparent hover:bg-surface-container hover:text-on-surface text-on-surface-variant transition-colors font-label-caps text-label-caps">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-[18px]">account_balance_wallet</span>
+<span>Payments</span>
+</div>
+<span>8</span>
+</button>
+<button class="flex items-center justify-between w-full text-left px-3 py-2.5 border-l-4 border-transparent hover:bg-surface-container hover:text-on-surface text-on-surface-variant transition-colors font-label-caps text-label-caps">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-[18px]">dns</span>
+<span>System</span>
+</div>
+<span>1</span>
+</button>
+</div>
+</aside>
+<!-- Main Notifications Area (Bento Grid Style List) -->
+<div class="flex-1 bg-surface-bright border border-outline-variant rounded-lg overflow-y-auto p-5">
+<div class="flex justify-between items-center mb-6">
+<h3 class="font-data-lg text-data-lg text-on-background uppercase">Recent Alerts</h3>
+<div class="flex gap-2">
+<button class="border border-outline-variant bg-transparent text-on-surface font-label-caps text-[10px] px-3 py-1.5 hover:bg-surface-container transition-colors rounded-DEFAULT">FILTER</button>
+<button class="border border-outline-variant bg-transparent text-on-surface font-label-caps text-[10px] px-3 py-1.5 hover:bg-surface-container transition-colors rounded-DEFAULT">SORT</button>
+</div>
+</div>
+<div class="flex flex-col gap-bento-gap">
+<!-- High Priority / Expiration Card -->
+<div class="group relative flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-background border border-outline-variant p-4 hover:border-primary-container transition-colors rounded-DEFAULT">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-primary-container"></div>
+<div class="flex gap-4 items-start pl-2">
+<div class="mt-1 w-8 h-8 rounded-DEFAULT bg-surface-container flex items-center justify-center border border-outline-variant shrink-0">
+<span class="material-symbols-outlined text-primary-container text-[18px]">warning</span>
+</div>
+<div>
+<div class="flex items-center gap-2 mb-1">
+<span class="px-2 py-0.5 bg-surface-container-highest rounded text-on-surface font-label-caps text-[10px] uppercase border border-outline-variant flex items-center gap-1">
+<span class="w-1.5 h-1.5 bg-primary-container block"></span> EXPIRATION
+                  </span>
+<span class="font-data-md text-[12px] text-on-surface-variant">10 MINS AGO</span>
+</div>
+<h4 class="font-headline-md text-headline-md text-on-background mb-1">42 Subscriptions Expiring Soon</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant max-w-2xl">A large batch of monthly memberships are scheduled to expire within the next 48 hours. Review the list to trigger automated renewal reminders.</p>
+</div>
+</div>
+<div class="flex flex-row sm:flex-col gap-2 w-full sm:w-auto shrink-0 mt-2 sm:mt-0">
+<button class="flex-1 sm:flex-none border border-outline-variant bg-transparent text-on-surface font-label-caps text-label-caps px-4 py-2 hover:bg-surface-container transition-colors rounded-DEFAULT text-center uppercase">Review List</button>
+</div>
+</div>
+<!-- Success / Payment Received -->
+<div class="group relative flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-background border border-outline-variant p-4 hover:border-primary-container transition-colors rounded-DEFAULT opacity-80">
+<div class="flex gap-4 items-start pl-3">
+<div class="mt-1 w-8 h-8 rounded-DEFAULT bg-surface-container flex items-center justify-center border border-outline-variant shrink-0">
+<span class="material-symbols-outlined text-on-surface text-[18px]">check_circle</span>
+</div>
+<div>
+<div class="flex items-center gap-2 mb-1">
+<span class="px-2 py-0.5 bg-surface-container-highest rounded text-on-surface font-label-caps text-[10px] uppercase border border-outline-variant flex items-center gap-1">
+<span class="w-1.5 h-1.5 bg-secondary-fixed-dim block"></span> PAYMENT
+                  </span>
+<span class="font-data-md text-[12px] text-on-surface-variant">1 HOUR AGO</span>
+</div>
+<h4 class="font-headline-md text-headline-md text-on-background mb-1">Payment Received: Annual Corporate Plan</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant max-w-2xl">Transaction #TRX-8921 for $12,400.00 has cleared successfully via ACH.</p>
+</div>
+</div>
+<div class="flex flex-row sm:flex-col gap-2 w-full sm:w-auto shrink-0 mt-2 sm:mt-0">
+<button class="flex-1 sm:flex-none border border-transparent bg-transparent text-on-surface-variant hover:text-on-surface font-label-caps text-label-caps px-4 py-2 hover:bg-surface-container transition-colors rounded-DEFAULT text-center uppercase">View Receipt</button>
+</div>
+</div>
+<!-- Refund Processed -->
+<div class="group relative flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-background border border-outline-variant p-4 hover:border-primary-container transition-colors rounded-DEFAULT opacity-80">
+<div class="flex gap-4 items-start pl-3">
+<div class="mt-1 w-8 h-8 rounded-DEFAULT bg-surface-container flex items-center justify-center border border-outline-variant shrink-0">
+<span class="material-symbols-outlined text-on-surface text-[18px]">currency_exchange</span>
+</div>
+<div>
+<div class="flex items-center gap-2 mb-1">
+<span class="px-2 py-0.5 bg-surface-container-highest rounded text-on-surface font-label-caps text-[10px] uppercase border border-outline-variant flex items-center gap-1">
+<span class="w-1.5 h-1.5 bg-outline block"></span> REFUND
+                  </span>
+<span class="font-data-md text-[12px] text-on-surface-variant">3 HOURS AGO</span>
+</div>
+<h4 class="font-headline-md text-headline-md text-on-background mb-1">Refund Processed: Member Cancellation</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant max-w-2xl">A partial refund of $45.00 was issued to John Doe (ID: 10492) due to mid-cycle termination.</p>
+</div>
+</div>
+<div class="flex flex-row sm:flex-col gap-2 w-full sm:w-auto shrink-0 mt-2 sm:mt-0">
+<button class="flex-1 sm:flex-none border border-transparent bg-transparent text-on-surface-variant hover:text-on-surface font-label-caps text-label-caps px-4 py-2 hover:bg-surface-container transition-colors rounded-DEFAULT text-center uppercase">Details</button>
+</div>
+</div>
+<!-- System Update -->
+<div class="group relative flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-background border border-outline-variant p-4 hover:border-primary-container transition-colors rounded-DEFAULT opacity-60">
+<div class="flex gap-4 items-start pl-3">
+<div class="mt-1 w-8 h-8 rounded-DEFAULT bg-surface-container flex items-center justify-center border border-outline-variant shrink-0">
+<span class="material-symbols-outlined text-on-surface text-[18px]">update</span>
+</div>
+<div>
+<div class="flex items-center gap-2 mb-1">
+<span class="px-2 py-0.5 bg-surface-container-highest rounded text-on-surface font-label-caps text-[10px] uppercase border border-outline-variant flex items-center gap-1">
+<span class="w-1.5 h-1.5 bg-surface-variant block"></span> SYSTEM
+                  </span>
+<span class="font-data-md text-[12px] text-on-surface-variant">YESTERDAY</span>
+</div>
+<h4 class="font-headline-md text-headline-md text-on-background mb-1">Scheduled Maintenance Completed</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant max-w-2xl">Database optimization finished at 03:00 AM UTC. System performing nominally.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+{% endblock %}

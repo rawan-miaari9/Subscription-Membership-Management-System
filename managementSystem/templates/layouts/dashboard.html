@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% block extra_head %}<style>#sidebar.sidebar-collapsed{width:4rem;}#sidebar.sidebar-collapsed .sidebar-text{display:none;}#sidebar.sidebar-collapsed .sidebar-logo{justify-content:center;}</style>{% endblock %}
+{% block body_class %}text-on-surface antialiased font-body-sm{% endblock %}
+
+{% block body %}
+<div class="flex min-h-screen w-full bg-background">
+<!-- Sidebar -->
+<aside id="sidebar" class="flex flex-col w-64 shrink-0 bg-background border-r border-outline-variant sticky top-0 h-screen overflow-hidden transition-all duration-300">
+    <div class="px-4 py-5 border-b border-outline-variant shrink-0 flex items-center justify-between gap-2">
+        <div class="flex items-center justify-center flex-1 sidebar-logo">
+            <span class="font-display text-[18px] font-bold tracking-widest text-primary sidebar-text">IRON</span>
+        </div>
+        <button id="sidebar-toggle" class="w-8 h-8 flex items-center justify-center rounded border border-outline-variant bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-primary transition-colors shrink-0" title="Collapse sidebar">
+            <span class="material-symbols-outlined text-[18px]">chevron_left</span>
+        </button>
+    </div>
+    <nav class="flex-1 overflow-y-auto py-3">
+        <ul class="flex flex-col gap-0.5 px-2">
+            <!-- Dashboard -->
+            <li><a class="{% if request.resolver_match.url_name == 'dashboard' %}flex items-center gap-3 text-primary border-l-4 border-primary bg-surface-container-high px-3 py-2.5 font-label-caps text-[11px]{% else %}flex items-center gap-3 text-on-surface-variant hover:bg-surface-container-high hover:text-primary transition-colors duration-150 px-3 py-2.5 font-label-caps text-[11px] border-l-4 border-transparent{% endif %}" href="{% url 'dashboard' %}"><span class="material-symbols-outlined text-[18px]">dashboard</span> <span class="sidebar-text">Dashboard</span></a></li>
+
+            <!-- Members -->
+            <li class="sidebar-group">
+                <button data-sidebar-group-toggle="members" class="w-full flex items-center justify-between gap-3 text-on-surface-variant hover:bg-surface-container-high hover:text-primary transition-colors duration-150 px-3 py-2.5 font-label-caps text-[11px] border-l-4 border-transparent {% if request.resolver_match.url_name in 'members member-detail' %}!text-primary !border-primary !bg-surface-container-high{% endif %}">
+                    <span class="flex items-center gap-3"><span class="material-symbols-outlined text-[18px]">group</span> <span class="sidebar-text">Members</span></span>
+                    <span class="material-symbols-outlined text-[16px] sidebar-text transition-transform" data-icon="expand">expand_more</span>
+                </button>
+                <ul data-sidebar-group="members" class="ml-4 mt-1 pl-3 border-l border-outline-variant flex flex-col gap-0.5 {% if request.resolver_match.url_name not in 'members member-detail' %}hidden{% endif %}">
+                    <li><a class="{% if request.resolver_match.url_name == 'members' %}text-primary bg-surface-container-high{% else %}text-on-surface-variant hover:text-primary{% endif %} block px-3 py-2 font-label-caps text-[11px] rounded" href="{% url 'members' %}"><span class="sidebar-text">All Members</span></a></li>
+                    <li><a class="{% if request.resolver_match.url_name == 'member-detail' %}text-primary bg-surface-container-high{% else %}text-on-surface-variant hover:text-primary{% endif %} block px-3 py-2 font-label-caps text-[11px] rounded" href="{% url 'member-detail' %}"><span class="sidebar-text">Member Details</span></a></li>
+                </ul>
+            </li>
+
+            <!-- Membership Plans -->
+            <li class="sidebar-group">
+                <button data-sidebar-group-toggle="plans" class="w-full flex items-center justify-between gap-3 text-on-surface-variant hover:bg-surface-container-high hover:text-primary transition-colors duration-150 px-3 py-2.5 font-label-caps text-[11px] border-l-4 border-transparent {% if request.resolver_match.url_name in 'plans services' %}!text-primary !border-primary !bg-surface-container-high{% endif %}">
+                    <span class="flex items-center gap-3"><span class="material-symbols-outlined text-[18px]">fitness_center</span> <span class="sidebar-text">Membership Plans</span></span>
+                    <span class="material-symbols-outlined text-[16px] sidebar-text transition-transform" data-icon="expand">expand_more</span>
+                </button>
+                <ul data-sidebar-group="plans" class="ml-4 mt-1 pl-3 border-l border-outline-variant flex flex-col gap-0.5 {% if request.resolver_match.url_name not in 'plans services' %}hidden{% endif %}">
+                    <li><a class="{% if request.resolver_match.url_name == 'plans' %}text-primary bg-surface-container-high{% else %}text-on-surface-variant hover:text-primary{% endif %} block px-3 py-2 font-label-caps text-[11px] rounded" href="{% url 'plans' %}"><span class="sidebar-text">All Plans</span></a></li>
+                    <li><a class="{% if request.resolver_match.url_name == 'services' %}text-primary bg-surface-container-high{% else %}text-on-surface-variant hover:text-primary{% endif %} block px-3 py-2 font-label-caps text-[11px] rounded" href="{% url 'services' %}"><span class="sidebar-text">Services & Benefits</span></a></li>
+                </ul>
+            </li>
+
+            <!-- Subscriptions -->
+            <li class="sidebar-group">
+                <button data-sidebar-group-toggle="subscriptions" class="w-full flex items-center justify-between gap-3 text-on-surface-variant hover:bg-surface-container-high hover:text-primary transition-colors duration-150 px-3 py-2.5 font-label-caps text-[11px] border-l-4 border-transparent {% if request.resolver_match.url_name in 'subscriptions subscription-detail' %}!text-primary !border-primary !bg-surface-container-high{% endif %}">
+                    <span class="flex items-center gap-3"><span class="material-symbols-outlined text-[18px]">card_membership</span> <span class="sidebar-text">Subscriptions</span></span>
+                    <span class="material-symbols-outlined text-[16px] sidebar-text transition-transform" data-icon="expand">expand_more</span>
+                </button>
+                <ul data-sidebar-group="subscriptions" class="ml-4 mt-1 pl-3 border-l border-outline-variant flex flex-col gap-0.5 {% if request.resolver_match.url_name not in 'subscriptions subscription-detail' %}hidden{% endif %}">
+                    <li><a class="{% if request.resolver_match.url_name == 'subscriptions' %}text-primary bg-surface-container-high{% else %}text-on-surface-variant hover:text-primary{% endif %} block px-3 py-2 font-label-caps text-[11px] rounded" href="{% url 'subscriptions' %}"><span class="sidebar-text">All Subscriptions</span></a></li>
+                    <li><a class="{% if request.resolver_match.url_name == 'subscription-detail' %}text-primary bg-surface-container-high{% else %}text-on-surface-variant hover:text-primary{% endif %} block px-3 py-2 font-label-caps text-[11px] rounded" href="{% url 'subscription-detail' %}"><span class="sidebar-text">Subscription Details</span></a></li>
+                </ul>
+            </li>
+
+            <!-- Payments -->
+            <li class="sidebar-group">
+                <button data-sidebar-group-toggle="payments" class="w-full flex items-center justify-between gap-3 text-on-surface-variant hover:bg-surface-container-high hover:text-primary transition-colors duration-150 px-3 py-2.5 font-label-caps text-[11px] border-l-4 border-transparent {% if request.resolver_match.url_name in 'payments payment-detail' %}!text-primary !border-primary !bg-surface-container-high{% endif %}">
+                    <span class="flex items-center gap-3"><span class="material-symbols-outlined text-[18px]">payments</span> <span class="sidebar-text">Payments</span></span>
+                    <span class="material-symbols-outlined text-[16px] sidebar-text transition-transform" data-icon="expand">expand_more</span>
+                </button>
+                <ul data-sidebar-group="payments" class="ml-4 mt-1 pl-3 border-l border-outline-variant flex flex-col gap-0.5 {% if request.resolver_match.url_name not in 'payments payment-detail' %}hidden{% endif %}">
+                    <li><a class="{% if request.resolver_match.url_name == 'payments' %}text-primary bg-surface-container-high{% else %}text-on-surface-variant hover:text-primary{% endif %} block px-3 py-2 font-label-caps text-[11px] rounded" href="{% url 'payments' %}"><span class="sidebar-text">All Payments</span></a></li>
+                    <li><a class="{% if request.resolver_match.url_name == 'payment-detail' %}text-primary bg-surface-container-high{% else %}text-on-surface-variant hover:text-primary{% endif %} block px-3 py-2 font-label-caps text-[11px] rounded" href="{% url 'payment-detail' %}"><span class="sidebar-text">Payment Details</span></a></li>
+                </ul>
+            </li>
+
+            <li class="sidebar-group">
+                <button data-sidebar-group-toggle="invoices" class="w-full flex items-center justify-between gap-3 text-on-surface-variant hover:bg-surface-container-high hover:text-primary transition-colors duration-150 px-3 py-2.5 font-label-caps text-[11px] border-l-4 border-transparent {% if request.resolver_match.url_name in 'invoices receipt-custom' %}!text-primary !border-primary !bg-surface-container-high{% endif %}">
+                    <span class="flex items-center gap-3"><span class="material-symbols-outlined text-[18px]">receipt_long</span> <span class="sidebar-text">Invoices & Receipts</span></span>
+                    <span class="material-symbols-outlined text-[16px] sidebar-text transition-transform" data-icon="expand">expand_more</span>
+                </button>
+                <ul data-sidebar-group="invoices" class="ml-4 mt-1 pl-3 border-l border-outline-variant flex flex-col gap-0.5 {% if request.resolver_match.url_name not in 'invoices receipt-custom' %}hidden{% endif %}">
+                    <li><a class="{% if request.resolver_match.url_name == 'invoices' %}text-primary bg-surface-container-high{% else %}text-on-surface-variant hover:text-primary{% endif %} block px-3 py-2 font-label-caps text-[11px] rounded" href="{% url 'invoices' %}"><span class="sidebar-text">All Invoices</span></a></li>
+                    <li><a class="{% if request.resolver_match.url_name == 'receipt-custom' %}text-primary bg-surface-container-high{% else %}text-on-surface-variant hover:text-primary{% endif %} block px-3 py-2 font-label-caps text-[11px] rounded" href="{% url 'receipt-custom' %}"><span class="sidebar-text">Custom Receipt</span></a></li>
+                </ul>
+            </li>
+            <li><a class="{% if request.resolver_match.url_name == 'refunds' %}flex items-center gap-3 text-primary border-l-4 border-primary bg-surface-container-high px-3 py-2.5 font-label-caps text-[11px]{% else %}flex items-center gap-3 text-on-surface-variant hover:bg-surface-container-high hover:text-primary transition-colors duration-150 px-3 py-2.5 font-label-caps text-[11px] border-l-4 border-transparent{% endif %}" href="{% url 'refunds' %}"><span class="material-symbols-outlined text-[18px]">undo</span> <span class="sidebar-text">Refunds</span></a></li>
+            <li><a class="{% if request.resolver_match.url_name == 'attendance' %}flex items-center gap-3 text-primary border-l-4 border-primary bg-surface-container-high px-3 py-2.5 font-label-caps text-[11px]{% else %}flex items-center gap-3 text-on-surface-variant hover:bg-surface-container-high hover:text-primary transition-colors duration-150 px-3 py-2.5 font-label-caps text-[11px] border-l-4 border-transparent{% endif %}" href="{% url 'attendance' %}"><span class="material-symbols-outlined text-[18px]">event_available</span> <span class="sidebar-text">Attendance</span></a></li>
+            <li><a class="{% if request.resolver_match.url_name == 'expenses' %}flex items-center gap-3 text-primary border-l-4 border-primary bg-surface-container-high px-3 py-2.5 font-label-caps text-[11px]{% else %}flex items-center gap-3 text-on-surface-variant hover:bg-surface-container-high hover:text-primary transition-colors duration-150 px-3 py-2.5 font-label-caps text-[11px] border-l-4 border-transparent{% endif %}" href="{% url 'expenses' %}"><span class="material-symbols-outlined text-[18px]">receipt</span> <span class="sidebar-text">Expenses</span></a></li>
+            <li><a class="{% if request.resolver_match.url_name == 'notifications' %}flex items-center gap-3 text-primary border-l-4 border-primary bg-surface-container-high px-3 py-2.5 font-label-caps text-[11px]{% else %}flex items-center gap-3 text-on-surface-variant hover:bg-surface-container-high hover:text-primary transition-colors duration-150 px-3 py-2.5 font-label-caps text-[11px] border-l-4 border-transparent{% endif %}" href="{% url 'notifications' %}"><span class="material-symbols-outlined text-[18px]">notifications</span> <span class="sidebar-text">Notifications</span></a></li>
+            <li><a class="{% if request.resolver_match.url_name == 'reports' %}flex items-center gap-3 text-primary border-l-4 border-primary bg-surface-container-high px-3 py-2.5 font-label-caps text-[11px]{% else %}flex items-center gap-3 text-on-surface-variant hover:bg-surface-container-high hover:text-primary transition-colors duration-150 px-3 py-2.5 font-label-caps text-[11px] border-l-4 border-transparent{% endif %}" href="{% url 'reports' %}"><span class="material-symbols-outlined text-[18px]">analytics</span> <span class="sidebar-text">Reports</span></a></li>
+            <li><a class="{% if request.resolver_match.url_name == 'users' %}flex items-center gap-3 text-primary border-l-4 border-primary bg-surface-container-high px-3 py-2.5 font-label-caps text-[11px]{% else %}flex items-center gap-3 text-on-surface-variant hover:bg-surface-container-high hover:text-primary transition-colors duration-150 px-3 py-2.5 font-label-caps text-[11px] border-l-4 border-transparent{% endif %}" href="{% url 'users' %}"><span class="material-symbols-outlined text-[18px]">person_outline</span> <span class="sidebar-text">Users & Roles</span></a></li>
+            <li><a class="{% if request.resolver_match.url_name == 'settings' %}flex items-center gap-3 text-primary border-l-4 border-primary bg-surface-container-high px-3 py-2.5 font-label-caps text-[11px]{% else %}flex items-center gap-3 text-on-surface-variant hover:bg-surface-container-high hover:text-primary transition-colors duration-150 px-3 py-2.5 font-label-caps text-[11px] border-l-4 border-transparent{% endif %}" href="{% url 'settings' %}"><span class="material-symbols-outlined text-[18px]">settings</span> <span class="sidebar-text">Settings</span></a></li>
+        </ul>
+    </nav>
+</aside>
+<div class="flex-1 flex flex-col min-w-0">
+<!-- Header -->
+<header class="sticky top-0 z-30 flex justify-between items-center px-margin-desktop h-16 border-b border-outline-variant bg-background shrink-0">
+    <div class="flex-1 max-w-md">
+        <div class="relative flex items-center group">
+            <span class="material-symbols-outlined absolute left-3 text-on-surface-variant">search</span>
+            <input class="w-full bg-surface-container-highest border border-outline-variant text-on-surface font-body-sm py-2 pl-10 pr-4 focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all placeholder:text-on-surface-variant" data-global-search placeholder="Search data..." type="text"/>
+        </div>
+    </div>
+    <div class="flex items-center gap-6">
+        <button data-toast="No new notifications" class="text-on-surface-variant hover:text-primary transition-colors duration-200 focus:ring-1 focus:ring-primary outline-none rounded-sm">
+            <span class="material-symbols-outlined">notifications</span>
+        </button>
+        <div class="flex items-center gap-3 pl-6 border-l border-outline-variant">
+            <div class="text-right">
+                <p id="admin-role-display" class="font-data-md text-data-md text-on-surface">Admin Role</p>
+            </div>
+            <img id="admin-avatar" class="w-8 h-8 rounded-full border border-outline-variant object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD-h__OQH13M54LTb_QcIzgLKwBl0ziYdq2LT4MF4jyvJA3yYS3G5fe9azJtgPXTliLX7mJbkRbbdcjKyephA1EV4Hs7glGM72BBQVROkUkEUNE445Mk8R-3OEq8DfH-PXAb8p2zdpQFcayCVYoiT8pfKu-Vbu0fwmIOUJe6kgoRDDAL4N4symKwm1P1QesK75n1DGCZh-ZdVUGm6jhs9-5eh2Biufj2g8Vq0DTYt3O9SYm_19J-UVGkw" alt="Admin avatar"/>
+        </div>
+    </div>
+</header>
+
+<!-- Main Content Area -->
+<main class="flex-1 p-margin-desktop bg-background">
+    {% block dashboard_content %}{% endblock %}
+</main>
+</div>
+</div>
+{% endblock %}

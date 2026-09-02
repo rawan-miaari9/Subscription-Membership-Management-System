@@ -1,0 +1,202 @@
+{% extends "layouts/dashboard.html" %}
+{% block title %}Membership Plans - Iron Core{% endblock %}
+
+{% block dashboard_content %}
+<!-- Header Section -->
+<div class="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4 border-b border-outline-variant pb-6">
+<div>
+<h1 class="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface uppercase tracking-tight">Membership Plans</h1>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-2 max-w-2xl">Configure and manage core access tiers for the facility. Ensure pricing models reflect current equipment depreciation and facility usage caps.</p>
+</div>
+<button class="bg-primary-container text-on-primary-container font-label-caps text-label-caps uppercase px-6 py-3 rounded hover:bg-primary-container/90 transition-colors flex items-center justify-center gap-2 self-start md:self-auto border border-primary-container">
+<span class="material-symbols-outlined text-[18px]">add</span>
+                New Tier
+            </button>
+</div>
+<!-- Plans Bento Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-bento-gap">
+<!-- SILVER PLAN -->
+<div class="bg-[#1E293B] border border-outline-variant rounded-lg flex flex-col overflow-hidden group">
+<!-- Image Header -->
+<div class="relative h-40 border-b border-outline-variant bg-surface-dim">
+<div class="absolute inset-0 bg-cover bg-center grayscale mix-blend-luminosity opacity-40" data-alt="A desaturated, high-contrast close-up shot of heavy iron dumbbells racked in a dark, industrial gym setting. Grayscale aesthetic with a moody, intense atmosphere." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCJWV_mkDL5HM0DStYeMRFOuF57ulb0joWE1ocUnoNDrxSSNX8vuhQDvLyVP9u5dtTt442RyWmsZXUf_75L3PmAZHWQ6XKJGjzcnm7C7FN3jTR62opqom3W_Y1zYlpmdqeP27jF3s8ASgY0MTzPxGZIOq7gq9cutot63UXcqF-ey48opYwgRodOmv7Y4XwlrQtVosNdawbpDZehCDWsP4gnjaDbUkieNl0-Kn2roPeE4kaLR9bdIEsAUA')"></div>
+<div class="absolute inset-0 bg-background/20 mix-blend-multiply"></div>
+<div class="absolute top-4 left-4">
+<span class="font-label-caps text-label-caps uppercase text-on-surface bg-surface-container-highest px-3 py-1 border border-outline-variant rounded">Tier 01</span>
+</div>
+<div class="absolute bottom-4 left-4">
+<h2 class="font-headline-md text-headline-md text-on-surface uppercase tracking-wider">Silver</h2>
+</div>
+</div>
+<!-- Pricing & Details -->
+<div class="p-5 flex-1 flex flex-col">
+<div class="flex items-baseline gap-1 mb-6">
+<span class="font-display text-[32px] font-bold text-primary-container tracking-tighter">$40</span>
+<span class="font-label-caps text-label-caps text-on-surface-variant uppercase">/ mo</span>
+</div>
+<ul class="flex flex-col gap-3 mb-8 flex-1">
+<li class="flex items-start gap-3">
+<span class="material-symbols-outlined text-primary-container text-[18px] mt-0.5">check</span>
+<span class="font-body-sm text-body-sm text-on-surface">24/7 Facility Access</span>
+</li>
+<li class="flex items-start gap-3">
+<span class="material-symbols-outlined text-primary-container text-[18px] mt-0.5">check</span>
+<span class="font-body-sm text-body-sm text-on-surface">Standard Equipment Usage</span>
+</li>
+<li class="flex items-start gap-3 opacity-50">
+<span class="material-symbols-outlined text-on-surface-variant text-[18px] mt-0.5">close</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant line-through">Guest Passes</span>
+</li>
+</ul>
+<button class="w-full bg-transparent border border-outline-variant text-on-surface font-label-caps text-label-caps uppercase py-3 rounded hover:bg-surface-container transition-colors">
+                        Deactivate Plan
+                    </button>
+</div>
+</div>
+<!-- GOLD PLAN (POPULAR) -->
+<div class="bg-[#1E293B] border border-primary-container rounded-lg flex flex-col overflow-hidden relative shadow-[0_0_15px_rgba(245,158,11,0.1)] transform md:-translate-y-2 transition-transform">
+<!-- Popular Badge -->
+<div class="absolute top-0 right-4 bg-primary-container text-on-primary-container font-label-caps text-[10px] uppercase font-bold px-2 py-1 rounded-b z-10 tracking-widest">
+                    Popular Focus
+                </div>
+<!-- Image Header -->
+<div class="relative h-40 border-b border-primary-container/30 bg-surface-dim">
+<div class="absolute inset-0 bg-cover bg-center grayscale mix-blend-luminosity opacity-60" data-alt="A gritty, black and white photograph of a muscular male athlete gripping a heavy barbell deadlift in a rugged iron gym. High contrast lighting emphasizing chalk and sweat, dark mode vibe." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCApfXzNPwZthChcq1xFMH2vmV9-25wRwxBtWycelujFIt3GG8Fy-1vdXtDsQgO2fCGAdLMnpXzYOESNZJHdS651X5XcVT8BbWrE3n7Vu_jpIpiN4ZTZugJtPnNEdDRGRuG6uBz3KEvR4i4Uk0fuZO8qyLR5Tm4VxmIw3F-WRBhBO-u8-aWIn-ugtWqr_hHbsx432t9B7FCRVTCxEJkFCYjf6uLiNMA9vgB2C_mwgL1UZycCoaoqYw55A')"></div>
+<div class="absolute inset-0 bg-background/20 mix-blend-multiply"></div>
+<div class="absolute top-4 left-4">
+<span class="font-label-caps text-label-caps uppercase text-primary-container bg-surface-container-highest px-3 py-1 border border-primary-container/50 rounded">Tier 02</span>
+</div>
+<div class="absolute bottom-4 left-4">
+<h2 class="font-headline-md text-headline-md text-on-surface uppercase tracking-wider">Gold</h2>
+</div>
+</div>
+<!-- Pricing & Details -->
+<div class="p-5 flex-1 flex flex-col bg-surface-container-lowest">
+<div class="flex items-baseline gap-1 mb-6">
+<span class="font-display text-[40px] font-extrabold text-primary-container tracking-tighter">$400</span>
+<span class="font-label-caps text-label-caps text-on-surface-variant uppercase">/ yr</span>
+</div>
+<ul class="flex flex-col gap-3 mb-8 flex-1">
+<li class="flex items-start gap-3">
+<span class="material-symbols-outlined text-primary-container text-[18px] mt-0.5">check</span>
+<span class="font-body-sm text-body-sm text-on-surface font-medium">All Silver Tier Benefits</span>
+</li>
+<li class="flex items-start gap-3">
+<span class="material-symbols-outlined text-primary-container text-[18px] mt-0.5">check</span>
+<span class="font-body-sm text-body-sm text-on-surface">2 Guest Passes / Month</span>
+</li>
+<li class="flex items-start gap-3">
+<span class="material-symbols-outlined text-primary-container text-[18px] mt-0.5">check</span>
+<span class="font-body-sm text-body-sm text-on-surface">Access to Powerlifting Zone</span>
+</li>
+</ul>
+<button class="w-full bg-primary-container text-on-primary-container border border-primary-container font-label-caps text-label-caps uppercase py-3 rounded hover:bg-primary-container/80 transition-colors font-bold">
+                        Activate Plan
+                    </button>
+</div>
+</div>
+<!-- PREMIUM PLAN -->
+<div class="bg-[#1E293B] border border-outline-variant rounded-lg flex flex-col overflow-hidden">
+<!-- Image Header -->
+<div class="relative h-40 border-b border-outline-variant bg-surface-dim">
+<div class="absolute inset-0 bg-cover bg-center grayscale mix-blend-luminosity opacity-40" data-alt="Desaturated, shadowy image of a heavy-duty squat rack and mechanical weight machines in a dark industrial strength training facility. Pure grayscale with intense contrast." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBohNhNjUeXhsg7eEGTfKU99he0x6PKJibQ0s0QaiIuRgvytHGca-L50BGph9s7uzCVok-bucHiqQiIngZ1BC6dC6aoftiiS6WQYz6yQ6t1kUqZ2w1TfgXneDt4GSxvSW6YnrZ_UG20bjc06WvzMuzB4mJM6iM92Oa5KgMUpK-LI3iQpkGOVaMhAwRYQhxTyt1v-y1BWP2ebIM5rW7k0DAKYZmiH1CmOzuTO5KsUi4iAG5Fhm8ETXP16w')"></div>
+<div class="absolute inset-0 bg-background/20 mix-blend-multiply"></div>
+<div class="absolute top-4 left-4">
+<span class="font-label-caps text-label-caps uppercase text-on-surface bg-surface-container-highest px-3 py-1 border border-outline-variant rounded">Tier 03</span>
+</div>
+<div class="absolute bottom-4 left-4">
+<h2 class="font-headline-md text-headline-md text-on-surface uppercase tracking-wider">Premium</h2>
+</div>
+</div>
+<!-- Pricing & Details -->
+<div class="p-5 flex-1 flex flex-col">
+<div class="flex items-baseline gap-1 mb-6">
+<span class="font-display text-[32px] font-bold text-primary-container tracking-tighter">$60</span>
+<span class="font-label-caps text-label-caps text-on-surface-variant uppercase">/ mo</span>
+</div>
+<ul class="flex flex-col gap-3 mb-8 flex-1">
+<li class="flex items-start gap-3">
+<span class="material-symbols-outlined text-primary-container text-[18px] mt-0.5">check</span>
+<span class="font-body-sm text-body-sm text-on-surface">All Gold Tier Benefits</span>
+</li>
+<li class="flex items-start gap-3">
+<span class="material-symbols-outlined text-primary-container text-[18px] mt-0.5">check</span>
+<span class="font-body-sm text-body-sm text-on-surface">Priority Rack Booking</span>
+</li>
+<li class="flex items-start gap-3">
+<span class="material-symbols-outlined text-primary-container text-[18px] mt-0.5">check</span>
+<span class="font-body-sm text-body-sm text-on-surface">1 Recovery Session / Week</span>
+</li>
+</ul>
+<button class="w-full bg-transparent border border-outline-variant text-on-surface font-label-caps text-label-caps uppercase py-3 rounded hover:bg-surface-container transition-colors">
+                        Deactivate Plan
+                    </button>
+</div>
+</div>
+</div>
+<!-- Secondary Sections Bento -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-bento-gap mt-bento-gap">
+<!-- Custom Plans -->
+<div class="bg-[#1E293B] border border-outline-variant rounded-lg p-6">
+<div class="flex items-center gap-3 mb-4">
+<span class="material-symbols-outlined text-primary-container">tune</span>
+<h3 class="font-label-caps text-label-caps text-on-surface uppercase tracking-widest">Custom Plans</h3>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-6">Define bespoke membership parameters for corporate clients, specialized athletic teams, or VIP members requiring non-standard access rules.</p>
+<div class="border border-outline-variant rounded overflow-hidden">
+<table class="w-full text-left font-data-md text-data-md text-on-surface">
+<thead class="bg-surface-container border-b border-outline-variant text-on-surface-variant">
+<tr>
+<th class="py-2 px-3 font-normal uppercase text-[10px] tracking-wider">Plan Name</th>
+<th class="py-2 px-3 font-normal uppercase text-[10px] tracking-wider">Base Rate</th>
+<th class="py-2 px-3 font-normal uppercase text-[10px] tracking-wider">Status</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant">
+<tr class="hover:bg-surface-container/50 transition-colors">
+<td class="py-3 px-3">Police Dept. Corp</td>
+<td class="py-3 px-3">$25/mo</td>
+<td class="py-3 px-3"><div class="flex items-center gap-2"><div class="w-1.5 h-1.5 bg-[#10B981] rounded-none"></div>Active</div></td>
+</tr>
+<tr class="hover:bg-surface-container/50 transition-colors">
+<td class="py-3 px-3">State Rugby Team</td>
+<td class="py-3 px-3">$500/yr</td>
+<td class="py-3 px-3"><div class="flex items-center gap-2"><div class="w-1.5 h-1.5 bg-primary-container rounded-none"></div>Pending</div></td>
+</tr>
+</tbody>
+</table>
+</div>
+<button class="mt-4 text-primary font-label-caps text-label-caps uppercase hover:underline flex items-center gap-1">
+                    Manage Custom Tiers <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</button>
+</div>
+<!-- Service Assignment -->
+<div class="bg-[#1E293B] border border-outline-variant rounded-lg p-6">
+<div class="flex items-center gap-3 mb-4">
+<span class="material-symbols-outlined text-primary-container">link</span>
+<h3 class="font-label-caps text-label-caps text-on-surface uppercase tracking-widest">Service Assignment</h3>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-6">Map auxiliary facility services (lockers, towel service, physical therapy consults) to specific membership tiers as add-ons or inclusions.</p>
+<div class="space-y-3">
+<div class="flex items-center justify-between p-3 border border-outline-variant rounded bg-surface-container-lowest">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-on-surface-variant text-[20px]">door_sliding</span>
+<span class="font-body-sm text-body-sm text-on-surface font-medium">Permanent Locker Allocation</span>
+</div>
+<span class="font-label-caps text-[10px] uppercase bg-surface-variant px-2 py-1 rounded text-on-surface border border-outline-variant">Premium Only</span>
+</div>
+<div class="flex items-center justify-between p-3 border border-outline-variant rounded bg-surface-container-lowest">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-on-surface-variant text-[20px]">local_laundry_service</span>
+<span class="font-body-sm text-body-sm text-on-surface font-medium">Daily Towel Service</span>
+</div>
+<span class="font-label-caps text-[10px] uppercase bg-surface-variant px-2 py-1 rounded text-on-surface border border-outline-variant">Gold &amp; Premium</span>
+</div>
+</div>
+<button class="mt-6 w-full bg-transparent border border-outline-variant text-on-surface font-label-caps text-label-caps uppercase py-2 rounded hover:bg-surface-container transition-colors flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+                    Edit Mappings
+                </button>
+</div>
+</div>
+{% endblock %}

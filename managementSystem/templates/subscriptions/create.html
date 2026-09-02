@@ -1,0 +1,814 @@
+{% extends "layouts/dashboard.html" %}
+{% block title %}Create Subscription - Iron Core{% endblock %}
+
+{% block dashboard_content %}
+<div class="max-w-4xl mx-auto">
+  <!-- Header -->
+  <div class="flex items-center gap-2 mb-4">
+    <a href="{% url 'subscriptions' %}" class="inline-flex items-center gap-1.5 font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant hover:text-primary transition-colors">
+      <span class="material-symbols-outlined text-[16px]">arrow_back</span> Back to Subscriptions
+    </a>
+  </div>
+  <div class="mb-6 border-b border-outline-variant pb-6">
+    <div class="flex items-center gap-3 mb-2">
+      <span class="w-8 h-8 flex items-center justify-center rounded bg-primary-container text-on-primary-container">
+        <span class="material-symbols-outlined text-[18px]">card_membership</span>
+      </span>
+      <span class="font-label-caps text-[11px] uppercase tracking-[0.12em] text-primary-container">Subscriptions</span>
+    </div>
+    <h1 class="font-headline-lg text-headline-lg text-on-surface uppercase tracking-tight">Create Subscription</h1>
+    <p class="font-body-sm text-body-sm text-on-surface-variant mt-2 max-w-2xl">Provision a new membership subscription through the 6-step Iron Precision protocol. All steps are frontend-only.</p>
+  </div>
+
+  <!-- Stepper Header -->
+  <div class="bg-surface-container border border-outline-variant rounded-lg p-4 mb-6">
+    <div class="flex items-center justify-between" id="stepper">
+      <!-- Step 1 -->
+      <div class="flex flex-col items-center gap-1.5 flex-1 stepper-item" data-stepper="1">
+        <div class="w-8 h-8 rounded-full flex items-center justify-center font-label-caps text-[11px] font-bold border transition-all stepper-circle bg-primary-container text-on-primary-container border-primary-container">1</div>
+        <span class="font-label-caps text-[10px] uppercase tracking-widest stepper-label text-primary">Member</span>
+      </div>
+      <div class="h-px flex-1 bg-outline-variant mx-1 stepper-line" data-line="1"></div>
+      <!-- Step 2 -->
+      <div class="flex flex-col items-center gap-1.5 flex-1 stepper-item" data-stepper="2">
+        <div class="w-8 h-8 rounded-full flex items-center justify-center font-label-caps text-[11px] font-bold border transition-all stepper-circle bg-surface-container-lowest text-on-surface-variant border-outline-variant">2</div>
+        <span class="font-label-caps text-[10px] uppercase tracking-widest stepper-label text-on-surface-variant">Plan</span>
+      </div>
+      <div class="h-px flex-1 bg-outline-variant mx-1 stepper-line" data-line="2"></div>
+      <!-- Step 3 -->
+      <div class="flex flex-col items-center gap-1.5 flex-1 stepper-item" data-stepper="3">
+        <div class="w-8 h-8 rounded-full flex items-center justify-center font-label-caps text-[11px] font-bold border transition-all stepper-circle bg-surface-container-lowest text-on-surface-variant border-outline-variant">3</div>
+        <span class="font-label-caps text-[10px] uppercase tracking-widest stepper-label text-on-surface-variant">Subscription</span>
+      </div>
+      <div class="h-px flex-1 bg-outline-variant mx-1 stepper-line" data-line="3"></div>
+      <!-- Step 4 -->
+      <div class="flex flex-col items-center gap-1.5 flex-1 stepper-item" data-stepper="4">
+        <div class="w-8 h-8 rounded-full flex items-center justify-center font-label-caps text-[11px] font-bold border transition-all stepper-circle bg-surface-container-lowest text-on-surface-variant border-outline-variant">4</div>
+        <span class="font-label-caps text-[10px] uppercase tracking-widest stepper-label text-on-surface-variant">Pricing</span>
+      </div>
+      <div class="h-px flex-1 bg-outline-variant mx-1 stepper-line" data-line="4"></div>
+      <!-- Step 5 -->
+      <div class="flex flex-col items-center gap-1.5 flex-1 stepper-item" data-stepper="5">
+        <div class="w-8 h-8 rounded-full flex items-center justify-center font-label-caps text-[11px] font-bold border transition-all stepper-circle bg-surface-container-lowest text-on-surface-variant border-outline-variant">5</div>
+        <span class="font-label-caps text-[10px] uppercase tracking-widest stepper-label text-on-surface-variant">Payment</span>
+      </div>
+      <div class="h-px flex-1 bg-outline-variant mx-1 stepper-line" data-line="5"></div>
+      <!-- Step 6 -->
+      <div class="flex flex-col items-center gap-1.5 flex-1 stepper-item" data-stepper="6">
+        <div class="w-8 h-8 rounded-full flex items-center justify-center font-label-caps text-[11px] font-bold border transition-all stepper-circle bg-surface-container-lowest text-on-surface-variant border-outline-variant">6</div>
+        <span class="font-label-caps text-[10px] uppercase tracking-widest stepper-label text-on-surface-variant">Confirm</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Form Wrapper -->
+  <form id="create-subscription-form" data-create-subscription-form method="post" action="{% url 'subscription-create' %}" class="bg-surface-container border border-outline-variant rounded-lg p-6 md:p-8 space-y-0" novalidate>
+    {% csrf_token %}
+    {% if messages %}
+      {% for message in messages %}
+        <div class="p-3 rounded border mb-4 {% if message.tags == 'error' %}border-error bg-error-container text-on-error-container{% else %}border-tertiary bg-tertiary-container text-on-tertiary-container{% endif %} font-body-sm text-sm">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+    <div data-form-msg class="hidden p-3 rounded border border-error bg-error-container text-on-error-container font-body-sm text-sm mb-6"></div>
+
+    <!-- ============ STEP 1 : MEMBER ============ -->
+    <div data-step="1" class="step-panel">
+      <div class="flex items-center gap-2 mb-4">
+        <span class="w-6 h-6 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center font-label-caps text-[11px] font-bold">1</span>
+        <h2 class="font-label-caps text-[11px] uppercase tracking-widest text-on-surface">Member</h2>
+        <span class="font-body-sm text-xs text-on-surface-variant ml-2">Select the member for this subscription</span>
+      </div>
+
+      <!-- Search Input -->
+      <div class="relative mb-4">
+        <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">search</span>
+        <input data-member-search id="member-search" type="text" placeholder="Search Member by name, ID, phone..." class="w-full bg-surface-container-lowest border border-outline-variant rounded pl-10 pr-4 py-3 font-body-sm text-body-sm text-on-surface placeholder:text-on-surface-variant/60 focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all" />
+      </div>
+
+      <!-- Members Table -->
+      <div class="border border-outline-variant rounded overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse" id="member-table">
+            <thead>
+              <tr class="border-b border-outline-variant bg-surface-container-high">
+                <th class="py-2.5 px-4 font-label-caps text-[11px] text-on-surface-variant w-10"></th>
+                <th class="py-2.5 px-4 font-label-caps text-[11px] text-on-surface-variant">Member</th>
+                <th class="py-2.5 px-4 font-label-caps text-[11px] text-on-surface-variant">Member ID</th>
+                <th class="py-2.5 px-4 font-label-caps text-[11px] text-on-surface-variant">Phone</th>
+                <th class="py-2.5 px-4 font-label-caps text-[11px] text-on-surface-variant">Status</th>
+              </tr>
+            </thead>
+            <tbody class="font-data-md text-data-md text-on-surface">
+              {% for member in members %}
+              <tr class="border-b border-outline-variant hover:bg-surface-container-highest transition-colors">
+                <td class="py-3 px-4"><input type="radio" name="member_select" value="{{ member.member_code }}|{{ member.full_name }}" data-member-id="{{ member.id }}" class="accent-primary" /></td>
+                <td class="py-3 px-4 font-bold">{{ member.full_name }}</td>
+                <td class="py-3 px-4 text-on-surface-variant text-[12px]">{{ member.member_code }}</td>
+                <td class="py-3 px-4 text-on-surface-variant text-[12px]">{{ member.phone|default:"—" }}</td>
+                <td class="py-3 px-4">
+                  {% if member.status == "active" %}<span class="inline-flex items-center gap-1.5 bg-secondary-container px-2 py-0.5 border border-outline-variant rounded-sm"><span class="w-1.5 h-1.5 bg-tertiary-container"></span><span class="font-label-caps text-[10px] uppercase">Active</span></span>
+                  {% elif member.status == "suspended" %}<span class="inline-flex items-center gap-1.5 bg-secondary-container px-2 py-0.5 border border-outline-variant rounded-sm"><span class="w-1.5 h-1.5 bg-surface-variant border border-outline"></span><span class="font-label-caps text-[10px] uppercase">Suspended</span></span>
+                  {% elif member.status == "expired" %}<span class="inline-flex items-center gap-1.5 bg-secondary-container px-2 py-0.5 border border-outline-variant rounded-sm"><span class="w-1.5 h-1.5 bg-error"></span><span class="font-label-caps text-[10px] uppercase">Expired</span></span>
+                  {% else %}<span class="inline-flex items-center gap-1.5 bg-secondary-container px-2 py-0.5 border border-outline-variant rounded-sm"><span class="w-1.5 h-1.5 bg-primary-container"></span><span class="font-label-caps text-[10px] uppercase">{{ member.status|upper }}</span></span>
+                  {% endif %}
+                </td>
+              </tr>
+              {% empty %}
+              <tr><td colspan="5" class="py-8 text-center text-on-surface-variant">No members found. Add members first.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Selected Member Display -->
+      <div id="selected-member-display" class="hidden mt-4 p-3 rounded border border-primary-container bg-surface-container-high flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <span class="w-8 h-8 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center"><span class="material-symbols-outlined text-[16px]">person</span></span>
+          <div>
+            <p class="font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant">Selected Member</p>
+            <p class="font-data-md text-data-md text-on-surface" id="selected-member-name">—</p>
+            <p class="font-body-sm text-xs text-on-surface-variant" id="selected-member-id">—</p>
+          </div>
+        </div>
+        <button type="button" id="clear-member" class="font-label-caps text-[11px] uppercase tracking-widest text-error hover:text-error/80 transition-colors">Clear</button>
+      </div>
+      <p class="hidden text-error text-xs mt-2 font-body-sm" data-error="member">Please select a member.</p>
+    </div>
+
+    <!-- ============ STEP 2 : PLAN ============ -->
+    <div data-step="2" class="step-panel hidden">
+      <div class="flex items-center gap-2 mb-4">
+        <span class="w-6 h-6 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center font-label-caps text-[11px] font-bold">2</span>
+        <h2 class="font-label-caps text-[11px] uppercase tracking-widest text-on-surface">Plan</h2>
+        <span class="font-body-sm text-xs text-on-surface-variant ml-2">Choose Standard or Custom plan</span>
+      </div>
+
+      <!-- Toggle -->
+      <div class="flex gap-2 mb-6 p-1 bg-surface-container-lowest border border-outline-variant rounded w-fit">
+        <button type="button" data-plan-toggle="standard" class="px-5 py-2 rounded font-label-caps text-[11px] uppercase tracking-widest bg-primary-container text-on-primary-container border border-primary-container transition-colors">Standard Plan</button>
+        <button type="button" data-plan-toggle="custom" class="px-5 py-2 rounded font-label-caps text-[11px] uppercase tracking-widest bg-transparent text-on-surface-variant border border-transparent hover:bg-surface-container-high transition-colors">Custom Plan</button>
+      </div>
+
+      <!-- Standard Plan Cards (from DB) -->
+      <div data-plan-panel="standard" class="grid grid-cols-1 md:grid-cols-3 gap-bento-gap">
+        {% for plan in standard_plans %}
+        <label class="group cursor-pointer bg-surface-container-lowest border border-outline-variant rounded-lg p-4 flex flex-col gap-3 hover:border-primary-container transition-colors has-[input:checked]:border-primary-container has-[input:checked]:bg-surface-container-high relative">
+          <input type="radio" name="standard_plan" value="{{ plan.id }}|{{ plan.name }}|{{ plan.price }}" class="absolute top-3 right-3 accent-primary" />
+          <span class="font-label-caps text-[10px] uppercase tracking-widest {% if forloop.counter == 2 %}text-primary{% else %}text-on-surface-variant{% endif %}">{% if forloop.counter == 2 %}Popular · {% endif %}Tier 0{{ forloop.counter }}</span>
+          <h3 class="font-headline-md text-headline-md text-on-surface uppercase">{{ plan.name }}</h3>
+          <p class="font-display text-[24px] font-bold text-primary-container">${{ plan.price }} <span class="font-label-caps text-[11px] text-on-surface-variant">/ {% if plan.duration_days >= 365 %}yr{% else %}mo{% endif %}</span></p>
+          <ul class="font-body-sm text-xs text-on-surface-variant space-y-1">
+            <li class="flex items-center gap-1.5"><span class="material-symbols-outlined text-primary-container text-[14px]">check</span>{{ plan.duration_days }} Days Access</li>
+            <li class="flex items-center gap-1.5"><span class="material-symbols-outlined text-primary-container text-[14px]">check</span>Full Facility Access</li>
+          </ul>
+        </label>
+        {% empty %}
+        <p class="text-on-surface-variant text-sm">No plans available. Create plans in DB first.</p>
+        {% endfor %}
+      </div>
+      <p class="hidden text-error text-xs mt-2 font-body-sm" data-error="standard_plan">Please select a standard plan.</p>
+
+      <!-- Custom Plan Inputs -->
+      <div data-plan-panel="custom" class="hidden grid grid-cols-1 md:grid-cols-2 gap-6 p-4 border border-outline-variant rounded bg-surface-container-lowest">
+        <div>
+          <label class="block font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">Duration *</label>
+          <select name="custom_duration" id="custom-duration" class="w-full bg-surface-container border border-outline-variant rounded px-4 py-3 font-body-sm text-body-sm text-on-surface focus:ring-1 focus:ring-primary focus:border-primary outline-none">
+            <option value="" disabled selected>Select duration</option>
+            <option value="1_month">1 Month</option>
+            <option value="3_months">3 Months</option>
+            <option value="6_months">6 Months</option>
+            <option value="12_months">12 Months / Yearly</option>
+            <option value="custom">Custom</option>
+          </select>
+          <p class="hidden text-error text-xs mt-1.5 font-body-sm" data-error="custom_duration">Duration is required.</p>
+        </div>
+        <div>
+          <label class="block font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">Price *</label>
+          <div class="relative">
+            <span class="absolute left-3 top-1/2 -translate-y-1/2 font-data-md text-data-md text-on-surface-variant">$</span>
+            <input name="custom_price" id="custom-price" type="number" min="0" step="0.01" placeholder="0.00" class="w-full bg-surface-container border border-outline-variant rounded pl-8 pr-4 py-3 font-body-sm text-body-sm text-on-surface placeholder:text-on-surface-variant/60 focus:ring-1 focus:ring-primary focus:border-primary outline-none" />
+          </div>
+          <p class="hidden text-error text-xs mt-1.5 font-body-sm" data-error="custom_price">Valid price &gt; 0 required.</p>
+        </div>
+        <div class="md:col-span-2">
+          <label class="block font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">Benefits *</label>
+          <textarea name="custom_benefits" id="custom-benefits" rows="3" placeholder="One benefit per line — e.g. 24/7 Access, PT Sessions, etc." class="w-full bg-surface-container border border-outline-variant rounded px-4 py-3 font-body-sm text-body-sm text-on-surface placeholder:text-on-surface-variant/60 focus:ring-1 focus:ring-primary focus:border-primary outline-none resize-none"></textarea>
+          <p class="hidden text-error text-xs mt-1.5 font-body-sm" data-error="custom_benefits">Add at least one benefit.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ STEP 3 : SUBSCRIPTION ============ -->
+    <div data-step="3" class="step-panel hidden">
+      <div class="flex items-center gap-2 mb-4">
+        <span class="w-6 h-6 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center font-label-caps text-[11px] font-bold">3</span>
+        <h2 class="font-label-caps text-[11px] uppercase tracking-widest text-on-surface">Subscription</h2>
+        <span class="font-body-sm text-xs text-on-surface-variant ml-2">Set membership period</span>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label class="block font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">Start Date *</label>
+          <input type="date" name="start_date" id="start-date" required class="w-full bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 font-body-sm text-body-sm text-on-surface focus:ring-1 focus:ring-primary focus:border-primary outline-none" />
+          <p class="hidden text-error text-xs mt-1.5 font-body-sm" data-error="start_date">Start date is required.</p>
+        </div>
+        <div>
+          <label class="block font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">End Date *</label>
+          <input type="date" name="end_date" id="end-date" required class="w-full bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 font-body-sm text-body-sm text-on-surface focus:ring-1 focus:ring-primary focus:border-primary outline-none" />
+          <p class="hidden text-error text-xs mt-1.5 font-body-sm" data-error="end_date">End date is required and must be after start.</p>
+        </div>
+        <div class="md:col-span-2 flex items-start gap-2 p-3 rounded border border-outline-variant bg-surface-container-high">
+          <span class="material-symbols-outlined text-primary-container text-[18px] mt-0.5 shrink-0">calendar_month</span>
+          <p class="font-body-sm text-xs leading-relaxed text-on-surface-variant">Subscription activates on Start Date at 00:00 and remains valid through End Date inclusive. Early termination handled via Suspension workflow.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ STEP 4 : PRICING ============ -->
+    <div data-step="4" class="step-panel hidden">
+      <div class="flex items-center gap-2 mb-4">
+        <span class="w-6 h-6 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center font-label-caps text-[11px] font-bold">4</span>
+        <h2 class="font-label-caps text-[11px] uppercase tracking-widest text-on-surface">Pricing</h2>
+        <span class="font-body-sm text-xs text-on-surface-variant ml-2">Calculate final payable amount</span>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label class="block font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">Base Price *</label>
+          <div class="relative">
+            <span class="absolute left-3 top-1/2 -translate-y-1/2 font-data-md text-data-md text-on-surface-variant">$</span>
+            <input type="number" name="base_price" id="base-price" min="0" step="0.01" required placeholder="0.00" class="w-full bg-surface-container-lowest border border-outline-variant rounded pl-8 pr-4 py-3 font-body-sm text-body-sm text-on-surface placeholder:text-on-surface-variant/60 focus:ring-1 focus:ring-primary focus:border-primary outline-none" />
+          </div>
+          <p class="hidden text-error text-xs mt-1.5 font-body-sm" data-error="base_price">Base price must be &gt; 0.</p>
+        </div>
+        <div>
+          <label class="block font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">Discount</label>
+          <div class="relative">
+            <span class="absolute left-3 top-1/2 -translate-y-1/2 font-data-md text-data-md text-on-surface-variant">$</span>
+            <input type="number" name="discount" id="discount" min="0" step="0.01" placeholder="0.00" value="0" class="w-full bg-surface-container-lowest border border-outline-variant rounded pl-8 pr-4 py-3 font-body-sm text-body-sm text-on-surface placeholder:text-on-surface-variant/60 focus:ring-1 focus:ring-primary focus:border-primary outline-none" />
+          </div>
+          <p class="hidden text-error text-xs mt-1.5 font-body-sm" data-error="discount">Discount cannot exceed base price.</p>
+        </div>
+        <div class="md:col-span-2 bg-surface-container-high border border-outline-variant rounded p-4">
+          <h3 class="font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-3">Live Calculation</h3>
+          <div class="space-y-2 font-data-md text-[12px] text-on-surface">
+            <div class="flex justify-between"><span class="text-on-surface-variant">Base Price</span><span id="calc-base">$0.00</span></div>
+            <div class="flex justify-between"><span class="text-on-surface-variant">Discount</span><span id="calc-discount" class="text-error">-$0.00</span></div>
+            <div class="flex justify-between font-bold border-t border-outline-variant pt-2 text-[14px]"><span>Final Amount</span><span id="final-amount" data-final-amount class="text-primary-container">$0.00</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ STEP 5 : PAYMENT ============ -->
+    <div data-step="5" class="step-panel hidden">
+      <div class="flex items-center gap-2 mb-4">
+        <span class="w-6 h-6 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center font-label-caps text-[11px] font-bold">5</span>
+        <h2 class="font-label-caps text-[11px] uppercase tracking-widest text-on-surface">Payment</h2>
+        <span class="font-body-sm text-xs text-on-surface-variant ml-2">Collect payment authorization</span>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label class="block font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">Payment Method *</label>
+          <div class="relative">
+            <select name="payment_method" id="payment-method" required class="w-full appearance-none bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 pr-10 font-body-sm text-body-sm text-on-surface focus:ring-1 focus:ring-primary focus:border-primary outline-none">
+              <option value="" disabled selected>Select method</option>
+              <option value="cash">Cash</option>
+              <option value="card">Card</option>
+              <option value="bank_transfer">Bank Transfer</option>
+              <option value="online">Online</option>
+            </select>
+            <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none text-[20px]">expand_more</span>
+          </div>
+          <p class="hidden text-error text-xs mt-1.5 font-body-sm" data-error="payment_method">Payment method is required.</p>
+        </div>
+        <div>
+          <label class="block font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">Full Amount</label>
+          <div class="w-full bg-surface-container-high border border-outline-variant rounded px-4 py-3 font-display text-[16px] font-bold text-primary-container" id="full-amount-display">$0.00</div>
+          <p class="font-body-sm text-[11px] text-on-surface-variant mt-1.5">Mirrored from Pricing step — payable now.</p>
+        </div>
+        <div class="md:col-span-2 p-4 border border-outline-variant rounded bg-surface-container-lowest">
+          <label class="flex items-start gap-3 cursor-pointer">
+            <input type="checkbox" id="confirm-payment" name="confirm_payment" required class="mt-0.5 w-4 h-4 rounded border-outline-variant bg-surface-container text-primary focus:ring-primary accent-primary" />
+            <span class="font-body-sm text-body-sm text-on-surface">I confirm that payment has been collected / authorized for the full amount displayed above.</span>
+          </label>
+          <p class="hidden text-error text-xs mt-1.5 font-body-sm" data-error="confirm_payment">You must confirm payment to proceed.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ STEP 6 : CONFIRMATION ============ -->
+    <div data-step="6" class="step-panel hidden">
+      <div class="flex items-center gap-2 mb-4">
+        <span class="w-6 h-6 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center font-label-caps text-[11px] font-bold">6</span>
+        <h2 class="font-label-caps text-[11px] uppercase tracking-widest text-on-surface">Confirmation</h2>
+        <span class="font-body-sm text-xs text-on-surface-variant ml-2">Review and submit</span>
+      </div>
+
+      <div class="bg-surface-container-lowest border border-outline-variant rounded p-5 space-y-4">
+        <h3 class="font-label-caps text-[11px] uppercase tracking-widest text-primary-container border-b border-outline-variant pb-3">Summary</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 font-data-md text-[12px]">
+          <div class="space-y-3">
+            <div class="flex justify-between gap-4"><span class="text-on-surface-variant shrink-0">Member</span><span class="text-on-surface font-bold text-right" data-summary-member>—</span></div>
+            <div class="flex justify-between gap-4"><span class="text-on-surface-variant shrink-0">Plan</span><span class="text-on-surface text-right" data-summary-plan>—</span></div>
+            <div class="flex justify-between gap-4"><span class="text-on-surface-variant shrink-0">Dates</span><span class="text-on-surface text-right" data-summary-dates>—</span></div>
+            <div class="flex justify-between gap-4"><span class="text-on-surface-variant shrink-0">Payment Method</span><span class="text-on-surface text-right" data-summary-payment>—</span></div>
+          </div>
+          <div class="space-y-3">
+            <div class="flex justify-between gap-4"><span class="text-on-surface-variant shrink-0">Base Price</span><span class="text-on-surface text-right" data-summary-base>—</span></div>
+            <div class="flex justify-between gap-4"><span class="text-on-surface-variant shrink-0">Discount</span><span class="text-error text-right" data-summary-discount>—</span></div>
+            <div class="flex justify-between gap-4 font-bold border-t border-outline-variant pt-2 text-[13px]"><span class="text-on-surface">Total</span><span class="text-primary-container text-right" data-summary-total>—</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-6 p-4 bg-tertiary-container/10 border border-tertiary/20 rounded flex items-start gap-2">
+        <span class="material-symbols-outlined text-tertiary text-[18px] mt-0.5 shrink-0">info</span>
+        <p class="font-body-sm text-xs leading-relaxed text-on-surface-variant">By clicking Confirm, you acknowledge that member, plan, dates, and payment details are accurate. Subscription will be provisioned immediately (frontend demo — no backend).</p>
+      </div>
+    </div>
+
+    <!-- Navigation -->
+    <div class="flex items-center justify-between pt-8 mt-6 border-t border-outline-variant">
+      <button type="button" id="prev-btn" class="inline-flex items-center gap-1.5 px-6 py-3 border border-outline-variant bg-transparent text-on-surface font-label-caps text-[11px] uppercase tracking-widest rounded hover:bg-surface-container-high transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+        <span class="material-symbols-outlined text-[16px]">chevron_left</span> Prev
+      </button>
+      <div class="flex items-center gap-3">
+        <span class="font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant" id="step-indicator">Step 1 of 6</span>
+        <button type="button" id="next-btn" class="inline-flex items-center gap-1.5 px-8 py-3 bg-primary-container text-on-primary-container border border-primary-container font-label-caps text-[11px] uppercase tracking-widest font-bold rounded hover:bg-primary-container/90 transition-colors">
+          Next <span class="material-symbols-outlined text-[16px]">chevron_right</span>
+        </button>
+        <button type="submit" id="submit-btn" class="hidden inline-flex items-center gap-1.5 px-8 py-3 bg-primary text-on-primary font-label-caps text-[11px] uppercase tracking-widest font-bold rounded hover:bg-primary/90 transition-colors border border-primary">
+          <span class="material-symbols-outlined text-[16px]">check_circle</span> Confirm Subscription
+        </button>
+      </div>
+    </div>
+  </form>
+</div>
+
+<script>
+(function(){
+  const form = document.getElementById('create-subscription-form');
+  if(!form) return;
+
+  let currentStep = 1;
+  const totalSteps = 6;
+  let planMode = 'standard';
+
+  const panels = form.querySelectorAll('[data-step]');
+  const stepperItems = document.querySelectorAll('[data-stepper]');
+  const stepperLines = document.querySelectorAll('.stepper-line');
+  const prevBtn = document.getElementById('prev-btn');
+  const nextBtn = document.getElementById('next-btn');
+  const submitBtn = document.getElementById('submit-btn');
+  const stepIndicator = document.getElementById('step-indicator');
+  const msg = form.querySelector('[data-form-msg]');
+
+  // Member search elements
+  const memberSearch = document.querySelector('[data-member-search]');
+  const memberTable = document.getElementById('member-table');
+  const selectedDisplay = document.getElementById('selected-member-display');
+  const selectedNameEl = document.getElementById('selected-member-name');
+  const selectedIdEl = document.getElementById('selected-member-id');
+  const clearMemberBtn = document.getElementById('clear-member');
+
+  // Pricing elements (no tax)
+  const baseInput = document.getElementById('base-price');
+  const discountInput = document.getElementById('discount');
+  const calcBase = document.getElementById('calc-base');
+  const calcDiscount = document.getElementById('calc-discount');
+  const finalAmountEl = document.getElementById('final-amount');
+  const fullAmountDisplay = document.getElementById('full-amount-display');
+
+  function showToast(message, type){
+    if(typeof toast === 'function') toast(message, type);
+    else if(window.toast) window.toast(message, type);
+    else {
+      // fallback
+      let c = document.getElementById('toast-container');
+      if(!c){ c=document.createElement('div'); c.id='toast-container'; c.className='fixed bottom-4 right-4 z-50 flex flex-col gap-2'; document.body.appendChild(c); }
+      const el=document.createElement('div'); el.className='px-4 py-3 rounded border text-sm font-label-caps shadow-lg '+(type==='error'?'bg-error text-on-error border-error':type==='success'?'bg-tertiary-container text-on-tertiary-container border-tertiary':'bg-surface-container-high border-outline-variant text-on-surface'); el.textContent=message; c.appendChild(el); setTimeout(()=>{el.style.opacity='0'; setTimeout(()=>el.remove(),300);},2500);
+    }
+  }
+
+  function updateStepper(){
+    stepperItems.forEach(item=>{
+      const s = parseInt(item.dataset.stepper,10);
+      const circle = item.querySelector('.stepper-circle');
+      const label = item.querySelector('.stepper-label');
+      if(s < currentStep){
+        circle.className = 'w-8 h-8 rounded-full flex items-center justify-center font-label-caps text-[11px] font-bold border transition-all stepper-circle bg-tertiary-container text-on-tertiary-container border-tertiary';
+        circle.innerHTML = '<span class="material-symbols-outlined text-[16px]">check</span>';
+        label.className = 'font-label-caps text-[10px] uppercase tracking-widest stepper-label text-tertiary';
+      } else if(s === currentStep){
+        circle.textContent = s;
+        circle.className = 'w-8 h-8 rounded-full flex items-center justify-center font-label-caps text-[11px] font-bold border transition-all stepper-circle bg-primary-container text-on-primary-container border-primary-container';
+        label.className = 'font-label-caps text-[10px] uppercase tracking-widest stepper-label text-primary';
+      } else {
+        circle.textContent = s;
+        circle.className = 'w-8 h-8 rounded-full flex items-center justify-center font-label-caps text-[11px] font-bold border transition-all stepper-circle bg-surface-container-lowest text-on-surface-variant border-outline-variant';
+        label.className = 'font-label-caps text-[10px] uppercase tracking-widest stepper-label text-on-surface-variant';
+      }
+    });
+    stepperLines.forEach(line=>{
+      const n = parseInt(line.dataset.line,10);
+      if(n < currentStep) line.className = 'h-px flex-1 bg-primary-container mx-1 stepper-line';
+      else line.className = 'h-px flex-1 bg-outline-variant mx-1 stepper-line';
+    });
+    panels.forEach(p=>{
+      const s = parseInt(p.dataset.step,10);
+      if(s === currentStep) p.classList.remove('hidden');
+      else p.classList.add('hidden');
+    });
+    stepIndicator.textContent = 'Step ' + currentStep + ' of ' + totalSteps;
+    prevBtn.disabled = currentStep === 1;
+    if(currentStep === totalSteps){
+      nextBtn.classList.add('hidden');
+      submitBtn.classList.remove('hidden');
+    } else {
+      nextBtn.classList.remove('hidden');
+      submitBtn.classList.add('hidden');
+    }
+    msg.classList.add('hidden');
+    // scroll to top of form for usability
+    // form.scrollIntoView({behavior:'smooth', block:'start'});
+  }
+
+  function calcFinal(){
+    const base = parseFloat(baseInput.value) || 0;
+    const discount = parseFloat(discountInput.value) || 0;
+    const total = Math.max(0, base - discount);
+    calcBase.textContent = '$' + base.toFixed(2);
+    calcDiscount.textContent = '-$' + discount.toFixed(2);
+    finalAmountEl.textContent = '$' + total.toFixed(2);
+    fullAmountDisplay.textContent = '$' + total.toFixed(2);
+    return {base, discount, total};
+  }
+
+  // Listeners for live calc
+  [baseInput, discountInput].forEach(inp=>{
+    if(inp) inp.addEventListener('input', calcFinal);
+  });
+
+  // Plan toggle
+  document.querySelectorAll('[data-plan-toggle]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      planMode = btn.dataset.planToggle;
+      document.querySelectorAll('[data-plan-toggle]').forEach(b=>{
+        if(b.dataset.planToggle === planMode){
+          b.className = 'px-5 py-2 rounded font-label-caps text-[11px] uppercase tracking-widest bg-primary-container text-on-primary-container border border-primary-container transition-colors';
+        } else {
+          b.className = 'px-5 py-2 rounded font-label-caps text-[11px] uppercase tracking-widest bg-transparent text-on-surface-variant border border-transparent hover:bg-surface-container-high transition-colors';
+        }
+      });
+      document.querySelectorAll('[data-plan-panel]').forEach(panel=>{
+        if(panel.dataset.planPanel === planMode) panel.classList.remove('hidden');
+        else panel.classList.add('hidden');
+      });
+      // special for standard panel grid vs flex: restore grid display
+      const stdPanel = document.querySelector('[data-plan-panel="standard"]');
+      if(stdPanel && planMode === 'standard'){
+        stdPanel.classList.add('grid');
+      }
+    });
+  });
+
+  // Auto-fill pricing when standard plan selected (DB: id|name|price)
+  form.querySelectorAll('input[name="standard_plan"]').forEach(radio=>{
+    radio.addEventListener('change', ()=>{
+      if(!radio.checked) return;
+      const val = radio.value || ''; // e.g. "1|Silver|40.00"
+      const parts = val.split('|');
+      const price = parts[2] || parts[1] || '';
+      // try | split first, fallback to $ regex for old static data
+      let num = parseFloat(price);
+      if(isNaN(num)){
+        const m = val.match(/\$([\d.]+)/);
+        if(m) num = parseFloat(m[1]);
+      }
+      if(!isNaN(num) && baseInput){
+        baseInput.value = num.toFixed(2);
+        baseInput.dispatchEvent(new Event('input', {bubbles:true}));
+        calcFinal();
+      }
+    });
+  });
+  // Also watch custom price to sync if user edits custom
+  const customPriceInput = document.getElementById('custom-price');
+  if(customPriceInput && baseInput){
+    customPriceInput.addEventListener('input', ()=>{
+      if(planMode === 'custom'){
+        const v = parseFloat(customPriceInput.value);
+        if(!isNaN(v) && v > 0){
+          baseInput.value = v.toFixed(2);
+          calcFinal();
+        }
+      }
+    });
+    // when switching to custom, prefill base with custom price if exists
+    document.querySelectorAll('[data-plan-toggle]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        setTimeout(()=>{
+          if(planMode === 'custom' && customPriceInput.value){
+            const v = parseFloat(customPriceInput.value);
+            if(!isNaN(v) && baseInput) { baseInput.value = v.toFixed(2); calcFinal(); }
+          } else if(planMode === 'standard'){
+            const checked = form.querySelector('input[name="standard_plan"]:checked');
+            if(checked){
+              const parts = checked.value.split('|');
+              let num = parseFloat(parts[2] || '');
+              if(isNaN(num)){
+                const m = checked.value.match(/\$([\d.]+)/);
+                if(m) num = parseFloat(m[1]);
+              }
+              if(!isNaN(num) && baseInput){ baseInput.value = num.toFixed(2); calcFinal(); }
+            }
+          }
+        }, 50);
+      });
+    });
+  }
+
+  // Member search
+  if(memberSearch && memberTable){
+    memberSearch.addEventListener('input', ()=>{
+      const q = memberSearch.value.toLowerCase();
+      memberTable.querySelectorAll('tbody tr').forEach(tr=>{
+        const txt = tr.textContent.toLowerCase();
+        tr.style.display = txt.includes(q) ? '' : 'none';
+      });
+    });
+  }
+
+  // Member radio select
+  form.querySelectorAll('input[name="member_select"]').forEach(radio=>{
+    radio.addEventListener('change', ()=>{
+      const val = radio.value; // "ID|Name"
+      const parts = val.split('|');
+      const id = parts[0] || '';
+      const name = parts[1] || '';
+      selectedNameEl.textContent = name;
+      selectedIdEl.textContent = id;
+      selectedDisplay.classList.remove('hidden');
+      form.querySelector('[data-error="member"]').classList.add('hidden');
+    });
+  });
+  // also click row to select
+  if(memberTable){
+    memberTable.querySelectorAll('tbody tr').forEach(tr=>{
+      tr.addEventListener('click', (e)=>{
+        if(e.target.type === 'radio') return;
+        const radio = tr.querySelector('input[type="radio"]');
+        if(radio){ radio.checked = true; radio.dispatchEvent(new Event('change', {bubbles:true})); }
+      });
+      tr.style.cursor = 'pointer';
+    });
+  }
+  if(clearMemberBtn){
+    clearMemberBtn.addEventListener('click', ()=>{
+      form.querySelectorAll('input[name="member_select"]').forEach(r=> r.checked=false);
+      selectedDisplay.classList.add('hidden');
+      selectedNameEl.textContent = '—';
+      selectedIdEl.textContent = '—';
+    });
+  }
+
+  function getSelectedMember(){
+    const checked = form.querySelector('input[name="member_select"]:checked');
+    if(!checked) return null;
+    const parts = checked.value.split('|');
+    return {id: parts[0], name: parts[1]};
+  }
+  function getSelectedPlan(){
+    if(planMode === 'standard'){
+      const checked = form.querySelector('input[name="standard_plan"]:checked');
+      return checked ? checked.value : null;
+    } else {
+      const duration = form.querySelector('[name="custom_duration"]').value;
+      const price = form.querySelector('[name="custom_price"]').value;
+      const benefits = form.querySelector('[name="custom_benefits"]').value.trim();
+      if(!duration || !price || !benefits) return null;
+      return duration + ' | $' + parseFloat(price).toFixed(2) + ' | ' + benefits.split('\n')[0];
+    }
+  }
+
+  function validateStep(step){
+    let valid = true;
+    // reset errors for step
+    form.querySelectorAll('[data-error]').forEach(el=> el.classList.add('hidden'));
+    form.querySelectorAll('.border-error').forEach(el=> el.classList.remove('border-error'));
+    msg.classList.add('hidden');
+
+    function mark(name, message){
+      valid = false;
+      const err = form.querySelector(`[data-error="${name}"]`);
+      if(err){ if(message) err.textContent = message; err.classList.remove('hidden'); }
+      const input = form.querySelector(`[name="${name}"]`) || document.getElementById(name);
+      if(input) input.classList.add('border-error');
+    }
+
+    if(step === 1){
+      if(!getSelectedMember()){
+        mark('member', 'Please select a member.');
+      }
+    } else if(step === 2){
+      if(planMode === 'standard'){
+        if(!form.querySelector('input[name="standard_plan"]:checked')){
+          mark('standard_plan', 'Please select a standard plan.');
+        }
+      } else {
+        const duration = form.querySelector('[name="custom_duration"]');
+        const price = form.querySelector('[name="custom_price"]');
+        const benefits = form.querySelector('[name="custom_benefits"]');
+        if(!duration.value) mark('custom_duration');
+        if(!price.value.trim() || isNaN(parseFloat(price.value)) || parseFloat(price.value) <= 0) mark('custom_price', 'Valid price > 0 required.');
+        if(!benefits.value.trim()) mark('custom_benefits');
+      }
+    } else if(step === 3){
+      const start = document.getElementById('start-date');
+      const end = document.getElementById('end-date');
+      if(!start.value) mark('start_date');
+      if(!end.value) mark('end_date');
+      if(start.value && end.value){
+        const s = new Date(start.value);
+        const e = new Date(end.value);
+        if(e <= s){
+          mark('end_date', 'End date must be after start date.');
+        }
+      }
+    } else if(step === 4){
+      const baseVal = parseFloat(baseInput.value);
+      const discVal = parseFloat(discountInput.value) || 0;
+      if(isNaN(baseVal) || baseVal <= 0) mark('base_price', 'Base price must be > 0.');
+      if(discVal < 0) mark('discount', 'Discount cannot be negative.');
+      if(!isNaN(baseVal) && discVal > baseVal) mark('discount', 'Discount cannot exceed base price.');
+    } else if(step === 5){
+      const pm = document.getElementById('payment-method');
+      const confirm = document.getElementById('confirm-payment');
+      if(!pm.value) mark('payment_method');
+      if(!confirm.checked) mark('confirm_payment', 'You must confirm payment to proceed.');
+    }
+    if(!valid){
+      msg.textContent = 'Please fix validation errors before continuing.';
+      msg.classList.remove('hidden');
+      showToast('Please fix validation errors', 'error');
+    }
+    return valid;
+  }
+
+  function populateSummary(){
+    const member = getSelectedMember();
+    const plan = getSelectedPlan();
+    const start = document.getElementById('start-date').value;
+    const end = document.getElementById('end-date').value;
+    const calc = calcFinal();
+    const pm = document.getElementById('payment-method').value;
+
+    const memberEl = form.querySelector('[data-summary-member]');
+    if(memberEl) memberEl.textContent = member ? member.name + ' (' + member.id + ')' : '—';
+
+    const planEl = form.querySelector('[data-summary-plan]');
+    if(planEl){
+      if(planMode === 'standard'){
+        const checked = form.querySelector('input[name="standard_plan"]:checked');
+        if(checked){
+          const parts = checked.value.split('|');
+          // new format id|name|price, old format name|price
+          const name = parts[1] || parts[0];
+          const price = parts[2] || (checked.value.match(/\$([\d.]+)/)||[])[1] || '';
+          planEl.textContent = name + (price ? ' ($' + parseFloat(price).toFixed(2) + ')' : '');
+        } else {
+          planEl.textContent = '—';
+        }
+      } else {
+        const duration = form.querySelector('[name="custom_duration"]').value || '—';
+        const price = form.querySelector('[name="custom_price"]').value || '0';
+        const benefits = form.querySelector('[name="custom_benefits"]').value.trim().split('\n').filter(Boolean).join(', ') || '—';
+        planEl.textContent = 'Custom (' + duration + ', $' + (parseFloat(price)||0).toFixed(2) + ') • ' + benefits;
+      }
+    }
+
+    const datesEl = form.querySelector('[data-summary-dates]');
+    if(datesEl) datesEl.textContent = (start && end) ? start + ' → ' + end : '—';
+
+    const discountEl = form.querySelector('[data-summary-discount]');
+    if(discountEl) discountEl.textContent = '-$' + calc.discount.toFixed(2);
+
+    const baseEl = form.querySelector('[data-summary-base]');
+    if(baseEl) baseEl.textContent = '$' + calc.base.toFixed(2);
+
+    const totalEl = form.querySelector('[data-summary-total]');
+    if(totalEl) totalEl.textContent = '$' + calc.total.toFixed(2);
+
+    const paymentEl = form.querySelector('[data-summary-payment]');
+    if(paymentEl) paymentEl.textContent = pm ? pm.replace('_',' ') : '—';
+  }
+
+  // Navigation handlers
+  nextBtn.addEventListener('click', ()=>{
+    if(!validateStep(currentStep)) return;
+    if(currentStep < totalSteps){
+      currentStep++;
+      if(currentStep === 6) populateSummary();
+      updateStepper();
+      calcFinal();
+    }
+  });
+
+  prevBtn.addEventListener('click', ()=>{
+    if(currentStep > 1){
+      currentStep--;
+      updateStepper();
+    }
+  });
+
+  // Submit -> backend POST (no tax)
+  form.addEventListener('submit', (e)=>{
+    // Validate all steps first
+    for(let s=1; s<=5; s++){
+      if(!validateStep(s)){
+        e.preventDefault();
+        currentStep = s;
+        updateStepper();
+        return;
+      }
+    }
+    // If backend is available, use fetch; otherwise allow normal POST
+    // We intercept to use fetch for better UX (stay on page, show toast, redirect)
+    const isBackend = form.action && form.action.includes('/subscriptions/create');
+    if(isBackend){
+      e.preventDefault();
+      populateSummary();
+      submitBtn.disabled = true;
+      const origHTML = submitBtn.innerHTML;
+      submitBtn.innerHTML = '<span class="w-4 h-4 border-2 border-on-primary border-t-transparent rounded-full animate-spin inline-block align-middle"></span> Processing...';
+      const formData = new FormData(form);
+      // ensure member_select is present (fallback to checked radio)
+      if(!formData.get('member_select')){
+        const checked = form.querySelector('input[name="member_select"]:checked');
+        if(checked) formData.set('member_select', checked.value);
+      }
+      if(!formData.get('standard_plan')){
+        const checked = form.querySelector('input[name="standard_plan"]:checked');
+        if(checked) formData.set('standard_plan', checked.value);
+      }
+      fetch(form.action, {
+        method: 'POST',
+        body: formData,
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+      }).then(r=>{
+        if(r.redirected){
+          showToast('Subscription created successfully', 'success');
+          setTimeout(()=> window.location.href = r.url || '/subscriptions/', 700);
+          return null;
+        }
+        return r.json().catch(()=> r.text().then(t=> ({success: r.ok, html: t})));
+      }).then(data=>{
+        if(!data) return;
+        if(data.success){
+          showToast('Subscription ' + (data.code||'') + ' created ($' + (data.total||'') + ')', 'success');
+          setTimeout(()=> window.location.href = data.redirect || '/subscriptions/', 800);
+        } else if(data.html && data.html.includes('error')){
+          msg.textContent = 'Please check form errors.';
+          msg.classList.remove('hidden');
+          showToast('Failed - check errors', 'error');
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = origHTML;
+        } else {
+          // fallback: if backend rendered HTML with errors, reload page
+          window.location.reload();
+        }
+      }).catch(err=>{
+        showToast('Network error: ' + err, 'error');
+        msg.textContent = 'Network error. Trying normal submit...';
+        msg.classList.remove('hidden');
+        // fallback to normal submit
+        setTimeout(()=> form.submit(), 800);
+      });
+    } else {
+      populateSummary();
+      showToast('Subscription created successfully (frontend demo)', 'success');
+    }
+  });
+
+  // initial
+  updateStepper();
+  calcFinal();
+
+  // live clear errors on input
+  form.querySelectorAll('input, select, textarea').forEach(inp=>{
+    ['input','change'].forEach(evt=>{
+      inp.addEventListener(evt, ()=>{
+        inp.classList.remove('border-error');
+        const err = form.querySelector(`[data-error="${inp.name}"]`);
+        if(err) err.classList.add('hidden');
+        if(inp.name === 'member_select') {
+          const memberErr = form.querySelector('[data-error="member"]');
+          if(memberErr) memberErr.classList.add('hidden');
+        }
+      });
+    });
+  });
+
+})();
+</script>
+{% endblock %}

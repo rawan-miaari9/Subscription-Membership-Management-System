@@ -1,0 +1,187 @@
+{% extends "layouts/dashboard.html" %}
+{% block title %}Expenses - Iron Core{% endblock %}
+
+{% block dashboard_content %}
+<!-- Page Header & Action -->
+<div class="flex justify-between items-end mb-8">
+<div>
+<h2 class="font-headline-lg text-headline-lg text-on-surface uppercase tracking-tight text-white">EXPENSE TRACKING</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-2">Manage and monitor facility outgoings.</p>
+</div>
+<a href="/expenses/add.html" onclick="if(window.location.pathname!=='/expenses/add/'){ event.preventDefault(); if(typeof toast==='function') toast('Add Expense — opening frontend demo page','info'); setTimeout(()=>window.location.href='/expenses/add/', 300); }" class="bg-primary-container hover:bg-[#D97706] text-[#0F172A] font-headline-md text-sm uppercase px-6 py-3 rounded-DEFAULT transition-colors duration-200 font-bold flex items-center gap-2 border border-primary-container">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">add</span>
+                Add Expense
+            </a>
+</div>
+<!-- Expense Category Grid (Bento) -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-bento-gap mb-8">
+<!-- Rent Card -->
+<div class="bg-[#1E293B] border border-[#334155] p-[24px] rounded-lg relative overflow-hidden group hover:border-primary-container transition-colors duration-300">
+<div class="flex justify-between items-start mb-4">
+<span class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider">Facility Rent</span>
+<span class="material-symbols-outlined text-outline">business</span>
+</div>
+<div class="font-data-lg text-[32px] text-white tracking-tight">$12,500<span class="text-sm text-on-surface-variant">/mo</span></div>
+<div class="mt-4 flex items-center gap-2">
+<div class="w-1.5 h-1.5 bg-emerald-500 rounded-sm"></div>
+<span class="font-label-caps text-[10px] text-on-surface-variant uppercase">Paid on time</span>
+</div>
+<!-- Abstract bg texture hint -->
+<div class="absolute -bottom-4 -right-4 text-9xl text-[#0F172A] opacity-10 font-bold pointer-events-none">R</div>
+</div>
+<!-- Equipment Card -->
+<div class="bg-[#1E293B] border border-[#334155] p-[24px] rounded-lg relative overflow-hidden group hover:border-primary-container transition-colors duration-300">
+<div class="flex justify-between items-start mb-4">
+<span class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider">Equipment</span>
+<span class="material-symbols-outlined text-outline">fitness_center</span>
+</div>
+<div class="font-data-lg text-[32px] text-white tracking-tight">$4,200<span class="text-sm text-on-surface-variant">/mo</span></div>
+<div class="mt-4 flex items-center gap-2">
+<div class="w-1.5 h-1.5 bg-primary-container rounded-sm"></div>
+<span class="font-label-caps text-[10px] text-on-surface-variant uppercase">Lease active</span>
+</div>
+<!-- Abstract bg texture hint -->
+<div class="absolute -bottom-4 -right-4 text-9xl text-[#0F172A] opacity-10 font-bold pointer-events-none">E</div>
+</div>
+<!-- Salaries Card -->
+<div class="bg-[#1E293B] border border-[#334155] p-[24px] rounded-lg relative overflow-hidden group hover:border-primary-container transition-colors duration-300">
+<div class="flex justify-between items-start mb-4">
+<span class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider">Salaries</span>
+<span class="material-symbols-outlined text-outline">groups</span>
+</div>
+<div class="font-data-lg text-[32px] text-white tracking-tight">$18,450<span class="text-sm text-on-surface-variant">/mo</span></div>
+<div class="mt-4 flex items-center gap-2">
+<div class="w-1.5 h-1.5 bg-emerald-500 rounded-sm"></div>
+<span class="font-label-caps text-[10px] text-on-surface-variant uppercase">Processed</span>
+</div>
+<!-- Abstract bg texture hint -->
+<div class="absolute -bottom-4 -right-4 text-9xl text-[#0F172A] opacity-10 font-bold pointer-events-none">S</div>
+</div>
+<!-- Utilities Card -->
+<div class="bg-[#1E293B] border border-[#334155] p-[24px] rounded-lg relative overflow-hidden group hover:border-primary-container transition-colors duration-300">
+<div class="flex justify-between items-start mb-4">
+<span class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider">Utilities</span>
+<span class="material-symbols-outlined text-outline">bolt</span>
+</div>
+<div class="font-data-lg text-[32px] text-white tracking-tight">$2,100<span class="text-sm text-on-surface-variant">/mo</span></div>
+<div class="mt-4 flex items-center gap-2">
+<div class="w-1.5 h-1.5 bg-rose-500 rounded-sm"></div>
+<span class="font-label-caps text-[10px] text-on-surface-variant uppercase">Over budget</span>
+</div>
+<!-- Abstract bg texture hint -->
+<div class="absolute -bottom-4 -right-4 text-9xl text-[#0F172A] opacity-10 font-bold pointer-events-none">U</div>
+</div>
+</div>
+<!-- Data Table Section -->
+<div class="bg-[#1E293B] border border-[#334155] rounded-lg overflow-hidden flex flex-col h-[500px]">
+<!-- Table Header/Controls -->
+<div class="p-6 border-b border-[#334155] flex justify-between items-center bg-[#1E293B]">
+<h3 class="font-label-caps text-label-caps text-white uppercase tracking-wider">Expense History</h3>
+<div class="flex gap-4">
+<!-- Category Filter -->
+<select class="bg-[#0F172A] border border-[#334155] text-on-surface-variant font-body-sm text-body-sm rounded-DEFAULT py-2 pl-4 pr-10 focus:border-primary-container focus:outline-none appearance-none cursor-pointer">
+<option>All Categories</option>
+<option>Rent</option>
+<option>Equipment</option>
+<option>Salaries</option>
+<option>Utilities</option>
+</select>
+<!-- Search within table -->
+<div class="relative w-48">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm">search</span>
+<input class="w-full bg-[#0F172A] border border-[#334155] rounded-DEFAULT py-2 pl-9 pr-4 text-on-surface focus:border-primary-container focus:outline-none font-body-sm text-body-sm h-full" placeholder="Search ID..." type="text"/>
+</div>
+</div>
+</div>
+<!-- Table Content -->
+<div class="overflow-y-auto flex-1 p-0">
+<table class="w-full text-left border-collapse">
+<thead class="sticky top-0 bg-[#0F172A] border-b border-[#334155] z-10">
+<tr>
+<th class="py-3 px-6 font-label-caps text-[10px] text-on-surface-variant uppercase tracking-widest font-normal">ID</th>
+<th class="py-3 px-6 font-label-caps text-[10px] text-on-surface-variant uppercase tracking-widest font-normal">Date</th>
+<th class="py-3 px-6 font-label-caps text-[10px] text-on-surface-variant uppercase tracking-widest font-normal">Description</th>
+<th class="py-3 px-6 font-label-caps text-[10px] text-on-surface-variant uppercase tracking-widest font-normal">Category</th>
+<th class="py-3 px-6 font-label-caps text-[10px] text-on-surface-variant uppercase tracking-widest font-normal text-right">Amount</th>
+<th class="py-3 px-6 font-label-caps text-[10px] text-on-surface-variant uppercase tracking-widest font-normal text-center">Status</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-[#334155]">
+<tr class="hover:bg-[#0F172A] transition-colors duration-150 group">
+<td class="py-4 px-6 font-data-md text-data-md text-on-surface-variant group-hover:text-white transition-colors">EXP-9012</td>
+<td class="py-4 px-6 font-data-md text-sm text-on-surface">2023-10-25</td>
+<td class="py-4 px-6 font-body-sm text-body-sm text-white">Eleiko Barbell Replacement</td>
+<td class="py-4 px-6 font-label-caps text-[10px] text-on-surface-variant uppercase">Equipment</td>
+<td class="py-4 px-6 font-data-md text-data-md text-white text-right">$850.00</td>
+<td class="py-4 px-6 text-center flex justify-center">
+<div class="bg-slate-800 px-2 py-1 rounded-[4px] flex items-center gap-1.5 w-max">
+<div class="w-1.5 h-1.5 bg-primary-container"></div>
+<span class="font-label-caps text-[10px] text-slate-50 uppercase">Pending</span>
+</div>
+</td>
+</tr>
+<tr class="hover:bg-[#0F172A] transition-colors duration-150 group">
+<td class="py-4 px-6 font-data-md text-data-md text-on-surface-variant group-hover:text-white transition-colors">EXP-9011</td>
+<td class="py-4 px-6 font-data-md text-sm text-on-surface">2023-10-24</td>
+<td class="py-4 px-6 font-body-sm text-body-sm text-white">Industrial Fans Maintenance</td>
+<td class="py-4 px-6 font-label-caps text-[10px] text-on-surface-variant uppercase">Utilities</td>
+<td class="py-4 px-6 font-data-md text-data-md text-white text-right">$320.00</td>
+<td class="py-4 px-6 text-center flex justify-center">
+<div class="bg-slate-800 px-2 py-1 rounded-[4px] flex items-center gap-1.5 w-max">
+<div class="w-1.5 h-1.5 bg-emerald-500"></div>
+<span class="font-label-caps text-[10px] text-slate-50 uppercase">Cleared</span>
+</div>
+</td>
+</tr>
+<tr class="hover:bg-[#0F172A] transition-colors duration-150 group">
+<td class="py-4 px-6 font-data-md text-data-md text-on-surface-variant group-hover:text-white transition-colors">EXP-9010</td>
+<td class="py-4 px-6 font-data-md text-sm text-on-surface">2023-10-20</td>
+<td class="py-4 px-6 font-body-sm text-body-sm text-white">Coaching Staff Payroll Q3</td>
+<td class="py-4 px-6 font-label-caps text-[10px] text-on-surface-variant uppercase">Salaries</td>
+<td class="py-4 px-6 font-data-md text-data-md text-white text-right">$18,450.00</td>
+<td class="py-4 px-6 text-center flex justify-center">
+<div class="bg-slate-800 px-2 py-1 rounded-[4px] flex items-center gap-1.5 w-max">
+<div class="w-1.5 h-1.5 bg-emerald-500"></div>
+<span class="font-label-caps text-[10px] text-slate-50 uppercase">Cleared</span>
+</div>
+</td>
+</tr>
+<tr class="hover:bg-[#0F172A] transition-colors duration-150 group">
+<td class="py-4 px-6 font-data-md text-data-md text-on-surface-variant group-hover:text-white transition-colors">EXP-9009</td>
+<td class="py-4 px-6 font-data-md text-sm text-on-surface">2023-10-15</td>
+<td class="py-4 px-6 font-body-sm text-body-sm text-white">Warehouse Facility Rent Nov</td>
+<td class="py-4 px-6 font-label-caps text-[10px] text-on-surface-variant uppercase">Rent</td>
+<td class="py-4 px-6 font-data-md text-data-md text-white text-right">$12,500.00</td>
+<td class="py-4 px-6 text-center flex justify-center">
+<div class="bg-slate-800 px-2 py-1 rounded-[4px] flex items-center gap-1.5 w-max">
+<div class="w-1.5 h-1.5 bg-emerald-500"></div>
+<span class="font-label-caps text-[10px] text-slate-50 uppercase">Cleared</span>
+</div>
+</td>
+</tr>
+<tr class="hover:bg-[#0F172A] transition-colors duration-150 group">
+<td class="py-4 px-6 font-data-md text-data-md text-on-surface-variant group-hover:text-white transition-colors">EXP-9008</td>
+<td class="py-4 px-6 font-data-md text-sm text-on-surface">2023-10-12</td>
+<td class="py-4 px-6 font-body-sm text-body-sm text-white">Chalk &amp; Cleaning Supplies</td>
+<td class="py-4 px-6 font-label-caps text-[10px] text-on-surface-variant uppercase">Operations</td>
+<td class="py-4 px-6 font-data-md text-data-md text-white text-right">$450.75</td>
+<td class="py-4 px-6 text-center flex justify-center">
+<div class="bg-slate-800 px-2 py-1 rounded-[4px] flex items-center gap-1.5 w-max">
+<div class="w-1.5 h-1.5 bg-emerald-500"></div>
+<span class="font-label-caps text-[10px] text-slate-50 uppercase">Cleared</span>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Table Footer Pagination -->
+<div class="p-4 border-t border-[#334155] bg-[#1E293B] flex justify-between items-center">
+<span class="font-body-sm text-xs text-on-surface-variant">Showing 1 to 5 of 42 entries</span>
+<div class="flex gap-2">
+<button class="bg-transparent border border-[#334155] hover:bg-slate-800 text-slate-50 font-label-caps text-[10px] uppercase px-3 py-1.5 rounded-DEFAULT transition-colors">Prev</button>
+<button class="bg-transparent border border-[#334155] hover:bg-slate-800 text-slate-50 font-label-caps text-[10px] uppercase px-3 py-1.5 rounded-DEFAULT transition-colors">Next</button>
+</div>
+</div>
+</div>
+{% endblock %}

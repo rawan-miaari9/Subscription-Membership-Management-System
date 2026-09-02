@@ -1,0 +1,194 @@
+{% extends "layouts/dashboard.html" %}
+{% block title %}Add Expense - Iron Core{% endblock %}
+
+{% block dashboard_content %}
+<div class="max-w-3xl mx-auto">
+  <!-- Back + Header -->
+  <div class="flex items-center gap-2 mb-4">
+    <a href="{% url 'expenses' %}" class="inline-flex items-center gap-1.5 font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant hover:text-primary transition-colors">
+      <span class="material-symbols-outlined text-[16px]">arrow_back</span> Back to Expenses
+    </a>
+  </div>
+  <div class="mb-8 border-b border-outline-variant pb-6">
+    <div class="flex items-center gap-3 mb-2">
+      <span class="w-8 h-8 flex items-center justify-center rounded bg-primary-container text-on-primary-container">
+        <span class="material-symbols-outlined text-[18px]">receipt</span>
+      </span>
+      <span class="font-label-caps text-[11px] uppercase tracking-[0.12em] text-primary-container">Expenses</span>
+    </div>
+    <h1 class="font-headline-lg text-headline-lg text-on-surface uppercase tracking-tight">ADD EXPENSE</h1>
+    <p class="font-body-sm text-body-sm text-on-surface-variant mt-2 max-w-2xl">Record a new facility expense. All fields are validated frontend-only — no backend required.</p>
+  </div>
+
+  <!-- Form Card -->
+  <form data-add-expense-form class="bg-surface-container border border-outline-variant rounded-lg p-6 md:p-8 space-y-6" novalidate>
+    {% csrf_token %}
+    <div data-form-msg class="hidden p-3 rounded border border-error bg-error-container text-on-error-container font-body-sm text-sm"></div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <!-- Category -->
+      <div>
+        <label class="block font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">Category *</label>
+        <div class="relative">
+          <select name="category" required class="w-full appearance-none bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 pr-10 font-body-sm text-body-sm text-on-surface focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all">
+            <option value="" disabled selected>Select category</option>
+            <option value="Equipment">Equipment</option>
+            <option value="Maintenance">Maintenance</option>
+            <option value="Salary">Salary</option>
+            <option value="Utility">Utility</option>
+            <option value="Other">Other</option>
+          </select>
+          <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none text-[20px]">expand_more</span>
+        </div>
+        <p class="hidden text-error text-xs mt-1.5 font-body-sm" data-error="category">Category is required.</p>
+      </div>
+
+      <!-- Date -->
+      <div>
+        <label class="block font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">Date *</label>
+        <input name="date" type="date" required class="w-full bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 font-body-sm text-body-sm text-on-surface focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all" />
+        <p class="hidden text-error text-xs mt-1.5 font-body-sm" data-error="date">Date is required.</p>
+      </div>
+
+      <!-- Amount -->
+      <div>
+        <label class="block font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">Amount *</label>
+        <div class="relative">
+          <span class="absolute left-3 top-1/2 -translate-y-1/2 font-data-md text-data-md text-on-surface-variant">$</span>
+          <input name="amount" type="number" min="0.01" step="0.01" required placeholder="0.00" class="w-full bg-surface-container-lowest border border-outline-variant rounded pl-8 pr-4 py-3 font-body-sm text-body-sm text-on-surface placeholder:text-on-surface-variant/60 focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all" />
+        </div>
+        <p class="hidden text-error text-xs mt-1.5 font-body-sm" data-error="amount">Valid amount &gt; 0 is required.</p>
+      </div>
+
+      <!-- Payment Method -->
+      <div>
+        <label class="block font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">Payment Method *</label>
+        <div class="relative">
+          <select name="payment_method" required class="w-full appearance-none bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 pr-10 font-body-sm text-body-sm text-on-surface focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all">
+            <option value="" disabled selected>Select method</option>
+            <option value="Cash">Cash</option>
+            <option value="Card">Card</option>
+            <option value="Bank Transfer">Bank Transfer</option>
+            <option value="Online">Online</option>
+            <option value="Other">Other</option>
+          </select>
+          <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none text-[20px]">expand_more</span>
+        </div>
+        <p class="hidden text-error text-xs mt-1.5 font-body-sm" data-error="payment_method">Payment method is required.</p>
+      </div>
+
+      <!-- Description -->
+      <div class="md:col-span-2">
+        <label class="block font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">Description *</label>
+        <textarea name="description" required rows="3" placeholder="e.g. Eleiko barbell replacement, HVAC maintenance, staff payroll..." class="w-full bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 font-body-sm text-body-sm text-on-surface placeholder:text-on-surface-variant/60 focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all resize-none"></textarea>
+        <p class="hidden text-error text-xs mt-1.5 font-body-sm" data-error="description">Description is required.</p>
+      </div>
+
+      <!-- Notes -->
+      <div class="md:col-span-2">
+        <label class="block font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">Notes <span class="normal-case tracking-normal text-on-surface-variant/70 font-body-sm text-xs">(optional)</span></label>
+        <textarea name="notes" rows="3" placeholder="Additional context, vendor, invoice reference..." class="w-full bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 font-body-sm text-body-sm text-on-surface placeholder:text-on-surface-variant/60 focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all resize-none"></textarea>
+        <p class="font-body-sm text-[11px] text-on-surface-variant mt-1.5">Optional — internal notes, not shown on statements.</p>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="flex flex-wrap items-center gap-3 pt-6 border-t border-outline-variant">
+      <button type="submit" class="inline-flex items-center justify-center gap-2 px-8 py-3 bg-primary-container text-on-primary-container border border-primary-container font-label-caps text-[11px] uppercase tracking-widest font-bold rounded hover:bg-primary-container/90 transition-colors">
+        <span class="material-symbols-outlined text-[16px]">save</span> Save Expense
+      </button>
+      <a href="{% url 'expenses' %}" class="inline-flex items-center justify-center px-8 py-3 border border-outline-variant bg-transparent text-on-surface font-label-caps text-[11px] uppercase tracking-widest rounded hover:bg-surface-container-high transition-colors">
+        Cancel
+      </a>
+      <span data-loading class="hidden ml-2 inline-flex items-center gap-2 font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant">
+        <span class="w-4 h-4 border-2 border-primary-container border-t-transparent rounded-full animate-spin"></span> Saving...
+      </span>
+    </div>
+
+    <div data-success class="hidden p-4 bg-tertiary-container border border-tertiary text-on-tertiary-container rounded font-body-sm text-sm flex items-center gap-2">
+      <span class="material-symbols-outlined text-[18px]">check_circle</span> Expense saved successfully (frontend demo).
+    </div>
+    <div data-error-state class="hidden p-4 bg-error-container border border-error text-on-error-container rounded font-body-sm text-sm flex items-center gap-2">
+      <span class="material-symbols-outlined text-[18px]">error</span> Failed to save. Please check highlighted fields.
+    </div>
+  </form>
+</div>
+
+<script>
+(function(){
+  const form = document.querySelector('[data-add-expense-form]');
+  if(!form) return;
+  function toastLocal(msg, type){
+    if(typeof toast === 'function') toast(msg, type);
+    else if(window.toast) window.toast(msg, type);
+    else {
+      let c = document.getElementById('toast-container');
+      if(!c){ c=document.createElement('div'); c.id='toast-container'; c.className='fixed bottom-4 right-4 z-50 flex flex-col gap-2'; document.body.appendChild(c); }
+      const el=document.createElement('div'); el.className='px-4 py-3 rounded border text-sm font-label-caps shadow-lg '+(type==='error'?'bg-error text-on-error border-error':type==='success'?'bg-tertiary-container text-on-tertiary-container border-tertiary':'bg-surface-container-high border-outline-variant text-on-surface'); el.textContent=msg; c.appendChild(el); setTimeout(()=>{el.style.opacity='0'; setTimeout(()=>el.remove(),300);},2500);
+    }
+  }
+  form.addEventListener('submit', function(e){
+    e.preventDefault();
+    let valid = true;
+    const msg = form.querySelector('[data-form-msg]');
+    form.querySelectorAll('[data-error]').forEach(el => el.classList.add('hidden'));
+    form.querySelectorAll('.border-error').forEach(el => el.classList.remove('border-error','!border-error'));
+    function markError(name, message){
+      valid = false;
+      const input = form.querySelector(`[name="${name}"]`);
+      const err = form.querySelector(`[data-error="${name}"]`);
+      if(input) input.classList.add('border-error','!border-error');
+      if(err){ if(message) err.textContent = message; err.classList.remove('hidden'); }
+    }
+    const category = form.querySelector('[name="category"]');
+    const description = form.querySelector('[name="description"]');
+    const amount = form.querySelector('[name="amount"]');
+    const date = form.querySelector('[name="date"]');
+    const payment = form.querySelector('[name="payment_method"]');
+
+    if(!category.value) markError('category');
+    if(!description.value.trim()) markError('description');
+    if(!amount.value.trim() || isNaN(parseFloat(amount.value)) || parseFloat(amount.value) <= 0) markError('amount');
+    if(!date.value) markError('date');
+    if(!payment.value) markError('payment_method');
+
+    if(!valid){
+      msg.textContent = 'Please fix validation errors before saving.';
+      msg.classList.remove('hidden');
+      toastLocal('Please fix validation errors','error');
+      return;
+    }
+    msg.classList.add('hidden');
+    const loading = form.querySelector('[data-loading]');
+    const success = form.querySelector('[data-success]');
+    const errState = form.querySelector('[data-error-state]');
+    loading.classList.remove('hidden');
+    success.classList.add('hidden');
+    errState.classList.add('hidden');
+    const submitBtn = form.querySelector('button[type="submit"]');
+    if(submitBtn) submitBtn.disabled = true;
+    setTimeout(function(){
+      loading.classList.add('hidden');
+      if(submitBtn) submitBtn.disabled = false;
+      if(Math.random() > 0.2){
+        success.classList.remove('hidden');
+        toastLocal('Expense saved (demo)','success');
+      } else {
+        errState.classList.remove('hidden');
+        errState.textContent = 'Failed to save. Simulated server error — try again.';
+        toastLocal('Save failed — try again','error');
+      }
+    }, 900);
+  });
+  form.querySelectorAll('input, select, textarea').forEach(inp=>{
+    ['input','change'].forEach(evt=>{
+      inp.addEventListener(evt, ()=>{
+        inp.classList.remove('border-error','!border-error');
+        const err = form.querySelector(`[data-error="${inp.name}"]`);
+        if(err) err.classList.add('hidden');
+      });
+    });
+  });
+})();
+</script>
+{% endblock %}

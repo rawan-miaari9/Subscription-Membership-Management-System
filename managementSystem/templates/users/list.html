@@ -1,0 +1,184 @@
+{% extends "layouts/dashboard.html" %}
+{% block title %}Users & Roles - Iron Core{% endblock %}
+
+{% block dashboard_content %}
+<!-- Page Header -->
+<div class="flex justify-between items-end pb-4 border-b border-[#334155] mb-4">
+<div>
+<h1 class="font-headline-lg-mobile md:font-headline-lg text-on-surface uppercase tracking-tight">USER MANAGEMENT</h1>
+<p class="font-body-sm text-on-surface-variant mt-1">Manage system administrators, accountants, and staff access roles.</p>
+</div>
+<a href="/users/add.html" onclick="event.preventDefault(); if(typeof toast==='function') toast('Add / Edit User — opening frontend demo page','info'); setTimeout(()=>window.location.href='/users/add/', 300);" class="bg-primary-container text-on-primary-container hover:bg-[#D97706] px-6 py-2 font-label-caps uppercase transition-colors rounded-sm flex items-center gap-2 border border-primary-container">
+<span class="material-symbols-outlined text-[18px]">add</span>
+                Create User
+            </a>
+</div>
+<!-- Bento Grid Layout -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-bento-gap">
+<!-- Quick Stats Bento (Span 4) -->
+<div class="lg:col-span-4 grid grid-rows-2 gap-bento-gap">
+<!-- Stat 1 -->
+<div class="bg-[#1E293B] border border-[#334155] rounded-lg p-5 flex flex-col justify-between relative overflow-hidden group">
+<div class="flex justify-between items-start z-10 relative">
+<span class="font-label-caps text-on-surface-variant">TOTAL ACTIVE</span>
+<span class="material-symbols-outlined text-[#F59E0B]">group</span>
+</div>
+<div class="mt-4 z-10 relative">
+<span class="font-display text-on-surface">24</span>
+</div>
+<!-- Decorative Graphic -->
+<div class="absolute -bottom-4 -right-4 opacity-10 group-hover:opacity-20 transition-opacity">
+<span class="material-symbols-outlined text-[100px] text-[#F59E0B]">badge</span>
+</div>
+</div>
+<!-- Stat 2 -->
+<div class="bg-[#1E293B] border border-[#334155] rounded-lg p-5 flex flex-col justify-between">
+<div class="flex justify-between items-start">
+<span class="font-label-caps text-on-surface-variant">PENDING INVITES</span>
+<span class="material-symbols-outlined text-secondary">mail</span>
+</div>
+<div class="mt-4 flex items-end gap-3">
+<span class="font-display text-on-surface">03</span>
+<span class="font-data-md text-secondary mb-2">resend available</span>
+</div>
+</div>
+</div>
+<!-- Role Distribution Bento (Span 8) -->
+<div class="lg:col-span-8 bg-[#1E293B] border border-[#334155] rounded-lg p-6 flex flex-col">
+<h2 class="font-label-caps text-on-surface-variant mb-6 border-b border-[#334155] pb-2">ROLE DISTRIBUTION</h2>
+<div class="flex-1 grid grid-cols-3 gap-4">
+<div class="border border-[#334155] bg-[#0F172A] p-4 flex flex-col justify-center items-center rounded-sm hover:border-[#F59E0B] transition-colors cursor-pointer">
+<span class="font-data-lg text-[#F59E0B] mb-1">05</span>
+<span class="font-label-caps text-on-surface">ADMINISTRATOR</span>
+<div class="w-full bg-[#1E293B] h-1 mt-3">
+<div class="bg-[#F59E0B] h-1 w-full"></div>
+</div>
+</div>
+<div class="border border-[#334155] bg-[#0F172A] p-4 flex flex-col justify-center items-center rounded-sm hover:border-[#F59E0B] transition-colors cursor-pointer">
+<span class="font-data-lg text-on-surface mb-1">08</span>
+<span class="font-label-caps text-on-surface">ACCOUNTANT</span>
+<div class="w-full bg-[#1E293B] h-1 mt-3">
+<div class="bg-secondary h-1 w-3/4"></div>
+</div>
+</div>
+<div class="border border-[#334155] bg-[#0F172A] p-4 flex flex-col justify-center items-center rounded-sm hover:border-[#F59E0B] transition-colors cursor-pointer">
+<span class="font-data-lg text-on-surface mb-1">11</span>
+<span class="font-label-caps text-on-surface">COACH/STAFF</span>
+<div class="w-full bg-[#1E293B] h-1 mt-3">
+<div class="bg-outline h-1 w-1/2"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Main Data Table Bento (Span 12) -->
+<div class="lg:col-span-12 bg-[#1E293B] border border-[#334155] rounded-lg overflow-hidden flex flex-col mt-2">
+<div class="p-4 border-b border-[#334155] flex justify-between items-center bg-[#0F172A]">
+<h2 class="font-label-caps text-on-surface-variant">SYSTEM USERS DIRECTORY</h2>
+<div class="flex gap-2">
+<button class="p-1 border border-[#334155] text-on-surface-variant hover:text-[#F59E0B] hover:border-[#F59E0B] rounded-sm transition-colors">
+<span class="material-symbols-outlined text-[16px]">filter_list</span>
+</button>
+<button class="p-1 border border-[#334155] text-on-surface-variant hover:text-[#F59E0B] hover:border-[#F59E0B] rounded-sm transition-colors">
+<span class="material-symbols-outlined text-[16px]">download</span>
+</button>
+</div>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="border-b border-[#334155] bg-[#1E293B]">
+<th class="p-4 font-label-caps text-on-surface-variant font-normal">USER</th>
+<th class="p-4 font-label-caps text-on-surface-variant font-normal">ROLE</th>
+<th class="p-4 font-label-caps text-on-surface-variant font-normal">STATUS</th>
+<th class="p-4 font-label-caps text-on-surface-variant font-normal hidden md:table-cell">LAST LOGIN</th>
+<th class="p-4 font-label-caps text-on-surface-variant font-normal text-right">ACTIONS</th>
+</tr>
+</thead>
+<tbody class="font-body-sm text-on-surface divide-y divide-[#334155]">
+<!-- Row 1 -->
+<tr class="hover:bg-[#0F172A] transition-colors group">
+<td class="p-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-sm bg-[#334155] flex items-center justify-center font-data-md text-[#F59E0B]">
+                                            MR
+                                        </div>
+<div>
+<p class="font-data-md">Marcus Ruhl</p>
+<p class="text-[12px] text-on-surface-variant">marcus@ironcore.gym</p>
+</div>
+</div>
+</td>
+<td class="p-4 font-data-md">Admin</td>
+<td class="p-4">
+<div class="inline-flex items-center gap-2 bg-slate-800 px-2 py-1 rounded-sm border border-[#334155]">
+<div class="w-1.5 h-1.5 bg-emerald-500"></div>
+<span class="font-label-caps text-[10px]">ACTIVE</span>
+</div>
+</td>
+<td class="p-4 font-data-md text-on-surface-variant hidden md:table-cell">Today, 08:42 AM</td>
+<td class="p-4 text-right">
+<button class="text-on-surface-variant group-hover:text-[#F59E0B] transition-colors">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-[#0F172A] transition-colors group">
+<td class="p-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-sm bg-[#334155] flex items-center justify-center font-data-md text-secondary">
+                                            SJ
+                                        </div>
+<div>
+<p class="font-data-md">Sarah Jenkins</p>
+<p class="text-[12px] text-on-surface-variant">sarah.j@ironcore.gym</p>
+</div>
+</div>
+</td>
+<td class="p-4 font-data-md">Accountant</td>
+<td class="p-4">
+<div class="inline-flex items-center gap-2 bg-slate-800 px-2 py-1 rounded-sm border border-[#334155]">
+<div class="w-1.5 h-1.5 bg-emerald-500"></div>
+<span class="font-label-caps text-[10px]">ACTIVE</span>
+</div>
+</td>
+<td class="p-4 font-data-md text-on-surface-variant hidden md:table-cell">Yesterday, 16:20</td>
+<td class="p-4 text-right">
+<button class="text-on-surface-variant group-hover:text-[#F59E0B] transition-colors">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-[#0F172A] transition-colors group">
+<td class="p-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-sm bg-[#334155] flex items-center justify-center font-data-md text-secondary">
+                                            DT
+                                        </div>
+<div>
+<p class="font-data-md">Dave Tate</p>
+<p class="text-[12px] text-on-surface-variant">dave@ironcore.gym</p>
+</div>
+</div>
+</td>
+<td class="p-4 font-data-md">Coach</td>
+<td class="p-4">
+<div class="inline-flex items-center gap-2 bg-slate-800 px-2 py-1 rounded-sm border border-[#334155]">
+<div class="w-1.5 h-1.5 bg-red-500"></div>
+<span class="font-label-caps text-[10px]">DISABLED</span>
+</div>
+</td>
+<td class="p-4 font-data-md text-on-surface-variant hidden md:table-cell">Oct 12, 2023</td>
+<td class="p-4 text-right">
+<button class="text-on-surface-variant group-hover:text-[#F59E0B] transition-colors">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+{% endblock %}

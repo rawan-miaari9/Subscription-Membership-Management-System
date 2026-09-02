@@ -1,0 +1,18 @@
+{% extends "layouts/dashboard.html" %}
+{% block title %}Payment Details - Iron Core{% endblock %}
+{% block dashboard_content %}
+<div class="flex flex-col gap-6">
+  <div><h1 class="font-headline-lg text-headline-lg text-on-surface uppercase">PAY-2023-089</h1><p class="font-data-md text-on-surface-variant">Receipt #RC-1001 • Marcus Thorne</p></div>
+  <div class="grid grid-cols-12 gap-bento-gap">
+    <div class="col-span-6 md:col-span-3 bg-surface-container border border-outline-variant p-4 rounded"><p class="font-label-caps text-[11px] text-on-surface-variant">Amount</p><p class="font-data-lg text-primary mt-1">$350.00</p></div>
+    <div class="col-span-6 md:col-span-3 bg-surface-container border border-outline-variant p-4 rounded"><p class="font-label-caps text-[11px] text-on-surface-variant">Method</p><p class="font-data-md mt-1">VISA ****4242</p></div>
+    <div class="col-span-6 md:col-span-3 bg-surface-container border border-outline-variant p-4 rounded"><p class="font-label-caps text-[11px] text-on-surface-variant">Date</p><p class="font-data-md mt-1">2023-10-24</p></div>
+    <div class="col-span-6 md:col-span-3 bg-surface-container border border-outline-variant p-4 rounded"><p class="font-label-caps text-[11px] text-on-surface-variant">Status</p><p class="font-data-md mt-1 text-tertiary">PAID</p></div>
+  </div>
+  <div class="bg-surface-container border border-outline-variant p-6 rounded">
+    <h3 class="font-label-caps text-[11px] text-on-surface-variant mb-4">Subscription</h3>
+    <p class="font-data-md text-[12px]">Elite Powerlifting • 2023-10-01 → 2024-10-01 • $108.00</p>
+  </div>
+  <div class="flex gap-2"><button data-toast="View Invoice (demo)" class="px-4 py-2 border border-outline-variant font-label-caps text-[11px]">View Invoice</button><button data-toast="Refund (demo)" class="px-4 py-2 border border-error text-error font-label-caps text-[11px]">Refund</button></div>
+</div>
+{% endblock %}

@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Gym Core Login{% endblock %}
+{% block body_class %}text-on-background font-body-sm{% endblock %}
+
+{% block body %}
+<div class="min-h-screen flex flex-col md:flex-row">
+<!-- Left Split: Hero Visual & Stats -->
+<div class="hidden md:flex w-1/2 relative bg-surface-container-lowest border-r border-outline-variant overflow-hidden">
+    <!-- Grayscale Image Background -->
+    <div class="absolute inset-0 grayscale bg-cover bg-center" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBH-Po6ctnKNekNrrL8hqsw7A5f6Kqvo6yi-INkiyt5ijmNRuHE3ojOgbXu7c5-fT1gg1rIqBHoDV71uvnfnUoMo-Hby4aZ6GPJrzANkytMSFCGqnLGeV7w8BmcZMSAkVe-AGK5SlwtUzGzxRKMbF85MKju1ogBVHfJtVJe4H0ygNJQ_tXYsTwVjkgpy8SWDLpUZw81Yf2Oz3sYhr5ZiYDMUC_OAtLyoZJoeVVtiMGR4nD4xDPmIUP7cA')"></div>
+    <!-- Multiply Overlay (20% as per guidance) -->
+    <div class="absolute inset-0 bg-background mix-blend-multiply opacity-20"></div>
+    <!-- Darkening Gradient for legibility -->
+    <div class="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent"></div>
+    <!-- Overlay Content (Stats) -->
+    <div class="absolute bottom-0 left-0 p-margin-desktop w-full">
+        <div class="flex gap-bento-gap max-w-lg">
+            <!-- Stat Card 1 -->
+            <div class="flex-1 bg-surface-container border border-outline-variant rounded p-[20px] backdrop-blur-sm bg-opacity-90">
+                <div class="flex items-center gap-2 mb-3">
+                    <span class="material-symbols-outlined text-primary text-[20px]">group</span>
+                    <h3 class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider">Active Members</h3>
+                </div>
+                <div class="font-data-lg text-data-lg text-on-surface">1,248</div>
+            </div>
+            <!-- Stat Card 2 -->
+            <div class="flex-1 bg-surface-container border border-outline-variant rounded p-[20px] backdrop-blur-sm bg-opacity-90">
+                <div class="flex items-center gap-2 mb-3">
+                    <span class="material-symbols-outlined text-primary text-[20px]">dns</span>
+                    <h3 class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider">System Uptime</h3>
+                </div>
+                <div class="font-data-lg text-data-lg text-on-surface">99.9%</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Right Split: Form Area -->
+<div class="w-full md:w-1/2 flex items-center justify-center p-margin-mobile md:p-margin-desktop min-h-screen">
+    <!-- Bento Login Card -->
+    <div class="w-full max-w-[440px] bg-surface-container border border-outline-variant rounded-lg p-[24px] shadow-2xl">
+        <div class="mb-8 text-center md:text-left">
+            <h1 class="font-display text-display text-on-surface uppercase tracking-tight mb-2">GYM CORE LOGIN</h1>
+            <p data-login-subtitle class="font-body-sm text-body-sm text-on-surface-variant">Access your administrative dashboard.</p>
+        </div>
+        <!-- Role Selector (backend-aware) -->
+        <div class="flex gap-2 mb-6 p-1 bg-surface-container-lowest border border-outline-variant rounded-DEFAULT">
+            <button data-role="admin" class="flex-1 py-2 font-label-caps text-label-caps uppercase text-primary bg-surface-container-high border border-outline-variant rounded-DEFAULT transition-colors" type="button">
+                Admin
+            </button>
+            <button data-role="accountant" class="flex-1 py-2 font-label-caps text-label-caps uppercase text-on-surface-variant hover:bg-surface-container-high transition-colors rounded-DEFAULT" type="button">
+                Accountant
+            </button>
+        </div>
+        <form data-login-form class="space-y-5" method="post" action="{% url 'login' %}{% if next %}?next={{ next }}{% endif %}" novalidate>
+            {% csrf_token %}
+            <input type="hidden" name="role" id="role-input" value="Admin">
+            {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+            {% if error %}
+            <div class="p-3 rounded border border-error bg-error-container text-on-error-container font-body-sm text-sm">{{ error }}</div>
+            {% endif %}
+            {% if messages %}
+                {% for message in messages %}
+                <div class="p-3 rounded border {% if message.tags == 'error' %}border-error bg-error-container text-on-error-container{% else %}border-tertiary bg-tertiary-container text-on-tertiary-container{% endif %} font-body-sm text-sm">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+            <div data-form-msg class="hidden p-3 rounded border border-error bg-error-container text-on-error-container font-body-sm text-sm"></div>
+            <!-- Email Field -->
+            <div>
+                <label class="block font-label-caps text-label-caps text-on-surface-variant uppercase mb-2" for="email">Email Address</label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <span class="material-symbols-outlined text-on-surface-variant text-[18px]">mail</span>
+                    </span>
+                    <input class="w-full pl-10 pr-4 py-3 bg-surface-container-lowest border border-outline-variant rounded-DEFAULT font-body-sm text-body-sm text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all placeholder-on-surface-variant/50" id="email" name="email" placeholder="admin@ironcore.gym" type="email" value="{{ email|default:'' }}" required/>
+                </div>
+            </div>
+            <!-- Password Field -->
+            <div>
+                <label class="block font-label-caps text-label-caps text-on-surface-variant uppercase mb-2" for="password">Password</label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <span class="material-symbols-outlined text-on-surface-variant text-[18px]">lock</span>
+                    </span>
+                    <input class="w-full pl-10 pr-4 py-3 bg-surface-container-lowest border border-outline-variant rounded-DEFAULT font-body-sm text-body-sm text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all placeholder-on-surface-variant/50" id="password" name="password" placeholder="••••••••" type="password" required/>
+                </div>
+            </div>
+            <!-- Options -->
+            <div class="flex items-center justify-between pt-2">
+                <div class="flex items-center">
+                    <input class="h-4 w-4 bg-surface-container-lowest border-outline-variant rounded-DEFAULT text-primary focus:ring-primary focus:ring-offset-background" id="remember-me" name="remember_me" type="checkbox"/>
+                    <label class="ml-2 block font-body-sm text-body-sm text-on-surface-variant" for="remember-me">
+                        Remember me
+                    </label>
+                </div>
+                <div class="text-sm">
+                    <a class="font-body-sm text-body-sm text-primary hover:text-primary-container transition-colors" href="#" data-toast="Password reset link sent (demo)">Forgot password?</a>
+                </div>
+            </div>
+            <!-- Submit Button -->
+            <button class="w-full py-3 mt-4 bg-primary text-surface-dim font-label-caps text-label-caps uppercase rounded-DEFAULT hover:bg-primary-container transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background" type="submit">
+                Sign In
+            </button>
+        </form>
+        <div class="mt-8">
+            <div class="relative">
+                <div class="absolute inset-0 flex items-center">
+                    <div class="w-full border-t border-outline-variant"></div>
+                </div>
+                <div class="relative flex justify-center text-sm">
+                    <span class="px-2 bg-surface-container font-label-caps text-label-caps text-on-surface-variant uppercase">Or continue with</span>
+                </div>
+            </div>
+            <div class="mt-6 grid grid-cols-2 gap-3">
+                <button data-toast="Google sign-in (frontend demo)" class="w-full inline-flex justify-center py-2 px-4 border border-outline-variant rounded-DEFAULT bg-transparent font-label-caps text-label-caps text-on-surface uppercase hover:bg-surface-container-high transition-colors items-center gap-2" type="button">
+                    <svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 24 24">
+                        <path d="M12.0003 4.75C13.7703 4.75 15.3553 5.36002 16.6053 6.54998L20.0303 3.125C17.9502 1.19 15.2353 0 12.0003 0C7.31028 0 3.25527 2.69 1.28027 6.60998L5.27028 9.70498C6.21525 6.86002 8.87028 4.75 12.0003 4.75Z" fill="#EA4335"></path>
+                        <path d="M23.49 12.275C23.49 11.49 23.415 10.73 23.3 10H12V14.51H18.47C18.18 15.99 17.34 17.25 16.08 18.1L19.945 21.1C22.2 19.01 23.49 15.92 23.49 12.275Z" fill="#4285F4"></path>
+                        <path d="M5.26498 14.2949C5.02498 13.5699 4.88501 12.7999 4.88501 11.9999C4.88501 11.1999 5.01998 10.4299 5.26498 9.7049L1.275 6.60986C0.46 8.22986 0 10.0599 0 11.9999C0 13.9399 0.46 15.7699 1.28 17.3899L5.26498 14.2949Z" fill="#FBBC05"></path>
+                        <path d="M12.0004 24C15.2404 24 17.9654 22.935 19.9454 21.095L16.0804 18.095C15.0054 18.82 13.6204 19.245 12.0004 19.245C8.8704 19.245 6.21537 17.135 5.26537 14.29L1.27539 17.385C3.25539 21.31 7.3104 24 12.0004 24Z" fill="#34A853"></path>
+                    </svg>
+                    Google
+                </button>
+                <button data-toast="Apple sign-in (frontend demo)" class="w-full inline-flex justify-center py-2 px-4 border border-outline-variant rounded-DEFAULT bg-transparent font-label-caps text-label-caps text-on-surface uppercase hover:bg-surface-container-high transition-colors items-center gap-2" type="button">
+                    <svg class="h-5 w-5 fill-current" viewBox="0 0 24 24">
+                        <path d="M12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2ZM14.9961 17.3204C14.0734 18.4283 13.1118 19.1246 12.0537 19.1353C10.7416 19.1506 10.3344 18.3541 8.84717 18.3541C7.38466 18.3541 6.91893 19.1172 5.71966 19.1353C4.66535 19.1534 3.55171 18.3414 2.6506 17.0253C1.65086 15.5422 0.771285 12.8718 1.83403 10.9856C2.36676 10.0384 3.32785 9.43166 4.38318 9.41407C5.63234 9.39494 6.81232 10.2796 7.5746 10.2796C8.33703 10.2796 9.77443 9.21556 11.2335 9.36395C11.8384 9.40059 13.5358 9.60533 14.653 11.2325C14.5623 11.2882 12.6393 12.4173 12.6588 14.6713C12.6823 17.2687 14.9388 18.1755 14.9961 17.3204ZM11.7588 8.65094C11.0267 9.53935 9.72252 10.1347 8.52843 10.0215C8.39009 8.76104 9.11306 7.42672 9.80806 6.57726C10.5348 5.68884 11.8906 5.04169 13.018 5.19527C13.208 6.52554 12.4839 7.77134 11.7588 8.65094Z"></path>
+                    </svg>
+                    Apple
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+{% endblock %}

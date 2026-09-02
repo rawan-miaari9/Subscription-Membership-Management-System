@@ -1,0 +1,115 @@
+{% extends "layouts/dashboard.html" %}
+{% block title %}Subscriptions - Iron Core{% endblock %}
+
+{% block dashboard_content %}
+<!-- Page Header -->
+<div class="flex justify-between items-end mb-8">
+<div>
+<h1 class="font-headline-lg text-headline-lg text-on-surface uppercase tracking-tight">SUBSCRIPTION LIFECYCLE</h1>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-2 max-w-2xl">Manage recurring memberships, track status changes, and handle manual overrides for facility access protocols.</p>
+</div>
+<a href="{% url 'subscription-create' %}" class="inline-block bg-primary-container text-on-primary-container border border-primary px-6 py-3 font-headline-md text-[14px] uppercase tracking-wider hover:bg-primary-fixed hover:text-on-primary transition-colors shadow-[4px_4px_0px_0px_rgba(83,68,52,1)] hover:shadow-none hover:translate-x-[4px] hover:translate-y-[4px] duration-150">
+                Create Subscription
+            </a>
+</div>
+<!-- Bento Grid Layout -->
+<div class="grid grid-cols-12 gap-bento-gap">
+<!-- Metrics Row (dynamic) -->
+<div class="col-span-4 bg-surface-container border border-outline-variant p-6 rounded-none flex flex-col justify-between h-32 relative overflow-hidden group">
+<div class="font-body-sm text-body-sm text-on-surface uppercase tracking-widest">Active Plans</div>
+<div class="font-display text-display text-on-surface mt-2">{{ active_count|default:0 }}</div>
+<div class="absolute bottom-0 left-0 h-1 bg-tertiary-container w-full scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-300"></div>
+</div>
+<div class="col-span-4 bg-surface-container border border-outline-variant p-6 rounded-none flex flex-col justify-between h-32 relative overflow-hidden group">
+<div class="font-body-sm text-body-sm text-on-surface uppercase tracking-widest">Expiring Soon</div>
+<div class="font-display text-display text-primary mt-2">{{ expiring_count|default:0 }}</div>
+<div class="absolute bottom-0 left-0 h-1 bg-primary w-full scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-300"></div>
+</div>
+<div class="col-span-4 bg-surface-container border border-outline-variant p-6 rounded-none flex flex-col justify-between h-32 relative overflow-hidden group">
+<div class="font-body-sm text-body-sm text-on-surface uppercase tracking-widest">Est. Monthly MRR</div>
+<div class="font-display text-display text-on-surface mt-2">${{ mrr|default:"0.00" }}</div>
+<div class="absolute bottom-0 left-0 h-1 bg-outline w-full scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-300"></div>
+</div>
+<!-- Main Data Table Container -->
+<div class="col-span-12 bg-surface-container border border-outline-variant mt-4 rounded-none">
+<!-- Table Header/Filters -->
+<div class="flex justify-between items-center p-4 border-b border-outline-variant bg-surface-container-low">
+<div class="font-label-caps text-label-caps text-on-surface">ROSTER DATA</div>
+<div class="flex gap-2">
+<select data-status-filter data-filter-target="[data-subscriptions-tbody]" class="bg-background border border-outline-variant text-on-surface font-label-caps text-[11px] py-1 pl-2 pr-8 focus:ring-1 focus:ring-primary rounded-none uppercase">
+<option>All Statuses</option>
+<option>Active</option>
+<option>Expiring</option>
+<option>Expired</option>
+<option>Suspended</option>
+</select>
+<button data-filter-apply class="p-1 border border-outline-variant text-on-surface-variant hover:text-primary hover:border-primary transition-colors bg-background">
+<span class="material-symbols-outlined text-[18px]">filter_list</span>
+</button>
+</div>
+</div>
+<!-- Table Content -->
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="border-b border-outline-variant bg-surface-container-high">
+<th class="py-3 px-4 font-label-caps text-label-caps text-on-surface-variant">Member ID / Name</th>
+<th class="py-3 px-4 font-label-caps text-label-caps text-on-surface-variant">Plan Tier</th>
+<th class="py-3 px-4 font-label-caps text-label-caps text-on-surface-variant">Start Date</th>
+<th class="py-3 px-4 font-label-caps text-label-caps text-on-surface-variant">End Date</th>
+<th class="py-3 px-4 font-label-caps text-label-caps text-on-surface-variant">Status</th>
+<th class="py-3 px-4 font-label-caps text-label-caps text-on-surface-variant text-right">Actions</th>
+</tr>
+</thead>
+<tbody data-subscriptions-tbody class="font-data-md text-data-md text-on-surface">
+{% for sub in subscriptions %}
+<tr class="border-b border-outline-variant hover:bg-surface-container-highest transition-colors {% if sub.status == 'expired' %}opacity-60{% endif %}">
+<td class="py-4 px-4">
+<div class="flex flex-col gap-1">
+<span class="text-on-surface font-bold">{{ sub.member.full_name|default:"—" }}</span>
+<span class="text-on-surface-variant text-[12px]">{{ sub.member.member_code|default:sub.subscription_code }}</span>
+</div>
+</td>
+<td class="py-4 px-4">{{ sub.plan.name|default:"—" }}</td>
+<td class="py-4 px-4 text-on-surface-variant">{{ sub.start_date|date:"Y-m-d" }}</td>
+<td class="py-4 px-4 text-on-surface-variant">{{ sub.end_date|date:"Y-m-d" }}</td>
+<td class="py-4 px-4">
+{% if sub.status == "active" %}<div class="inline-flex items-center gap-2 bg-secondary-container px-2 py-1 border border-outline-variant rounded-sm"><div class="w-1.5 h-1.5 bg-tertiary-container shrink-0"></div><span class="font-label-caps text-[10px] text-on-surface uppercase">Active</span></div>
+{% elif sub.status == "expiring" %}<div class="inline-flex items-center gap-2 bg-secondary-container px-2 py-1 border border-outline-variant rounded-sm"><div class="w-1.5 h-1.5 bg-primary-container shrink-0"></div><span class="font-label-caps text-[10px] text-on-surface uppercase">Expiring</span></div>
+{% elif sub.status == "expired" %}<div class="inline-flex items-center gap-2 bg-secondary-container px-2 py-1 border border-outline-variant rounded-sm"><div class="w-1.5 h-1.5 bg-error shrink-0"></div><span class="font-label-caps text-[10px] text-on-surface uppercase">Expired</span></div>
+{% elif sub.status == "suspended" %}<div class="inline-flex items-center gap-2 bg-secondary-container px-2 py-1 border border-outline-variant rounded-sm"><div class="w-1.5 h-1.5 bg-surface-variant shrink-0 border border-outline"></div><span class="font-label-caps text-[10px] text-on-surface uppercase">Suspended</span></div>
+{% else %}<div class="inline-flex items-center gap-2 bg-secondary-container px-2 py-1 border border-outline-variant rounded-sm"><span class="font-label-caps text-[10px] text-on-surface uppercase">{{ sub.status|upper }}</span></div>{% endif %}
+</td>
+<td class="py-4 px-4 text-right relative">
+<button data-action-toggle class="text-on-surface-variant hover:text-primary transition-colors p-1" onclick="event.stopPropagation()"><span class="material-symbols-outlined text-[20px]">more_vert</span></button>
+<div data-action-menu class="hidden absolute right-4 top-10 z-20 w-56 bg-surface-container border border-outline-variant rounded shadow-xl flex flex-col py-1">
+<a href="{% url 'subscription-detail' %}?code={{ sub.subscription_code }}" class="px-4 py-2.5 font-label-caps text-[11px] text-on-surface hover:bg-surface-container-high flex items-center gap-2"><span class="material-symbols-outlined text-[16px]">visibility</span> View Details</a>
+<form method="post" action="{% url 'subscription-renew' sub.subscription_code %}" class="w-full">{% csrf_token %}<button type="submit" class="w-full px-4 py-2.5 font-label-caps text-[11px] text-on-surface hover:bg-surface-container-high flex items-center gap-2 text-left"><span class="material-symbols-outlined text-[16px]">autorenew</span> Renew (same plan/duration)</button></form>
+<div class="border-t border-outline-variant my-1"></div>
+{% if sub.status == "suspended" %}
+<button data-action="activate" data-member="{{ sub.member.full_name }}" class="px-4 py-2.5 font-label-caps text-[11px] text-tertiary hover:bg-surface-container-high flex items-center gap-2 text-left w-full"><span class="material-symbols-outlined text-[16px]">check_circle</span> Activate</button>
+<button data-action="suspend" data-member="{{ sub.member.full_name }}" class="hidden px-4 py-2.5 font-label-caps text-[11px] text-on-surface hover:bg-surface-container-high flex items-center gap-2 text-left w-full"><span class="material-symbols-outlined text-[16px]">block</span> Suspend</button>
+{% else %}
+<button data-action="suspend" data-member="{{ sub.member.full_name }}" class="px-4 py-2.5 font-label-caps text-[11px] text-on-surface hover:bg-surface-container-high flex items-center gap-2 text-left w-full"><span class="material-symbols-outlined text-[16px]">block</span> Suspend</button>
+<button data-action="activate" data-member="{{ sub.member.full_name }}" class="hidden px-4 py-2.5 font-label-caps text-[11px] text-tertiary hover:bg-surface-container-high flex items-center gap-2 text-left w-full"><span class="material-symbols-outlined text-[16px]">check_circle</span> Activate</button>
+{% endif %}
+<button data-confirm="Cancel subscription for {{ sub.member.full_name }}? This will expire it immediately." data-confirm-title="Cancel Subscription" data-confirm-text="Are you sure you want to cancel {{ sub.member.full_name }}'s subscription?" class="px-4 py-2.5 font-label-caps text-[11px] text-error hover:bg-surface-container-high flex items-center gap-2 text-left w-full"><span class="material-symbols-outlined text-[16px]">cancel</span> Cancel</button>
+</div>
+</td>
+</tr>
+{% empty %}
+<tr><td colspan="6" class="py-16 text-center">
+<div class="flex flex-col items-center gap-3">
+<span class="material-symbols-outlined text-[32px] text-on-surface-variant">card_membership</span>
+<p class="font-label-caps text-label-caps text-on-surface-variant">No subscriptions yet</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Create your first subscription to see it here.</p>
+<a href="{% url 'subscription-create' %}" class="mt-2 px-6 py-2 bg-primary-container text-on-primary-container font-label-caps text-[11px] rounded">Create Subscription</a>
+</div>
+</td></tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+</div>
+</div>
+{% endblock %}
