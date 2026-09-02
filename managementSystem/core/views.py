@@ -278,6 +278,25 @@ def users_view(request):
     # Enhanced from users-backend: show counts, but using dev's User model
     # Safe handling if user_profiles table doesn't exist yet
     user_profiles = _safe_user_profiles(request)
+    # If table missing/empty, synthesize from dev Users so names appear
+    if not user_profiles:
+        try:
+            all_users = list(User.objects.all().order_by('full_name')[:100])
+            # Build pseudo-profiles compatible with template (profile.user.first_name etc)
+            pseudo = []
+            for u in all_users:
+                p = type('PseudoProfile', (), {})()
+                p.id = u.id
+                p.role = (u.role or "").lower()
+                p.user = u
+                # Ensure user has required attrs (added to model, but keep fallback)
+                if not hasattr(u, 'get_full_name'):
+                    u.get_full_name = lambda s=u: s.full_name
+                pseudo.append(p)
+            if pseudo:
+                user_profiles = pseudo
+        except Exception:
+            pass
     try:
         total_active = User.objects.filter(status='Active').count()
         admin_count = User.objects.filter(role='Admin').count()
@@ -285,8 +304,11 @@ def users_view(request):
         try:
             staff_count = UserProfile.objects.filter(role=UserProfile.ROLE_STAFF).count()
         except Exception:
-            staff_count = 0
-        # Also provide users queryset for templates that expect 'users'
+            # Fallback count staff from User role if profile table missing
+            try:
+                staff_count = User.objects.filter(role='Staff').count()
+            except Exception:
+                staff_count = 0
         try:
             all_users = list(User.objects.all().order_by('full_name')[:100])
         except Exception:
@@ -301,7 +323,7 @@ def users_view(request):
             'staff_count': staff_count,
         }
     except Exception as e:
-        context = {'current_user': get_current_user(request), 'user_profiles': [], 'users': []}
+        context = {'current_user': get_current_user(request), 'user_profiles': user_profiles or [], 'users': []}
     return render(request, "users/list.html", context)
 
 def _get_admin_user():

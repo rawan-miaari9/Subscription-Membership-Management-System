@@ -53,6 +53,22 @@ class User(models.Model):
     def is_anonymous(self):
         return False
 
+    def get_full_name(self):
+        return self.full_name or self.username
+
+    @property
+    def first_name(self):
+        return (self.full_name or "").split()[0] if self.full_name else ""
+
+    @property
+    def last_name(self):
+        parts = (self.full_name or "").split()
+        return parts[-1] if len(parts) > 1 else ""
+
+    @property
+    def last_login(self):
+        return self.updated_at
+
 
 class Member(models.Model):
     STATUS_CHOICES = [
