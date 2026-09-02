@@ -4,6 +4,16 @@
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <script>
+      (function(){
+        try{
+          var t = localStorage.getItem('theme');
+          var d = document.documentElement;
+          if(t === 'light'){ d.classList.remove('dark'); d.classList.add('light'); }
+          else { d.classList.add('dark'); d.classList.remove('light'); }
+        }catch(e){}
+      })();
+    </script>
     <title>{% block title %}Gym Core{% endblock %}</title>
     <!-- Tailwind CDN (Stitch design) -->
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
@@ -15,53 +25,53 @@
           theme: {
             extend: {
               "colors": {
-                      "primary-container": "#f59e0b",
-                      "surface-dim": "#101415",
-                      "on-error": "#690005",
-                      "inverse-on-surface": "#2d3133",
-                      "tertiary-fixed-dim": "#7fd0ff",
-                      "on-background": "#e0e3e5",
-                      "on-primary-fixed": "#2a1700",
-                      "on-surface": "#e0e3e5",
-                      "secondary": "#bcc7de",
-                      "outline": "#a08e7a",
-                      "tertiary-container": "#1abdff",
-                      "surface-container-high": "#272a2c",
-                      "on-tertiary-fixed": "#001e2d",
-                      "surface-bright": "#363a3b",
-                      "on-secondary-fixed-variant": "#3c475a",
-                      "primary-fixed-dim": "#ffb95f",
-                      "on-surface-variant": "#d8c3ad",
-                      "surface-container-highest": "#323537",
-                      "surface-tint": "#ffb95f",
-                      "surface-container": "#1d2022",
-                      "outline-variant": "#534434",
-                      "secondary-container": "#3e495d",
-                      "tertiary": "#8fd5ff",
-                      "surface-container-low": "#191c1e",
-                      "inverse-primary": "#855300",
-                      "inverse-surface": "#e0e3e5",
-                      "on-primary": "#472a00",
-                      "on-tertiary-container": "#004966",
-                      "surface-variant": "#323537",
-                      "on-tertiary-fixed-variant": "#004c6a",
-                      "primary-fixed": "#ffddb8",
-                      "surface": "#101415",
-                      "on-error-container": "#ffdad6",
-                      "on-tertiary": "#00344a",
-                      "primary": "#ffc174",
-                      "tertiary-fixed": "#c5e7ff",
-                      "on-primary-fixed-variant": "#653e00",
-                      "on-secondary": "#263143",
-                      "background": "#101415",
-                      "error-container": "#93000a",
-                      "error": "#ffb4ab",
-                      "surface-container-lowest": "#0b0f10",
-                      "on-primary-container": "#613b00",
-                      "secondary-fixed": "#d8e3fb",
-                      "secondary-fixed-dim": "#bcc7de",
-                      "on-secondary-fixed": "#111c2d",
-                      "on-secondary-container": "#aeb9d0"
+                      "primary-container": "var(--primary-container)",
+                      "surface-dim": "var(--surface-dim)",
+                      "on-error": "var(--on-error)",
+                      "inverse-on-surface": "var(--inverse-on-surface)",
+                      "tertiary-fixed-dim": "var(--tertiary-fixed-dim)",
+                      "on-background": "var(--on-background)",
+                      "on-primary-fixed": "var(--on-primary-fixed)",
+                      "on-surface": "var(--on-surface)",
+                      "secondary": "var(--secondary)",
+                      "outline": "var(--outline)",
+                      "tertiary-container": "var(--tertiary-container)",
+                      "surface-container-high": "var(--surface-container-high)",
+                      "on-tertiary-fixed": "var(--on-tertiary-fixed)",
+                      "surface-bright": "var(--surface-bright)",
+                      "on-secondary-fixed-variant": "var(--on-secondary-fixed-variant)",
+                      "primary-fixed-dim": "var(--primary-fixed-dim)",
+                      "on-surface-variant": "var(--on-surface-variant)",
+                      "surface-container-highest": "var(--surface-container-highest)",
+                      "surface-tint": "var(--surface-tint)",
+                      "surface-container": "var(--surface-container)",
+                      "outline-variant": "var(--outline-variant)",
+                      "secondary-container": "var(--secondary-container)",
+                      "tertiary": "var(--tertiary)",
+                      "surface-container-low": "var(--surface-container-low)",
+                      "inverse-primary": "var(--inverse-primary)",
+                      "inverse-surface": "var(--inverse-surface)",
+                      "on-primary": "var(--on-primary)",
+                      "on-tertiary-container": "var(--on-tertiary-container)",
+                      "surface-variant": "var(--surface-variant)",
+                      "on-tertiary-fixed-variant": "var(--on-tertiary-fixed-variant)",
+                      "primary-fixed": "var(--primary-fixed)",
+                      "surface": "var(--surface)",
+                      "on-error-container": "var(--on-error-container)",
+                      "on-tertiary": "var(--on-tertiary)",
+                      "primary": "var(--primary)",
+                      "tertiary-fixed": "var(--tertiary-fixed)",
+                      "on-primary-fixed-variant": "var(--on-primary-fixed-variant)",
+                      "on-secondary": "var(--on-secondary)",
+                      "background": "var(--background)",
+                      "error-container": "var(--error-container)",
+                      "error": "var(--error)",
+                      "surface-container-lowest": "var(--surface-container-lowest)",
+                      "on-primary-container": "var(--on-primary-container)",
+                      "secondary-fixed": "var(--secondary-fixed)",
+                      "secondary-fixed-dim": "var(--secondary-fixed-dim)",
+                      "on-secondary-fixed": "var(--on-secondary-fixed)",
+                      "on-secondary-container": "var(--on-secondary-container)"
               },
               "borderRadius": {
                       "DEFAULT": "0.125rem",
@@ -110,11 +120,109 @@
             'GRAD' 0,
             'opsz' 24
         }
+        :root, html.dark {
+            --primary-container: #f59e0b;
+            --surface-dim: #101415;
+            --on-error: #690005;
+            --inverse-on-surface: #2d3133;
+            --tertiary-fixed-dim: #7fd0ff;
+            --on-background: #e0e3e5;
+            --on-primary-fixed: #2a1700;
+            --on-surface: #e0e3e5;
+            --secondary: #bcc7de;
+            --outline: #a08e7a;
+            --tertiary-container: #1abdff;
+            --surface-container-high: #272a2c;
+            --on-tertiary-fixed: #001e2d;
+            --surface-bright: #363a3b;
+            --on-secondary-fixed-variant: #3c475a;
+            --primary-fixed-dim: #ffb95f;
+            --on-surface-variant: #d8c3ad;
+            --surface-container-highest: #323537;
+            --surface-tint: #ffb95f;
+            --surface-container: #1d2022;
+            --outline-variant: #534434;
+            --secondary-container: #3e495d;
+            --tertiary: #8fd5ff;
+            --surface-container-low: #191c1e;
+            --inverse-primary: #855300;
+            --inverse-surface: #e0e3e5;
+            --on-primary: #472a00;
+            --on-tertiary-container: #004966;
+            --surface-variant: #323537;
+            --on-tertiary-fixed-variant: #004c6a;
+            --primary-fixed: #ffddb8;
+            --surface: #101415;
+            --on-error-container: #ffdad6;
+            --on-tertiary: #00344a;
+            --primary: #ffc174;
+            --tertiary-fixed: #c5e7ff;
+            --on-primary-fixed-variant: #653e00;
+            --on-secondary: #263143;
+            --background: #101415;
+            --error-container: #93000a;
+            --error: #ffb4ab;
+            --surface-container-lowest: #0b0f10;
+            --on-primary-container: #613b00;
+            --secondary-fixed: #d8e3fb;
+            --secondary-fixed-dim: #bcc7de;
+            --on-secondary-fixed: #111c2d;
+            --on-secondary-container: #aeb9d0;
+        }
+        html.light {
+            --primary-container: #f59e0b;
+            --surface-dim: #dad8d5;
+            --on-error: #ffffff;
+            --inverse-on-surface: #2d3133;
+            --tertiary-fixed-dim: #8fd5ff;
+            --on-background: #1a1c1d;
+            --on-primary-fixed: #2a1700;
+            --on-surface: #1a1c1d;
+            --secondary: #596378;
+            --outline: #85756a;
+            --tertiary-container: #c5e7ff;
+            --surface-container-high: #e8e6e3;
+            --on-tertiary-fixed: #001e2d;
+            --surface-bright: #faf9f7;
+            --on-secondary-fixed-variant: #3c475a;
+            --primary-fixed-dim: #ffb95f;
+            --on-surface-variant: #85746a;
+            --surface-container-highest: #e3e1de;
+            --surface-tint: #ffb95f;
+            --surface-container: #eeede9;
+            --outline-variant: #d6c7bb;
+            --secondary-container: #d8e3fb;
+            --tertiary: #006687;
+            --surface-container-low: #f4f3f1;
+            --inverse-primary: #ffb95f;
+            --inverse-surface: #2d3133;
+            --on-primary: #472a00;
+            --on-tertiary-container: #004966;
+            --surface-variant: #f1e7de;
+            --on-tertiary-fixed-variant: #004c6a;
+            --primary-fixed: #ffddb8;
+            --surface: #faf9f7;
+            --on-error-container: #410002;
+            --on-tertiary: #ffffff;
+            --primary: #ffc174;
+            --tertiary-fixed: #c5e7ff;
+            --on-primary-fixed-variant: #653e00;
+            --on-secondary: #ffffff;
+            --background: #faf9f7;
+            --error-container: #ffdad6;
+            --error: #ba1a1a;
+            --surface-container-lowest: #ffffff;
+            --on-primary-container: #613b00;
+            --secondary-fixed: #d8e3fb;
+            --secondary-fixed-dim: #bcc7de;
+            --on-secondary-fixed: #111c2d;
+            --on-secondary-container: #111c2d;
+        }
         html { zoom: 0.92; }
         @supports not (zoom: 1) {
             html { transform: scale(0.92); transform-origin: top left; width: 108.7%; }
         }
-        html, body { min-height: 100%; background: #101415; }
+        html, body { min-height: 100%; background: var(--background); }
         body { margin: 0; }
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         main { display: block; }

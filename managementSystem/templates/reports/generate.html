@@ -215,7 +215,7 @@
           </table>
         </div>
         <div data-success class="hidden p-3 bg-tertiary-container border-t border-tertiary text-on-tertiary-container font-body-sm text-sm flex items-center gap-2">
-          <span class="material-symbols-outlined text-[18px]">check_circle</span> Report generated successfully (frontend demo).
+          <span class="material-symbols-outlined text-[18px]">check_circle</span> Report generated successfully.
         </div>
       </div>
 
@@ -346,7 +346,7 @@
       const meta = document.querySelector('[data-preview-meta]');
       if(meta) meta.textContent = rows.length + ' rows • ' + type + ' • ' + new Date().toLocaleDateString();
       if(success) success.classList.remove('hidden');
-      toastLocal(type + ' report generated (demo)','success');
+      toastLocal(type + ' report generated','success');
     }, 800);
   }
 
@@ -371,7 +371,7 @@
       const blob = new Blob([csv], {type:'text/csv'});
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a'); a.href=url; a.download= type.toLowerCase() + '_report_' + new Date().toISOString().slice(0,10) + '.csv'; a.click(); URL.revokeObjectURL(url);
-      toastLocal('CSV downloaded (frontend demo)','success');
+      toastLocal('CSV downloaded','success');
     } else if(kind==='print'){
       window.print();
       toastLocal('Print dialog opened','info');

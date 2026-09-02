@@ -1,7 +1,7 @@
 // Frontend-only interactivity - no backend
 document.addEventListener('DOMContentLoaded', () => {
   // ── Login: role toggle + form validation + demo redirect ──
-  const roleBtns = document.querySelectorAll('[data-role]');
+  const roleBtns = document.querySelectorAll('[data-role="admin"], [data-role="accountant"]');
   roleBtns.forEach(btn => {
     btn.addEventListener('click', () => {
       roleBtns.forEach(b => {

@@ -143,7 +143,7 @@
     const img=document.querySelector('[data-preview-logo]');
     img.src=url; img.classList.remove('hidden');
   });
-  form?.addEventListener('submit',e=>{e.preventDefault(); const m=form.querySelector('select[name="member"]').value; if(!m){toast('Select member','error'); return;} toast('Custom receipt generated (demo)','success'); calc();});
+  form?.addEventListener('submit',e=>{e.preventDefault(); const m=form.querySelector('select[name="member"]').value; if(!m){toast('Select member','error'); return;} toast('Custom receipt generated','success'); calc();});
   calc();
 
 })();

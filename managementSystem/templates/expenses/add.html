@@ -106,7 +106,7 @@
     </div>
 
     <div data-success class="hidden p-4 bg-tertiary-container border border-tertiary text-on-tertiary-container rounded font-body-sm text-sm flex items-center gap-2">
-      <span class="material-symbols-outlined text-[18px]">check_circle</span> Expense saved successfully (frontend demo).
+      <span class="material-symbols-outlined text-[18px]">check_circle</span> Expense saved successfully.
     </div>
     <div data-error-state class="hidden p-4 bg-error-container border border-error text-on-error-container rounded font-body-sm text-sm flex items-center gap-2">
       <span class="material-symbols-outlined text-[18px]">error</span> Failed to save. Please check highlighted fields.
@@ -172,7 +172,7 @@
       if(submitBtn) submitBtn.disabled = false;
       if(Math.random() > 0.2){
         success.classList.remove('hidden');
-        toastLocal('Expense saved (demo)','success');
+        toastLocal('Expense saved','success');
       } else {
         errState.classList.remove('hidden');
         errState.textContent = 'Failed to save. Simulated server error — try again.';
