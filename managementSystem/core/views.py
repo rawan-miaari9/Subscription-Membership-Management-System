@@ -267,37 +267,41 @@ def reports_view(request):
     return render(request, "reports/index.html", {"current_user": get_current_user(request)})
 
 @login_required_custom
+def _safe_user_profiles():
+    try:
+        # Evaluate immediately to catch missing table
+        return list(UserProfile.objects.select_related('user').order_by('user__full_name')[:100])
+    except Exception:
+        return []
+
 def users_view(request):
     # Enhanced from users-backend: show counts, but using dev's User model
-    # Try to show UserProfile counts if table exists, fallback to dev User
+    # Safe handling if user_profiles table doesn't exist yet
+    user_profiles = _safe_user_profiles()
     try:
-        user_profiles = UserProfile.objects.select_related('user').order_by('user__full_name') if hasattr(UserProfile.objects, 'select_related') else []
-        # Count via dev User if UserProfile empty
-        if not user_profiles:
-            raise Exception("empty")
+        total_active = User.objects.filter(status='Active').count()
+        admin_count = User.objects.filter(role='Admin').count()
+        accountant_count = User.objects.filter(role='Accountant').count()
+        try:
+            staff_count = UserProfile.objects.filter(role=UserProfile.ROLE_STAFF).count()
+        except Exception:
+            staff_count = 0
+        # Also provide users queryset for templates that expect 'users'
+        try:
+            all_users = list(User.objects.all().order_by('full_name')[:100])
+        except Exception:
+            all_users = []
         context = {
             'current_user': get_current_user(request),
             'user_profiles': user_profiles,
-            'total_active': User.objects.filter(status='Active').count(),
-            'admin_count': User.objects.filter(role='Admin').count(),
-            'accountant_count': User.objects.filter(role='Accountant').count(),
-            'staff_count': UserProfile.objects.filter(role=UserProfile.ROLE_STAFF).count(),
+            'users': all_users,
+            'total_active': total_active,
+            'admin_count': admin_count,
+            'accountant_count': accountant_count,
+            'staff_count': staff_count,
         }
-    except Exception:
-        # Fallback to simple dev User counts
-        try:
-            all_users = User.objects.all().order_by('full_name')
-            context = {
-                'current_user': get_current_user(request),
-                'users': all_users,
-                'user_profiles': UserProfile.objects.select_related('user').all() if 'UserProfile' in globals() else [],
-                'total_active': User.objects.filter(status='Active').count(),
-                'admin_count': User.objects.filter(role='Admin').count(),
-                'accountant_count': User.objects.filter(role='Accountant').count(),
-                'staff_count': 0,
-            }
-        except Exception:
-            context = {'current_user': get_current_user(request)}
+    except Exception as e:
+        context = {'current_user': get_current_user(request), 'user_profiles': [], 'users': []}
     return render(request, "users/list.html", context)
 
 def _get_admin_user():
