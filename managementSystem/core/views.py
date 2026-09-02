@@ -277,7 +277,7 @@ def _safe_user_profiles(*args, **kwargs):
 def users_view(request):
     # Enhanced from users-backend: show counts, but using dev's User model
     # Safe handling if user_profiles table doesn't exist yet
-    user_profiles = _safe_user_profiles()
+    user_profiles = _safe_user_profiles(request)
     try:
         total_active = User.objects.filter(status='Active').count()
         admin_count = User.objects.filter(role='Admin').count()
