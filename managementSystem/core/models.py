@@ -11,6 +11,7 @@ class User(models.Model):
     ROLE_CHOICES = [
         ("Admin", "Admin"),
         ("Accountant", "Accountant"),
+        ("Staff", "Staff"),
     ]
     STATUS_CHOICES = [
         ("Active", "Active"),

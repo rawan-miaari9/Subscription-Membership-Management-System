@@ -1131,15 +1131,38 @@ def user_add_view(request, pk=None):
                         pass
                 messages.success(request, f'User "{instance_user.username}" was updated successfully.')
             else:
+                # Fix sequence if out of sync (common after manual inserts with managed=False)
+                try:
+                    from django.db import connection
+                    with connection.cursor() as cur:
+                        cur.execute("SELECT setval(pg_get_serial_sequence('users','id'), COALESCE((SELECT MAX(id) FROM users),0)+1, false)")
+                except Exception:
+                    pass
                 new_user = User(
                     username=data['username'],
                     email=data['email'],
                     full_name=full_name,
-                    role=role_val if role_val in ['Admin','Accountant'] else 'Admin',
+                    role=role_val if role_val in ['Admin','Accountant','Staff'] else 'Admin',
                     status=status_val,
                 )
                 new_user.set_password(data['password'])
-                new_user.save()
+                try:
+                    new_user.save()
+                except Exception as e:
+                    # Retry once if duplicate key due to sequence lag
+                    if 'duplicate key' in str(e).lower() or 'users_pkey' in str(e):
+                        try:
+                            from django.db import connection as conn2
+                            with conn2.cursor() as cur2:
+                                cur2.execute("SELECT COALESCE(MAX(id),0)+1 FROM users")
+                                next_id = cur2.fetchone()[0]
+                                new_user.id = next_id
+                                new_user.save(force_insert=True)
+                        except Exception as e2:
+                            messages.error(request, f"Failed to create user: {e2}")
+                            return render(request, "users/add.html", {"form": form, "is_edit": False, "edit_profile": profile, "current_user": get_current_user(request)})
+                    else:
+                        raise
                 try:
                     UserProfile.objects.create(user=new_user, role=data['role'])
                 except Exception:
