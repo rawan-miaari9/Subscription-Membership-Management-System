@@ -6,8 +6,10 @@ from django.db import IntegrityError, connection
 from django.db.models import F, Q, Sum, Case, When, DecimalField
 from django.http import HttpResponse, HttpResponseNotAllowed, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.template.loader import render_to_string
 from django.utils import timezone
+from django.views.decorators.cache import never_cache
 
 
 def _parse_date(value):
@@ -378,6 +380,7 @@ def _refund_status_badges():
     return Refund.STATUS_CHOICES
 
 
+@never_cache
 def refunds_view(request):
     refunds_qs = Refund.objects.select_related('payment', 'member').order_by('-created_at', '-id')
 
@@ -577,11 +580,22 @@ def subscription_create_view(request):
 def payment_detail_view(request):
     return render(request, "payments/detail.html")
 
+@never_cache
 def refund_detail_view(request, pk):
     refund = get_object_or_404(Refund.objects.select_related('payment__member', 'member'), pk=pk)
+    success = None
+    if request.GET.get('created'):
+        success = f"Refund {refund.refund_code or refund.pk} was submitted and is now pending approval."
+    elif request.GET.get('updated'):
+        new = refund.status
+        if new == 'approved':
+            success = f"Refund {refund.refund_code or refund.pk} was approved and will appear on the member's statement."
+        elif new == 'rejected':
+            success = f"Refund {refund.refund_code or refund.pk} was rejected."
     return render(request, "refunds/detail.html", {
         'refund': refund,
         'statuses': Refund.STATUS_CHOICES,
+        'success': success,
     })
 
 
@@ -607,9 +621,10 @@ def refund_status_view(request, pk):
     else:
         return JsonResponse({'error': 'Unknown action.'}, status=400)
     refund.save()
-    return redirect('refund-detail', pk=refund.pk)
+    return redirect(f"{reverse('refund-detail', kwargs={'pk': refund.pk})}?updated=1")
 
 
+@never_cache
 def refund_create_view(request):
     payments_qs = Payment.objects.select_related('member').order_by('-paid_at', '-id')
     payment_options = [(p, p.refundable_amount()) for p in payments_qs]
@@ -677,13 +692,14 @@ def refund_create_view(request):
             refund.refund_code = _next_refund_no()
             refund.save()
 
-        return redirect('refund-detail', pk=refund.pk)
+        return redirect(f"{reverse('refund-detail', kwargs={'pk': refund.pk})}?created=1")
 
     return render(request, "refunds/create.html", {
         'payments': payment_options,
         'statuses': Refund.STATUS_CHOICES,
     })
 
+@never_cache
 def statement_view(request):
     members = Member.objects.order_by('full_name')
     member_id = request.GET.get('member')

@@ -42,7 +42,7 @@
             class="w-full bg-background border border-outline-variant text-on-surface font-body-sm rounded px-3 pl-10 py-2.5 focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all appearance-none">
             <option value="">Select a payment to refund…</option>
             {% for payment, refundable in payments %}
-            <option value="{{ payment.pk }}" data-refundable="{{ refundable|floatformat:2 }}" data-member="{{ payment.member_name }}" data-method="{{ payment.method|upper }}" data-date="{{ payment.paid_at|date:'M j, Y' }}" {% if selected_payment and selected_payment.pk == payment.pk %}selected{% endif %}>
+            <option value="{{ payment.pk }}" data-refundable="{{ refundable|floatformat:2 }}" data-member="{{ payment.member_name }}" data-method="{{ payment.method|upper }}" data-date="{{ payment.paid_at|date:'M j, Y' }}" data-total="{{ payment.total|floatformat:2 }}" {% if selected_payment and selected_payment.pk == payment.pk %}selected{% endif %}>
               {{ payment.payment_code|default:payment.pk }} — {{ payment.member_name }} — ${{ payment.total|floatformat:2 }} paid (refundable ${{ refundable|floatformat:2 }})
             </option>
             {% empty %}
@@ -51,7 +51,7 @@
           </select>
           <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none text-[18px]">expand_more</span>
         </div>
-        <p class="font-body-sm text-[11px] text-on-surface-variant">Only payments with a positive refundable balance can be refunded.</p>
+        <p class="font-body-sm text-[11px] text-on-surface-variant">Payments are loaded from the payments record for the selected member — amounts shown are what that member actually paid.</p>
       </div>
 
       <!-- Payment Preview -->
@@ -65,12 +65,13 @@
           <span class="font-data-md text-data-md text-on-surface" data-preview-total>—</span>
         </div>
         <div class="flex flex-col gap-0.5">
-          <span class="font-label-caps text-[10px] text-on-surface-variant uppercase tracking-wider">Method</span>
-          <span class="font-data-md text-data-md text-on-surface" data-preview-method>—</span>
+          <span class="font-label-caps text-[10px] text-on-surface-variant uppercase tracking-wider">Refundable</span>
+          <span class="font-data-md text-data-md text-emerald-400" data-preview-refundable>—</span>
         </div>
         <div class="flex flex-col gap-0.5">
-          <span class="font-label-caps text-[10px] text-on-surface-variant uppercase tracking-wider">Payment Date</span>
-          <span class="font-data-md text-data-md text-on-surface" data-preview-date>—</span>
+          <span class="font-label-caps text-[10px] text-on-surface-variant uppercase tracking-wider">Method / Date</span>
+          <span class="font-data-md text-data-md text-on-surface" data-preview-method>—</span>
+          <span class="font-body-sm text-[11px] text-on-surface-variant" data-preview-date>—</span>
         </div>
       </section>
 
@@ -97,10 +98,10 @@
     <!-- Confirmation -->
     <div class="px-6 py-4 border-y border-outline-variant bg-background flex flex-col gap-3">
       <label class="flex items-start gap-3 cursor-pointer group">
-        <input type="checkbox" name="confirm" value="1" id="confirm-refund" data-confirm
+        <input type="checkbox" name="confirm" value="1" id="confirm-refund"
           class="mt-0.5 w-4 h-4 rounded-sm border-outline-variant bg-surface-container-high text-primary focus:ring-primary focus:ring-1" />
         <span class="font-body-sm text-[13px] text-on-surface-variant group-hover:text-on-surface transition-colors">
-          I confirm that I have verified the payment details and authorise this refund. The refund will be created as pending and must be approved before it is applied.
+          I confirm that I have verified the payment details and authorize this refund. The refund will be created as pending and must be approved before it is applied.
         </span>
       </label>
     </div>
@@ -110,8 +111,10 @@
       <a href="{% url 'refunds' %}" class="inline-flex items-center justify-center gap-2 px-6 py-2.5 border border-outline-variant text-on-surface-variant font-label-caps text-[11px] uppercase hover:bg-surface-container-highest hover:text-on-surface transition-colors">
         Cancel
       </a>
-      <button type="submit" class="inline-flex items-center justify-center gap-2 px-8 py-2.5 bg-primary-container text-on-primary-container font-label-caps text-[11px] font-bold uppercase hover:bg-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed" data-submit-btn>
-        <span class="material-symbols-outlined text-[16px]">undo</span> Submit Refund
+      <button type="submit" data-submit-btn class="inline-flex items-center justify-center gap-2 px-8 py-2.5 bg-primary-container text-on-primary-container font-label-caps text-[11px] font-bold uppercase hover:bg-primary transition-colors disabled:opacity-70 disabled:cursor-wait">
+        <span class="material-symbols-outlined text-[16px]" data-btn-icon>undo</span>
+        <span data-btn-text>Submit Refund</span>
+        <span data-btn-spinner class="hidden w-4 h-4 border-2 border-on-primary-container border-t-transparent rounded-full animate-spin"></span>
       </button>
     </div>
   </form>
@@ -128,15 +131,20 @@ document.addEventListener('DOMContentLoaded', () => {
   const reasonInput = document.querySelector('[data-refund-reason]');
   const charCount = document.querySelector('[data-char-count]');
   const submitBtn = document.querySelector('[data-submit-btn]');
-
   function update() {
     const opt = sel.selectedOptions[0];
     const refundable = opt ? parseFloat(opt.dataset.refundable || '0') : 0;
     if (preview) {
-      preview.querySelector('[data-preview-member]').textContent = opt ? opt.dataset.member : '—';
-      preview.querySelector('[data-preview-total]').textContent = opt ? '$' + opt.textContent.split(' paid ')[0].split('$').slice(1).join('') : '—';
-      preview.querySelector('[data-preview-method]').textContent = opt ? opt.dataset.method : '—';
-      preview.querySelector('[data-preview-date]').textContent = opt ? opt.dataset.date : '—';
+      const m = preview.querySelector('[data-preview-member]');
+      const t = preview.querySelector('[data-preview-total]');
+      const rb = preview.querySelector('[data-preview-refundable]');
+      const md = preview.querySelector('[data-preview-method]');
+      const dt = preview.querySelector('[data-preview-date]');
+      if (m) m.textContent = opt ? opt.dataset.member : '—';
+      if (t) t.textContent = opt ? '$' + parseFloat(opt.dataset.total || '0').toFixed(2) : '—';
+      if (rb) rb.textContent = opt ? '$' + refundable.toFixed(2) : '—';
+      if (md) md.textContent = opt ? opt.dataset.method : '—';
+      if (dt) dt.textContent = opt ? opt.dataset.date : '—';
     }
     maxRef.textContent = '$' + refundable.toFixed(2);
     if (amountInput) { amountInput.max = refundable > 0 ? refundable : 0.01; }
@@ -149,12 +157,29 @@ document.addEventListener('DOMContentLoaded', () => {
     reasonInput.addEventListener('input', () => { charCount.textContent = reasonInput.value.length + ' / 500'; });
   }
   if (submitBtn) {
+    const form = submitBtn.closest('form');
+    const btnIcon = submitBtn.querySelector('[data-btn-icon]');
+    const btnText = submitBtn.querySelector('[data-btn-text]');
+    const btnSpinner = submitBtn.querySelector('[data-btn-spinner]');
+
+    function setSubmitting() {
+      submitBtn.disabled = true;
+      submitBtn.classList.add('pointer-events-none');
+      btnText.textContent = 'Submitting…';
+      btnIcon?.classList.add('hidden');
+      btnSpinner?.classList.remove('hidden');
+    }
+
     submitBtn.addEventListener('click', (e) => {
+      e.preventDefault();
       const amt = parseFloat(amountInput.value);
       const max = parseFloat(maxRef.textContent.replace('$',''));
-      if (amountInput && (isNaN(amt) || amt <= 0)) { e.preventDefault(); window.toast?.('Enter a refund amount greater than zero.', 'error'); return; }
-      if (amountInput && max > 0 && amt > max) { e.preventDefault(); window.toast?.('Refund cannot exceed the refundable amount of $' + max.toFixed(2) + '.', 'error'); return; }
-      if (submitBtn) { submitBtn.disabled = true; }
+      if (amountInput && (isNaN(amt) || amt <= 0)) { window.toast?.('Enter a refund amount greater than zero.', 'error'); return; }
+      if (amountInput && max > 0 && amt > max) { window.toast?.('Refund cannot exceed the refundable amount of $' + max.toFixed(2) + '.', 'error'); return; }
+      if (form && form.checkValidity && !form.checkValidity()) { window.toast?.('Please complete all required fields.', 'error'); return; }
+      // Show the spinner first, then let the browser perform the real submit.
+      requestAnimationFrame(() => requestAnimationFrame(() => setSubmitting()));
+      form.requestSubmit();
     });
   }
 });

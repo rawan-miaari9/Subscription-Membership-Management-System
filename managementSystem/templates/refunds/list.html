@@ -112,15 +112,15 @@
             <td class="py-4 px-6 text-center">
               {% if refund.status == 'pending' %}
               <div class="inline-flex gap-2">
-                <form method="post" action="{% url 'refund-status' refund.pk %}">{% csrf_token %}
+                <form id="refund-approve-{{ refund.pk }}" method="post" action="{% url 'refund-status' refund.pk %}">{% csrf_token %}
                   <input type="hidden" name="action" value="approve">
-                  <button data-confirm="Approve refund {{ refund.refund_code|default:refund.pk }} for ${{ refund.amount|floatformat:2 }}?" data-confirm-title="Approve Refund" data-confirm-text="Approve" type="submit" class="inline-flex items-center gap-1 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 px-2.5 py-1 rounded font-label-caps text-[10px] uppercase hover:bg-emerald-500/20 transition-colors">
+                  <button type="submit" data-confirm="Approve refund {{ refund.refund_code|default:refund.pk }} for ${{ refund.amount|floatformat:2 }}?" data-confirm-title="Approve Refund" data-confirm-text="Approve" data-confirm-form="#refund-approve-{{ refund.pk }}" class="inline-flex items-center gap-1 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 px-2.5 py-1 rounded font-label-caps text-[10px] uppercase hover:bg-emerald-500/20 transition-colors">
                     <span class="material-symbols-outlined text-[14px]">check</span> Approve
                   </button>
                 </form>
-                <form method="post" action="{% url 'refund-status' refund.pk %}">{% csrf_token %}
+                <form id="refund-reject-{{ refund.pk }}" method="post" action="{% url 'refund-status' refund.pk %}">{% csrf_token %}
                   <input type="hidden" name="action" value="reject">
-                  <button data-confirm="Reject refund {{ refund.refund_code|default:refund.pk }}?" data-confirm-title="Reject Refund" data-confirm-text="Reject" type="submit" class="inline-flex items-center gap-1 bg-error/10 border border-error/30 text-error px-2.5 py-1 rounded font-label-caps text-[10px] uppercase hover:bg-error/20 transition-colors">
+                  <button type="submit" data-confirm="Reject refund {{ refund.refund_code|default:refund.pk }}?" data-confirm-title="Reject Refund" data-confirm-text="Reject" data-confirm-form="#refund-reject-{{ refund.pk }}" class="inline-flex items-center gap-1 bg-error/10 border border-error/30 text-error px-2.5 py-1 rounded font-label-caps text-[10px] uppercase hover:bg-error/20 transition-colors">
                     <span class="material-symbols-outlined text-[14px]">close</span> Reject
                   </button>
                 </form>
