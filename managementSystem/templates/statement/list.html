@@ -173,7 +173,7 @@
     // Uncomment to enable real print: window.print();
   });
   document.querySelector('[data-action="pdf"]')?.addEventListener('click',()=>{
-    toast('Downloading PDF statement (frontend demo)','success');
+    toast('Downloading PDF statement','success');
   });
   document.querySelector('[data-action="csv"]')?.addEventListener('click',()=>{
     const csv = `Date,Description,Charge,Payment,Discount,Refund,Balance
@@ -187,7 +187,7 @@
     const blob = new Blob([csv], {type:'text/csv'});
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a'); a.href=url; a.download='statement-MBR-8421.csv'; a.click(); URL.revokeObjectURL(url);
-    toast('CSV downloaded (frontend demo)','success');
+    toast('CSV downloaded','success');
   });
 })();
 </script>

@@ -5,14 +5,16 @@
 <div class="max-w-5xl mx-auto">
   <!-- Header -->
   <div class="mb-6 border-b border-outline-variant pb-6">
-    <div class="flex items-center gap-3 mb-2">
-      <span class="w-8 h-8 flex items-center justify-center rounded bg-primary-container text-on-primary-container">
-        <span class="material-symbols-outlined text-[18px]">settings</span>
-      </span>
-      <span class="font-label-caps text-[11px] uppercase tracking-[0.12em] text-primary-container">System Settings</span>
+    <div class="flex items-center mb-2">
+      <div class="flex items-center gap-3">
+        <span class="w-8 h-8 flex items-center justify-center rounded bg-primary-container text-on-primary-container">
+          <span class="material-symbols-outlined text-[18px]">settings</span>
+        </span>
+        <span class="font-label-caps text-[11px] uppercase tracking-[0.12em] text-primary-container">System Settings</span>
+      </div>
     </div>
     <h1 class="font-headline-lg text-headline-lg text-on-surface uppercase tracking-tight">SETTINGS</h1>
-    <p class="font-body-sm text-body-sm text-on-surface-variant mt-2">Configure facility, financial, payment, notification and receipt preferences. Frontend-only demo.</p>
+    <p class="font-body-sm text-body-sm text-on-surface-variant mt-2">Configure facility, financial, payment and notification preferences. Each tab is saved separately.</p>
   </div>
 
   <!-- Tabs -->
@@ -21,13 +23,11 @@
     <button data-settings-tab="financial" class="settings-tab px-5 py-3 font-label-caps text-[11px] uppercase tracking-widest border-b-2 border-transparent text-on-surface-variant hover:text-primary whitespace-nowrap">Financial</button>
     <button data-settings-tab="payment" class="settings-tab px-5 py-3 font-label-caps text-[11px] uppercase tracking-widest border-b-2 border-transparent text-on-surface-variant hover:text-primary whitespace-nowrap">Payment Methods</button>
     <button data-settings-tab="notifications" class="settings-tab px-5 py-3 font-label-caps text-[11px] uppercase tracking-widest border-b-2 border-transparent text-on-surface-variant hover:text-primary whitespace-nowrap">Notifications</button>
-    <button data-settings-tab="receipt" class="settings-tab px-5 py-3 font-label-caps text-[11px] uppercase tracking-widest border-b-2 border-transparent text-on-surface-variant hover:text-primary whitespace-nowrap">Receipt</button>
     <button data-settings-tab="admin" class="settings-tab px-5 py-3 font-label-caps text-[11px] uppercase tracking-widest border-b-2 border-transparent text-on-surface-variant hover:text-primary whitespace-nowrap">Admin Profile</button>
   </div>
 
   <form data-settings-form class="space-y-6" novalidate>
     {% csrf_token %}
-    <div data-form-msg class="hidden p-3 rounded border border-error bg-error-container text-on-error-container font-body-sm text-sm"></div>
 
     <!-- 1. Business Information Card -->
     <div data-settings-panel="business" class="bg-surface-container border border-outline-variant rounded-lg p-6 md:p-8 space-y-6">
@@ -39,7 +39,7 @@
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div class="md:col-span-2">
           <label class="block font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">Business Name *</label>
-          <input name="business_name" required value="IRON CORE STRENGTH" class="w-full bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 font-body-sm text-body-sm text-on-surface placeholder:text-on-surface-variant/60 focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all" />
+          <input name="business_name" required value="{{ business.business_name }}" class="w-full bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 font-body-sm text-body-sm text-on-surface placeholder:text-on-surface-variant/60 focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all" />
           <p class="hidden text-error text-xs mt-1.5 font-body-sm" data-error="business_name">Business name is required.</p>
         </div>
 
@@ -48,7 +48,7 @@
           <label class="block font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">Logo Upload</label>
           <div class="flex items-start gap-4">
             <div class="w-20 h-20 rounded border border-outline-variant bg-surface-container-lowest flex items-center justify-center overflow-hidden shrink-0">
-              <img id="logo-preview" src="https://via.placeholder.com/80x80/101415/F59E0B?text=IRON" alt="logo preview" class="w-full h-full object-cover hidden">
+              <img id="logo-preview" src="{% if business.logo %}{{ business.logo.url }}{% else %}https://via.placeholder.com/80x80/101415/F59E0B?text=IRON{% endif %}" alt="logo preview" class="w-full h-full object-cover{% if not business.logo %} hidden{% endif %}">
               <span id="logo-placeholder" class="material-symbols-outlined text-on-surface-variant text-[32px]">image</span>
             </div>
             <div class="flex-1">
@@ -58,25 +58,35 @@
               </label>
               <p class="font-body-sm text-xs text-on-surface-variant mt-2">PNG, JPG up to 2MB. Preview shown instantly (frontend-only).</p>
               <p class="font-data-md text-xs text-on-surface-variant mt-1" id="logo-filename"></p>
+              <p class="hidden text-error text-xs mt-1.5 font-body-sm" data-error="logo">Logo must be a PNG/JPG image under 2MB.</p>
             </div>
           </div>
         </div>
 
         <div>
           <label class="block font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">Phone *</label>
-          <input name="phone" required value="+1 (555) 019-8372" class="w-full bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 font-body-sm text-body-sm text-on-surface placeholder:text-on-surface-variant/60 focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all" />
+          <input name="phone" required value="{{ business.phone }}" class="w-full bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 font-body-sm text-body-sm text-on-surface placeholder:text-on-surface-variant/60 focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all" />
           <p class="hidden text-error text-xs mt-1.5 font-body-sm" data-error="phone">Valid phone is required.</p>
         </div>
         <div>
           <label class="block font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">Email *</label>
-          <input name="email" type="email" required value="admin@ironcore.gym" class="w-full bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 font-body-sm text-body-sm text-on-surface placeholder:text-on-surface-variant/60 focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all" />
-          <p class="hidden text-error text-xs mt-1.5 font-body-sm" data-error="email">Valid email is required.</p>
+          <input name="email" type="email" required value="{{ business.email }}" class="w-full bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 font-body-sm text-body-sm text-on-surface placeholder:text-on-surface-variant/60 focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all" />
+          <p class="hidden text-error text-xs mt-1.5 font-body-sm" data-error="email">Enter a valid email address.</p>
         </div>
         <div class="md:col-span-2">
           <label class="block font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">Address *</label>
-          <input name="address" required value="400 Industrial Blvd, Metropolis, 90210" placeholder="Street, City, Postal" class="w-full bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 font-body-sm text-body-sm text-on-surface placeholder:text-on-surface-variant/60 focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all" />
+          <input name="address" required value="{{ business.address }}" placeholder="Street, City, Postal" class="w-full bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 font-body-sm text-body-sm text-on-surface placeholder:text-on-surface-variant/60 focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all" />
           <p class="hidden text-error text-xs mt-1.5 font-body-sm" data-error="address">Address is required.</p>
         </div>
+      </div>
+
+      <div class="flex items-center gap-3 pt-5 border-t border-outline-variant mt-6">
+        <button type="button" data-save-panel="business" class="inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-primary-container text-on-primary-container border border-primary-container font-label-caps text-[11px] uppercase tracking-widest font-bold rounded hover:bg-primary-container/90 transition-colors">
+          <span class="material-symbols-outlined text-[16px]">save</span> Save Business Information
+        </button>
+        <button type="button" data-reset-panel="business" class="inline-flex items-center justify-center px-6 py-2.5 border border-outline-variant bg-transparent text-on-surface font-label-caps text-[11px] uppercase tracking-widest rounded hover:bg-surface-container-high transition-colors">
+          Reset
+        </button>
       </div>
     </div>
 
@@ -88,22 +98,17 @@
       </div>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
-          <label class="block font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">Currency *</label>
+          <label class="block font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">Currency (USD only)</label>
           <div class="relative">
-            <select name="currency" required class="w-full appearance-none bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 pr-10 font-body-sm text-body-sm text-on-surface focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all">
-              <option value="USD" selected>USD — US Dollar ($)</option>
-              <option value="EUR">EUR — Euro (€)</option>
-              <option value="EGP">EGP — Egyptian Pound (E£)</option>
-              <option value="GBP">GBP — British Pound (£)</option>
-            </select>
-            <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none text-[20px]">expand_more</span>
+            <input type="text" name="currency" value="{{ financial.currency }}" readonly class="w-full bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 pr-10 font-body-sm text-body-sm text-on-surface opacity-70 cursor-not-allowed focus:outline-none" title="Only USD is supported" />
+            <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none text-[20px]">lock</span>
           </div>
-          <p class="hidden text-error text-xs mt-1.5 font-body-sm" data-error="currency">Currency is required.</p>
+          <p class="font-body-sm text-[11px] text-on-surface-variant mt-1.5">Only USD is currently supported.</p>
         </div>
         <div>
           <label class="block font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">Tax Settings — Rate (%) *</label>
           <div class="relative">
-            <input name="tax_rate" type="number" min="0" max="100" step="0.1" required value="14" class="w-full bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 pr-8 font-body-sm text-body-sm text-on-surface focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all" />
+            <input name="tax_rate" type="number" min="0" max="100" step="0.1" required value="{{ financial.tax_rate }}" class="w-full bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 pr-8 font-body-sm text-body-sm text-on-surface focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all" />
             <span class="absolute right-3 top-1/2 -translate-y-1/2 font-data-md text-data-md text-on-surface-variant">%</span>
           </div>
           <p class="hidden text-error text-xs mt-1.5 font-body-sm" data-error="tax_rate">Tax rate must be 0-100.</p>
@@ -113,6 +118,15 @@
           <span class="material-symbols-outlined text-primary-container text-[18px] mt-0.5 shrink-0">info</span>
           <p class="font-body-sm text-xs leading-relaxed text-on-surface-variant">Currency affects all displayed amounts. Tax rate is live-calculated on receipts and statements.</p>
         </div>
+      </div>
+
+      <div class="flex items-center gap-3 pt-5 border-t border-outline-variant mt-6">
+        <button type="button" data-save-panel="financial" class="inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-primary-container text-on-primary-container border border-primary-container font-label-caps text-[11px] uppercase tracking-widest font-bold rounded hover:bg-primary-container/90 transition-colors">
+          <span class="material-symbols-outlined text-[16px]">save</span> Save Financial
+        </button>
+        <button type="button" data-reset-panel="financial" class="inline-flex items-center justify-center px-6 py-2.5 border border-outline-variant bg-transparent text-on-surface font-label-caps text-[11px] uppercase tracking-widest rounded hover:bg-surface-container-high transition-colors">
+          Reset
+        </button>
       </div>
     </div>
 
@@ -124,24 +138,29 @@
       </div>
       <p class="font-body-sm text-xs text-on-surface-variant">Enable methods available at checkout. At least one must remain enabled.</p>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        {% for pm in payment_methods %}
         <label class="flex items-center justify-between p-3 border border-outline-variant rounded bg-surface-container-lowest cursor-pointer hover:border-primary-container transition-colors">
-          <span class="flex items-center gap-3"><span class="material-symbols-outlined text-on-surface-variant text-[18px]">payments</span><span class="font-label-caps text-[11px] uppercase tracking-widest text-on-surface">Cash</span></span>
-          <input type="checkbox" name="pm_cash" checked class="w-4 h-4 rounded border-outline-variant bg-surface-container text-primary focus:ring-primary accent-primary" />
+          <span class="flex items-center gap-3">
+            {% if pm.code == 'cash' %}<span class="material-symbols-outlined text-on-surface-variant text-[18px]">payments</span>
+            {% elif pm.code == 'card' %}<span class="material-symbols-outlined text-on-surface-variant text-[18px]">credit_card</span>
+            {% elif pm.code == 'transfer' %}<span class="material-symbols-outlined text-on-surface-variant text-[18px]">account_balance</span>
+            {% else %}<span class="material-symbols-outlined text-on-surface-variant text-[18px]">language</span>{% endif %}
+            <span class="font-label-caps text-[11px] uppercase tracking-widest text-on-surface">{{ pm.name }}</span>
+          </span>
+          <input type="checkbox" name="pm_{{ pm.code }}" {% if pm.enabled %}checked{% endif %} class="w-4 h-4 rounded border-outline-variant bg-surface-container text-primary focus:ring-primary accent-primary" />
         </label>
-        <label class="flex items-center justify-between p-3 border border-outline-variant rounded bg-surface-container-lowest cursor-pointer hover:border-primary-container transition-colors">
-          <span class="flex items-center gap-3"><span class="material-symbols-outlined text-on-surface-variant text-[18px]">credit_card</span><span class="font-label-caps text-[11px] uppercase tracking-widest text-on-surface">Card</span></span>
-          <input type="checkbox" name="pm_card" checked class="w-4 h-4 rounded border-outline-variant bg-surface-container text-primary focus:ring-primary accent-primary" />
-        </label>
-        <label class="flex items-center justify-between p-3 border border-outline-variant rounded bg-surface-container-lowest cursor-pointer hover:border-primary-container transition-colors">
-          <span class="flex items-center gap-3"><span class="material-symbols-outlined text-on-surface-variant text-[18px]">account_balance</span><span class="font-label-caps text-[11px] uppercase tracking-widest text-on-surface">Bank Transfer</span></span>
-          <input type="checkbox" name="pm_transfer" checked class="w-4 h-4 rounded border-outline-variant bg-surface-container text-primary focus:ring-primary accent-primary" />
-        </label>
-        <label class="flex items-center justify-between p-3 border border-outline-variant rounded bg-surface-container-lowest cursor-pointer hover:border-primary-container transition-colors">
-          <span class="flex items-center gap-3"><span class="material-symbols-outlined text-on-surface-variant text-[18px]">language</span><span class="font-label-caps text-[11px] uppercase tracking-widest text-on-surface">Online</span></span>
-          <input type="checkbox" name="pm_online" class="w-4 h-4 rounded border-outline-variant bg-surface-container text-primary focus:ring-primary accent-primary" />
-        </label>
+        {% endfor %}
       </div>
       <p class="hidden text-error text-xs mt-1 font-body-sm" data-error="payment_methods">At least one payment method must be enabled.</p>
+
+      <div class="flex items-center gap-3 pt-5 border-t border-outline-variant mt-6">
+        <button type="button" data-save-panel="payment" class="inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-primary-container text-on-primary-container border border-primary-container font-label-caps text-[11px] uppercase tracking-widest font-bold rounded hover:bg-primary-container/90 transition-colors">
+          <span class="material-symbols-outlined text-[16px]">save</span> Save Payment Methods
+        </button>
+        <button type="button" data-reset-panel="payment" class="inline-flex items-center justify-center px-6 py-2.5 border border-outline-variant bg-transparent text-on-surface font-label-caps text-[11px] uppercase tracking-widest rounded hover:bg-surface-container-high transition-colors">
+          Reset
+        </button>
+      </div>
     </div>
 
     <!-- 4. Notifications Card -->
@@ -151,60 +170,28 @@
         <h2 class="font-label-caps text-[11px] uppercase tracking-widest text-on-surface">NOTIFICATIONS</h2>
       </div>
       <div class="space-y-3">
+        {% for ns in notification_settings %}
         <label class="flex items-center justify-between p-4 border border-outline-variant rounded bg-surface-container-lowest cursor-pointer">
           <div>
-            <span class="font-label-caps text-[11px] uppercase tracking-widest text-on-surface block">Expiration Alerts</span>
-            <span class="font-body-sm text-xs text-on-surface-variant">Notify members & staff when subscriptions near expiry.</span>
+            <span class="font-label-caps text-[11px] uppercase tracking-widest text-on-surface block">{{ ns.name }}</span>
+            <span class="font-body-sm text-xs text-on-surface-variant">{{ ns.description }}</span>
           </div>
-          <input type="checkbox" name="notif_expiration" checked data-toggle class="w-10 h-6 appearance-none bg-surface-container-highest border border-outline-variant rounded-full relative before:absolute before:w-4 before:h-4 before:bg-on-surface-variant before:rounded-full before:top-0.5 before:left-0.5 before:transition-all checked:before:translate-x-4 checked:before:bg-primary-container checked:bg-primary-container/20 transition-colors accent-primary shrink-0" />
+          <input type="checkbox" name="notif_{{ ns.code }}" {% if ns.enabled %}checked{% endif %} data-toggle class="w-10 h-6 appearance-none bg-surface-container-highest border border-outline-variant rounded-full relative before:absolute before:w-4 before:h-4 before:bg-on-surface-variant before:rounded-full before:top-0.5 before:left-0.5 before:transition-all checked:before:translate-x-4 checked:before:bg-primary-container checked:bg-primary-container/20 transition-colors accent-primary shrink-0" />
         </label>
-        <label class="flex items-center justify-between p-4 border border-outline-variant rounded bg-surface-container-lowest cursor-pointer">
-          <div>
-            <span class="font-label-caps text-[11px] uppercase tracking-widest text-on-surface block">Renewal Reminders</span>
-            <span class="font-body-sm text-xs text-on-surface-variant">Automated reminders for renewals and failed payments.</span>
-          </div>
-          <input type="checkbox" name="notif_renewal" checked data-toggle class="w-10 h-6 appearance-none bg-surface-container-highest border border-outline-variant rounded-full relative before:absolute before:w-4 before:h-4 before:bg-on-surface-variant before:rounded-full before:top-0.5 before:left-0.5 before:transition-all checked:before:translate-x-4 checked:before:bg-primary-container checked:bg-primary-container/20 transition-colors accent-primary shrink-0" />
-        </label>
+        {% endfor %}
+      </div>
+
+      <div class="flex items-center gap-3 pt-5 border-t border-outline-variant mt-6">
+        <button type="button" data-save-panel="notifications" class="inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-primary-container text-on-primary-container border border-primary-container font-label-caps text-[11px] uppercase tracking-widest font-bold rounded hover:bg-primary-container/90 transition-colors">
+          <span class="material-symbols-outlined text-[16px]">save</span> Save Notifications
+        </button>
+        <button type="button" data-reset-panel="notifications" class="inline-flex items-center justify-center px-6 py-2.5 border border-outline-variant bg-transparent text-on-surface font-label-caps text-[11px] uppercase tracking-widest rounded hover:bg-surface-container-high transition-colors">
+          Reset
+        </button>
       </div>
     </div>
 
-    <!-- 5. Receipt Card -->
-    <div data-settings-panel="receipt" class="bg-surface-container border border-outline-variant rounded-lg p-6 md:p-8 space-y-6">
-      <div class="flex items-center gap-2 mb-2">
-        <span class="material-symbols-outlined text-primary-container text-[20px]">receipt_long</span>
-        <h2 class="font-label-caps text-[11px] uppercase tracking-widest text-on-surface">RECEIPT</h2>
-      </div>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div class="md:col-span-2">
-          <label class="block font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">Receipt Information</label>
-          <textarea name="receipt_info" rows="3" class="w-full bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 font-body-sm text-body-sm text-on-surface placeholder:text-on-surface-variant/60 focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all resize-none">Thank you for training at IRON CORE. Keep pushing your limits.</textarea>
-          <p class="font-body-sm text-[11px] text-on-surface-variant mt-1.5">Footer text printed on every receipt and invoice.</p>
-        </div>
-        <div>
-          <label class="block font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">Receipt Format *</label>
-          <div class="relative">
-            <select name="receipt_format" required class="w-full appearance-none bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 pr-10 font-body-sm text-body-sm text-on-surface focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all">
-              <option value="compact" selected>Compact — Single line</option>
-              <option value="detailed">Detailed — Breakdown + Tax</option>
-              <option value="thermal">Thermal — 80mm</option>
-            </select>
-            <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none text-[20px]">expand_more</span>
-          </div>
-          <p class="hidden text-error text-xs mt-1.5 font-body-sm" data-error="receipt_format">Receipt format is required.</p>
-        </div>
-        <div class="flex items-end">
-          <div class="w-full p-3 border border-dashed border-outline-variant rounded bg-surface-container-lowest">
-            <span class="font-label-caps text-[10px] uppercase tracking-widest text-on-surface-variant block mb-1">Preview</span>
-            <div class="font-data-md text-xs text-on-surface space-y-1">
-              <div class="flex justify-between"><span>IRON CORE STRENGTH</span><span id="preview-currency">$</span></div>
-              <div class="border-t border-outline-variant pt-1 flex justify-between"><span>Format</span><span id="preview-format" class="text-primary">Compact</span></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 6. Admin Profile Card -->
+    <!-- 5. Admin Profile Card -->
     <div data-settings-panel="admin" class="bg-surface-container border border-outline-variant rounded-lg p-6 md:p-8 space-y-6">
       <div class="flex items-center gap-2 mb-2">
         <span class="material-symbols-outlined text-primary-container text-[20px]">person</span>
@@ -212,49 +199,73 @@
       </div>
       <div class="flex items-start gap-6">
         <div class="w-24 h-24 rounded-full border-2 border-outline-variant bg-surface-container-lowest flex items-center justify-center overflow-hidden shrink-0">
-          <img id="admin-preview" src="" alt="admin preview" class="w-full h-full object-cover hidden">
-          <span id="admin-placeholder" class="material-symbols-outlined text-on-surface-variant text-[40px]">person</span>
+          <img id="admin-preview" src="{% if admin_user.avatar %}{{ admin_user.avatar.url }}{% endif %}" alt="admin preview" class="w-full h-full object-cover{% if not admin_user.avatar %} hidden{% endif %}">
+          <span id="admin-placeholder" class="material-symbols-outlined text-on-surface-variant text-[40px]{% if admin_user.avatar %} hidden{% endif %}">person</span>
         </div>
         <div class="flex-1">
-          <label class="block font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">Admin Avatar *</label>
+          <label class="block font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">Admin Avatar</label>
           <label class="inline-flex items-center gap-2 px-4 py-2 bg-surface-container-highest border border-outline-variant rounded font-label-caps text-[11px] uppercase tracking-widest text-on-surface hover:bg-surface-container-high cursor-pointer transition-colors">
             <span class="material-symbols-outlined text-[16px]">upload</span> Choose Image
-            <input id="admin-input" name="admin_avatar" type="file" accept="image/*" class="hidden" />
+            <input id="admin-input" name="avatar" type="file" accept="image/*" class="hidden" />
           </label>
-          <p class="font-body-sm text-xs text-on-surface-variant mt-2">PNG, JPG up to 2MB. Saved to header avatar instantly (frontend-only, localStorage).</p>
+          <p class="font-body-sm text-xs text-on-surface-variant mt-2">PNG, JPG up to 2MB. Saved to the users table on Save.</p>
           <p class="font-data-md text-xs text-on-surface-variant mt-1" id="admin-filename"></p>
-          <p class="hidden text-error text-xs mt-1.5 font-body-sm" data-error="admin_avatar">Admin image is required.</p>
-          <div class="flex gap-2 mt-3">
-            <button type="button" id="admin-remove" class="px-4 py-2 border border-outline-variant font-label-caps text-[11px] text-on-surface hover:bg-surface-container-high">Remove</button>
-            <button type="button" id="admin-save" class="px-4 py-2 bg-primary-container text-on-primary-container font-label-caps text-[11px]">Apply to Header</button>
-          </div>
         </div>
       </div>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div><label class="block font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">Admin Name</label><input name="admin_name" value="Admin" class="w-full bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 font-body-sm text-body-sm text-on-surface"></div>
-        <div><label class="block font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">Admin Role</label><input name="admin_role" value="Admin" class="w-full bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 font-body-sm text-body-sm text-on-surface"></div>
+        <div>
+          <label class="block font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">Full Name *</label>
+          <input name="full_name" required value="{{ admin_user.full_name }}" class="w-full bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 font-body-sm text-body-sm text-on-surface focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all" />
+          <p class="hidden text-error text-xs mt-1.5 font-body-sm" data-error="full_name">Full name may contain letters and spaces only.</p>
+        </div>
+        <div>
+          <label class="block font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">Email *</label>
+          <input name="email" type="email" required value="{{ admin_user.email }}" class="w-full bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 font-body-sm text-body-sm text-on-surface focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all" />
+          <p class="hidden text-error text-xs mt-1.5 font-body-sm" data-error="email">Enter a valid email address.</p>
+        </div>
+        <div>
+          <label class="block font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">Username *</label>
+          <input name="username" required value="{{ admin_user.username }}" class="w-full bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 font-body-sm text-body-sm text-on-surface focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all" />
+          <p class="hidden text-error text-xs mt-1.5 font-body-sm" data-error="username">Username may contain letters, numbers, and underscores only.</p>
+        </div>
+        <div>
+          <label class="block font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">Role *</label>
+          <div class="relative">
+            <select name="role" required class="w-full appearance-none bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 pr-10 font-body-sm text-body-sm text-on-surface focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all">
+              <option value="Admin" {% if admin_user.role == 'Admin' %}selected{% endif %}>Admin</option>
+              <option value="Accountant" {% if admin_user.role == 'Accountant' %}selected{% endif %}>Accountant</option>
+            </select>
+            <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none text-[20px]">expand_more</span>
+          </div>
+        </div>
+        <div>
+          <label class="block font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">Status *</label>
+          <div class="relative">
+            <select name="status" required class="w-full appearance-none bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 pr-10 font-body-sm text-body-sm text-on-surface focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all">
+              <option value="Active" {% if admin_user.status == 'Active' %}selected{% endif %}>Active</option>
+              <option value="Inactive" {% if admin_user.status == 'Inactive' %}selected{% endif %}>Inactive</option>
+            </select>
+            <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none text-[20px]">expand_more</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3 pt-5 border-t border-outline-variant mt-6">
+        <button type="button" data-save-panel="admin" class="inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-primary-container text-on-primary-container border border-primary-container font-label-caps text-[11px] uppercase tracking-widest font-bold rounded hover:bg-primary-container/90 transition-colors">
+          <span class="material-symbols-outlined text-[16px]">save</span> Save Admin Profile
+        </button>
+        <button type="button" data-reset-panel="admin" class="inline-flex items-center justify-center px-6 py-2.5 border border-outline-variant bg-transparent text-on-surface font-label-caps text-[11px] uppercase tracking-widest rounded hover:bg-surface-container-high transition-colors">
+          Reset
+        </button>
+        <button type="button" id="admin-logout" data-action="logout" class="ml-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 border border-error text-error font-label-caps text-[11px] uppercase tracking-widest rounded hover:bg-error-container transition-colors">
+          <span class="material-symbols-outlined text-[16px]">logout</span> Logout
+        </button>
       </div>
     </div>
 
-    <!-- Global Actions -->
-    <div class="flex flex-wrap items-center gap-3 pt-6 border-t border-outline-variant bg-surface-container border border-outline-variant rounded-lg p-4 sticky bottom-4">
-      <button type="submit" class="inline-flex items-center justify-center gap-2 px-8 py-3 bg-primary-container text-on-primary-container border border-primary-container font-label-caps text-[11px] uppercase tracking-widest font-bold rounded hover:bg-primary-container/90 transition-colors">
-        <span class="material-symbols-outlined text-[16px]">save</span> Save Settings
-      </button>
-      <button type="button" data-reset class="inline-flex items-center justify-center px-8 py-3 border border-outline-variant bg-transparent text-on-surface font-label-caps text-[11px] uppercase tracking-widest rounded hover:bg-surface-container-high transition-colors">
-        Cancel
-      </button>
-      <span data-loading class="hidden ml-2 inline-flex items-center gap-2 font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant">
-        <span class="w-4 h-4 border-2 border-primary-container border-t-transparent rounded-full animate-spin"></span> Saving...
-      </span>
-      <span class="ml-auto font-label-caps text-[10px] uppercase tracking-widest text-on-surface-variant hidden md:inline">9 sections • Frontend demo • No backend</span>
-    </div>
-
-    <div data-success class="hidden p-4 bg-tertiary-container border border-tertiary text-on-tertiary-container rounded font-body-sm text-sm flex items-center gap-2">
-      <span class="material-symbols-outlined text-[18px]">check_circle</span> Settings saved successfully (frontend demo).
-    </div>
+    <!-- Panel save feedback (shared) -->
     <div data-error-state class="hidden p-4 bg-error-container border border-error text-on-error-container rounded font-body-sm text-sm flex items-center gap-2">
-      <span class="material-symbols-outlined text-[18px]">error</span> Failed to save. Please check highlighted fields.
+      <span class="material-symbols-outlined text-[18px]">error</span> Please fix the highlighted fields before saving.
     </div>
   </form>
 </div>
@@ -263,13 +274,40 @@
 (function(){
   const form = document.querySelector('[data-settings-form]');
   if(!form) return;
-  function toastLocal(msg, type){
-    if(typeof toast==='function') toast(msg,type);
-    else if(window.toast) window.toast(msg,type);
-    else {
-      let c=document.getElementById('toast-container'); if(!c){c=document.createElement('div'); c.id='toast-container'; c.className='fixed bottom-4 right-4 z-50 flex flex-col gap-2'; document.body.appendChild(c);}
-      const el=document.createElement('div'); el.className='px-4 py-3 rounded border text-sm font-label-caps shadow-lg '+(type==='error'?'bg-error text-on-error border-error':type==='success'?'bg-tertiary-container text-on-tertiary-container border-tertiary':'bg-surface-container-high border-outline-variant text-on-surface'); el.textContent=msg; c.appendChild(el); setTimeout(()=>{el.style.opacity='0'; setTimeout(()=>el.remove(),300);},2500);
+
+  // Mark all settings buttons so the global app.js fallback toast skips them (only our handlers show messages).
+  // The logout button is excluded so app.js never attaches role-toggle/className-rewriting behavior to it.
+  document.querySelectorAll('[data-settings-form] button').forEach(b=>{
+    if(b.id==='admin-logout') return;
+    b.setAttribute('data-role','settings');
+  });
+
+  function getCookie(name){
+    const m = document.cookie.match('(^|;)\\s*'+name+'\\s*=\\s*([^;]+)');
+    if(m) return decodeURIComponent(m.pop());
+    if(name==='csrftoken'){
+      const hidden = form.querySelector('input[name="csrfmiddlewaretoken"]');
+      if(hidden) return hidden.value;
     }
+    return '';
+  }
+
+  function toastLocal(msg, type){
+    const cont=document.createElement('div');
+    cont.className='fixed bottom-4 right-4 z-50 flex flex-col gap-2';
+    const old=document.getElementById('toast-container');
+    if(old && old.parentNode) old.parentNode.removeChild(old);
+    cont.id='toast-container';
+    document.body.appendChild(cont);
+    const el=document.createElement('div');
+    el.className='px-4 py-3 rounded border text-sm font-label-caps shadow-lg '+(type==='error'?'bg-error text-on-error border-error':type==='success'?'bg-tertiary-container text-on-tertiary-container border-tertiary':'bg-surface-container-high border-outline-variant text-on-surface');
+    el.textContent=msg;
+    cont.appendChild(el);
+    setTimeout(()=>{
+      el.style.transition='opacity 300ms';
+      el.style.opacity='0';
+      setTimeout(()=>{ if(cont && cont.parentNode) cont.parentNode.removeChild(cont); },300);
+    },3000);
   }
   // Tabs
   const tabs = document.querySelectorAll('[data-settings-tab]');
@@ -299,6 +337,13 @@
     logoInput.addEventListener('change', ()=>{
       const file = logoInput.files[0];
       if(!file) return;
+      const logoErr=form.querySelector('[data-error="logo"]');
+      if(logoErr) logoErr.classList.add('hidden');
+      if(!/^image\/(png|jpe?g)$/.test(file.type)){
+        toastLocal('Logo must be a PNG or JPG image','error');
+        logoInput.value=''; if(logoFilename) logoFilename.textContent='';
+        return;
+      }
       if(file.size > 2*1024*1024){ toastLocal('Logo must be < 2MB','error'); logoInput.value=''; return; }
       if(logoFilename) logoFilename.textContent = file.name + ' (' + (file.size/1024).toFixed(1) + ' KB)';
       const url = URL.createObjectURL(file);
@@ -307,105 +352,183 @@
     });
   }
 
-  // Admin avatar preview & save to header (frontend-only localStorage)
+  // ── Admin Profile (backend `users` table) ────────────────────────────
+  const DEFAULT_AVATAR='https://lh3.googleusercontent.com/aida-public/AB6AXuD-h__OQH13M54LTb_QcIzgLKwBl0ziYdq2LT4MF4jyvJA3yYS3G5fe9azJtgPXTliLX7mJbkRbbdcjKyephA1EV4Hs7glGM72BBQVROkUkEUNE445Mk8R-3OEq8DfH-PXAb8p2zdpQFcayCVYoiT8pfKu-Vbu0fwmIOUJe6kgoRDDAL4N4symKwm1P1QesK75n1DGCZh-ZdVUGm6jhs9-5eh2Biufj2g8Vq0DTYt3O9SYm_19J-UVGkw';
   const adminInput = document.getElementById('admin-input');
   const adminPreview = document.getElementById('admin-preview');
   const adminPlaceholder = document.getElementById('admin-placeholder');
   const adminFilename = document.getElementById('admin-filename');
-  const adminSaveBtn = document.getElementById('admin-save');
-  const adminRemoveBtn = document.getElementById('admin-remove');
-  let adminDataUrl = localStorage.getItem('admin-avatar') || '';
-  if(adminDataUrl && adminPreview){
-    adminPreview.src = adminDataUrl; adminPreview.classList.remove('hidden');
-    if(adminPlaceholder) adminPlaceholder.classList.add('hidden');
-  }
   if(adminInput){
     adminInput.addEventListener('change', ()=>{
       const file = adminInput.files[0];
       if(!file) return;
       if(file.size > 2*1024*1024){ toastLocal('Admin image must be < 2MB','error'); adminInput.value=''; return; }
       if(adminFilename) adminFilename.textContent = file.name + ' (' + (file.size/1024).toFixed(1) + ' KB)';
-      const reader = new FileReader();
-      reader.onload = e=>{
-        adminDataUrl = e.target.result;
-        if(adminPreview){ adminPreview.src = adminDataUrl; adminPreview.classList.remove('hidden'); }
-        if(adminPlaceholder) adminPlaceholder.classList.add('hidden');
-      };
-      reader.readAsDataURL(file);
+      const url = URL.createObjectURL(file);
+      if(adminPreview){ adminPreview.src = url; adminPreview.classList.remove('hidden'); }
+      if(adminPlaceholder) adminPlaceholder.classList.add('hidden');
     });
   }
-  if(adminSaveBtn){
-    adminSaveBtn.addEventListener('click', ()=>{
-      if(!adminDataUrl){ toastLocal('Choose an image first','error'); return; }
-      localStorage.setItem('admin-avatar', adminDataUrl);
-      const headerImg = document.getElementById('admin-avatar');
-      if(headerImg) headerImg.src = adminDataUrl;
-      // Also update name/role display if present
-      const nameInp = form.querySelector('[name="admin_name"]');
-      const roleInp = form.querySelector('[name="admin_role"]');
-      if(nameInp) localStorage.setItem('admin-name', nameInp.value);
-      if(roleInp) localStorage.setItem('admin-role', roleInp.value);
-      toastLocal('Admin avatar applied to header (frontend demo)','success');
-    });
+  function applyAdminHeader(data){
+    localStorage.setItem('admin-name', data.full_name);
+    localStorage.setItem('admin-role', data.role);
+    localStorage.setItem('admin-avatar', data.avatar||'');
+    const headerImg = document.getElementById('admin-avatar');
+    if(headerImg) headerImg.src = data.avatar ? data.avatar : DEFAULT_AVATAR;
+    const headerRole = document.getElementById('admin-role-display');
+    if(headerRole) headerRole.textContent = data.role;
   }
-  if(adminRemoveBtn){
-    adminRemoveBtn.addEventListener('click', ()=>{
-      localStorage.removeItem('admin-avatar');
-      adminDataUrl='';
-      if(adminPreview){ adminPreview.src=''; adminPreview.classList.add('hidden'); }
-      if(adminPlaceholder) adminPlaceholder.classList.remove('hidden');
-      if(adminFilename) adminFilename.textContent='';
-      if(adminInput) adminInput.value='';
-      const headerImg = document.getElementById('admin-avatar');
-      if(headerImg) headerImg.src='https://lh3.googleusercontent.com/aida-public/AB6AXuD-h__OQH13M54LTb_QcIzgLKwBl0ziYdq2LT4MF4jyvJA3yYS3G5fe9azJtgPXTliLX7mJbkRbbdcjKyephA1EV4Hs7glGM72BBQVROkUkEUNE445Mk8R-3OEq8DfH-PXAb8p2zdpQFcayCVYoiT8pfKu-Vbu0fwmIOUJe6kgoRDDAL4N4symKwm1P1QesK75n1DGCZh-ZdVUGm6jhs9-5eh2Biufj2g8Vq0DTYt3O9SYm_19J-UVGkw';
-      toastLocal('Admin avatar removed','info');
+  function saveAdminProfile(){
+    const fd = new FormData();
+    panelFields.admin.forEach(name=>{
+      const inp=form.querySelector(`[name="${name}"]`);
+      if(inp) fd.append(name, inp.value);
     });
+    if(adminInput && adminInput.files[0]) fd.append('avatar', adminInput.files[0]);
+    const btn = form.querySelector('[data-save-panel="admin"]');
+    errStateEl.classList.add('hidden');
+    if(btn) btn.disabled = true;
+    fetch('/settings/admin-profile/api/', {
+      method:'POST',
+      credentials:'same-origin',
+      headers:{ 'X-CSRFToken': getCookie('csrftoken') },
+      body: fd
+    })
+    .then(async res=>{
+      let r=null;
+      try{ r = await res.json(); }catch(e){}
+      if(res.ok && r && r.ok){
+        applyAdminHeader(r);
+        if(adminInput) adminInput.value='';
+        if(adminFilename) adminFilename.textContent='';
+        if(adminPreview){
+          adminPreview.src = r.avatar ? r.avatar : '';
+          if(r.avatar){ adminPreview.classList.remove('hidden'); if(adminPlaceholder) adminPlaceholder.classList.add('hidden'); }
+          else { adminPreview.classList.add('hidden'); if(adminPlaceholder) adminPlaceholder.classList.remove('hidden'); }
+        }
+        toastLocal('Admin Profile saved','success');
+      } else {
+        errStateEl.classList.remove('hidden');
+        errStateEl.textContent = (r && r.error) ? 'Failed to save: '+r.error : 'Failed to save admin profile. Please try again.';
+        toastLocal('Save failed — try again','error');
+      }
+    })
+    .catch(()=>{
+      errStateEl.classList.remove('hidden');
+      errStateEl.textContent='Failed to save admin profile. Network error.';
+      toastLocal('Save failed — try again','error');
+    })
+    .finally(()=>{ if(btn) btn.disabled = false; });
   }
-  // Load saved admin name/role into inputs
-  const savedName=localStorage.getItem('admin-name'); if(savedName){ const inp=form.querySelector('[name="admin_name"]'); if(inp) inp.value=savedName; }
-  const savedRole=localStorage.getItem('admin-role'); if(savedRole){ const inp=form.querySelector('[name="admin_role"]'); if(inp) inp.value=savedRole; }
+  function resetAdminProfile(){
+    fetch('/settings/admin-profile/api/', { headers:{ 'Accept':'application/json' } })
+      .then(res=>res.json())
+      .then(data=>{
+        panelFields.admin.forEach(name=>{
+          const inp=form.querySelector(`[name="${name}"]`);
+          if(!inp || !(name in data)) return;
+          writeField(inp, data[name]);
+        });
+        clearPanelErrors('admin');
+        if(adminInput) adminInput.value='';
+        if(adminFilename) adminFilename.textContent='';
+        if(adminPreview){
+          adminPreview.src = data.avatar ? data.avatar : '';
+          if(data.avatar){ adminPreview.classList.remove('hidden'); if(adminPlaceholder) adminPlaceholder.classList.add('hidden'); }
+          else { adminPreview.classList.add('hidden'); if(adminPlaceholder) adminPlaceholder.classList.remove('hidden'); }
+        }
+        toastLocal('Admin Profile reset to saved values','info');
+      })
+      .catch(()=>toastLocal('Reset failed — try again','error'));
+  }
 
-  // Receipt format preview
-  const fmtSelect = form.querySelector('[name="receipt_format"]');
-  const previewFmt = document.getElementById('preview-format');
-  const currencySelect = form.querySelector('[name="currency"]');
-  const previewCurrency = document.getElementById('preview-currency');
-  const currencyMap = {USD:'$', EUR:'€', EGP:'E£', GBP:'£'};
-  function updatePreview(){
-    if(previewFmt && fmtSelect) previewFmt.textContent = fmtSelect.options[fmtSelect.selectedIndex].text.split('—')[0].trim();
-    if(previewCurrency && currencySelect) previewCurrency.textContent = currencyMap[currencySelect.value] || '$';
-  }
-  if(fmtSelect) fmtSelect.addEventListener('change', updatePreview);
-  if(currencySelect) currencySelect.addEventListener('change', updatePreview);
-  updatePreview();
-
-  // Reset
-  const resetBtn = form.querySelector('[data-reset]');
-  if(resetBtn){
-    resetBtn.addEventListener('click', ()=>{
-      form.reset();
-      if(logoPreview){ logoPreview.classList.add('hidden'); logoPreview.src=''; }
-      if(logoPlaceholder) logoPlaceholder.classList.remove('hidden');
-      if(logoFilename) logoFilename.textContent='';
-      form.querySelectorAll('[data-error]').forEach(el=>el.classList.add('hidden'));
-      form.querySelectorAll('.border-error').forEach(el=>el.classList.remove('border-error','!border-error'));
-      form.querySelector('[data-form-msg]').classList.add('hidden');
-      form.querySelector('[data-success]').classList.add('hidden');
-      form.querySelector('[data-error-state]').classList.add('hidden');
-      updatePreview();
-      toastLocal('Changes discarded (frontend demo)','info');
-      // reset tabs to business
-      tabs.forEach((t,i)=>{ if(i===0) t.click(); });
+  // Logout — POST to backend, then redirect to the login page
+  const logoutBtn = document.getElementById('admin-logout');
+  if(logoutBtn){
+    let loggingOut = false;
+    logoutBtn.addEventListener('click', (e)=>{
+      e.preventDefault();
+      e.stopPropagation();
+      if(loggingOut) return;
+      loggingOut = true;
+      fetch('/logout/', {
+        method:'POST',
+        credentials:'same-origin',
+        headers:{
+          'X-CSRFToken': getCookie('csrftoken'),
+          'X-Requested-With':'XMLHttpRequest'
+        }
+      })
+      .then(res=>res.json())
+      .then(data=>{
+        window.location.href = (data && data.redirect) ? data.redirect : '/login/';
+      })
+      .catch(()=>{
+        loggingOut = false;
+        toastLocal('Logout failed — try again','error');
+      });
     });
   }
 
-  // Validation + save
-  form.addEventListener('submit', function(e){
-    e.preventDefault();
+  // ── Per-panel save system ─────────────────────────────────────────────
+  const panelFields = {
+    business: ['business_name','phone','email','address'],
+    financial: ['currency','tax_rate'],
+    payment: ['pm_cash','pm_card','pm_transfer','pm_online'],
+    notifications: ['notif_expiration','notif_renewal'],
+    admin: ['full_name','email','username','role','status']
+  };
+  const panelKeys = {
+    business: 'settings_business',
+    financial: 'settings_financial',
+    payment: 'settings_payment',
+    notifications: 'settings_notifications',
+    admin: 'settings_admin'
+  };
+  const panelLabels = {
+    business:'Business Info', financial:'Financial', payment:'Payment Methods',
+    notifications:'Notifications', admin:'Admin Profile'
+  };
+
+  const errStateEl = form.querySelector('[data-error-state]');
+
+  function clearPanelErrors(panel){
+    panelFields[panel].forEach(name=>{
+      const inp=form.querySelector(`[name="${name}"]`);
+      const err=form.querySelector(`[data-error="${name}"]`);
+      if(inp) inp.classList.remove('border-error','!border-error');
+      if(err) err.classList.add('hidden');
+    });
+    const pmErr=form.querySelector('[data-error="payment_methods"]');
+    if(pmErr) pmErr.classList.add('hidden');
+    if(panel==='business'){
+      const logoErr=form.querySelector('[data-error="logo"]');
+      if(logoErr) logoErr.classList.add('hidden');
+    }
+    errStateEl.classList.add('hidden');
+  }
+
+  function readField(inp){ return inp.type==='checkbox' ? inp.checked : inp.value; }
+  function writeField(inp, val){
+    if(inp.type==='checkbox') inp.checked = !!val;
+    else inp.value = val;
+  }
+
+  function loadPanel(panel){
+    const saved=localStorage.getItem(panelKeys[panel]);
+    if(!saved) return;
+    let data; try{ data=JSON.parse(saved); }catch(e){ return; }
+    panelFields[panel].forEach(name=>{
+      const inp=form.querySelector(`[name="${name}"]`);
+      if(!inp || !(name in data)) return;
+      writeField(inp, data[name]);
+    });
+  }
+  // Business, financial, payment and notifications are loaded from the backend (server-rendered), not localStorage.
+  Object.keys(panelKeys).filter(k=>!['business','financial','payment','notifications','admin'].includes(k)).forEach(loadPanel);
+
+  function validatePanel(panel){
     let valid=true;
-    const msg=form.querySelector('[data-form-msg]');
-    form.querySelectorAll('[data-error]').forEach(el=>el.classList.add('hidden'));
-    form.querySelectorAll('.border-error').forEach(el=>el.classList.remove('border-error','!border-error'));
     function mark(name){
       valid=false;
       const inp=form.querySelector(`[name="${name}"]`);
@@ -413,51 +536,233 @@
       if(inp) inp.classList.add('border-error','!border-error');
       if(err) err.classList.remove('hidden');
     }
-    const bn=form.querySelector('[name="business_name"]');
-    const phone=form.querySelector('[name="phone"]');
-    const email=form.querySelector('[name="email"]');
-    const address=form.querySelector('[name="address"]');
-    const currency=form.querySelector('[name="currency"]');
-    const tax=form.querySelector('[name="tax_rate"]');
-    const rfmt=form.querySelector('[name="receipt_format"]');
-    if(!bn.value.trim()) mark('business_name');
-    if(!phone.value.trim()) mark('phone');
-    if(!email.value.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value.trim())) mark('email');
-    if(!address.value.trim()) mark('address');
-    if(!currency.value) mark('currency');
-    const taxVal=parseFloat(tax.value);
-    if(isNaN(taxVal) || taxVal<0 || taxVal>100) mark('tax_rate');
-    if(!rfmt.value) mark('receipt_format');
-    // at least one payment method
-    const pmChecks=['pm_cash','pm_card','pm_transfer','pm_online'].map(n=>form.querySelector(`[name="${n}"]`)).filter(Boolean);
-    if(!pmChecks.some(c=>c.checked)){
-      valid=false;
-      const err=form.querySelector('[data-error="payment_methods"]');
-      if(err) err.classList.remove('hidden');
+    if(panel==='business'){
+      const bn=form.querySelector('[name="business_name"]');
+      const phone=form.querySelector('[name="phone"]');
+      const email=form.querySelector('[name="email"]');
+      const addr=form.querySelector('[name="address"]');
+      if(!bn.value.trim()) mark('business_name');
+      const ph=phone.value.trim();
+      if(!ph || !/^[+\d][\d\s().-]*$/.test(ph)) mark('phone');
+      if(!email.value.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value.trim())) mark('email');
+      if(!addr.value.trim()) mark('address');
+      if(logoInput && logoInput.files[0]){
+        const f=logoInput.files[0];
+        if(!/^image\/(png|jpe?g)$/.test(f.type)) mark('logo');
+        else if(f.size>2*1024*1024) mark('logo');
+      }
+    } else if(panel==='financial'){
+      const c=form.querySelector('[name="currency"]');
+      const t=form.querySelector('[name="tax_rate"]');
+      if(!c.value) mark('currency');
+      const tv=parseFloat(t.value);
+      if(isNaN(tv) || tv<0 || tv>100) mark('tax_rate');
+    } else if(panel==='admin'){
+      const fn=form.querySelector('[name="full_name"]');
+      const em=form.querySelector('[name="email"]');
+      const un=form.querySelector('[name="username"]');
+      const fullNameVal=fn.value.trim(); const unVal=un.value.trim();
+      if(!fullNameVal || !/^[A-Za-z ]+$/.test(fullNameVal)) mark('full_name');
+      if(!em.value.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em.value.trim())) mark('email');
+      if(!unVal || !/^[A-Za-z0-9_]+$/.test(unVal)) mark('username');
+    } else if(panel==='payment'){
+      const checks=panelFields.payment.map(n=>form.querySelector(`[name="${n}"]`)).filter(Boolean);
+      if(!checks.some(c=>c.checked)){
+        valid=false;
+        const err=form.querySelector('[data-error="payment_methods"]');
+        if(err) err.classList.remove('hidden');
+      }
     }
-    if(!valid){
-      msg.textContent='Please fix validation errors before saving.';
-      msg.classList.remove('hidden');
-      toastLocal('Please fix validation errors','error');
-      // show all panels to reveal errors
-      panels.forEach(p=>p.classList.remove('hidden'));
-      tabs.forEach(t=>{ t.className='settings-tab px-5 py-3 font-label-caps text-[11px] uppercase tracking-widest border-b-2 border-transparent text-on-surface-variant hover:text-primary whitespace-nowrap'; });
+    return valid;
+  }
+
+  function savePanel(panel){
+    clearPanelErrors(panel);
+    if(!validatePanel(panel)){
+      errStateEl.classList.remove('hidden');
+      errStateEl.textContent='Please fix the highlighted fields before saving.';
+      toastLocal('Please fix the highlighted fields','error');
       return;
     }
-    msg.classList.add('hidden');
-    const loading=form.querySelector('[data-loading]');
-    const success=form.querySelector('[data-success]');
-    const errState=form.querySelector('[data-error-state]');
-    loading.classList.remove('hidden'); success.classList.add('hidden'); errState.classList.add('hidden');
-    const submitBtn=form.querySelector('button[type="submit"]'); if(submitBtn) submitBtn.disabled=true;
-    setTimeout(()=>{
-      loading.classList.add('hidden'); if(submitBtn) submitBtn.disabled=false;
-      if(Math.random()>0.2){
-        success.classList.remove('hidden'); toastLocal('Settings saved (demo)','success');
+    if(panel==='business'){
+      saveBusiness(panel);
+      return;
+    }
+    if(panel==='financial'){
+      saveTogglePanel(panel, '/settings/financial/api/', '');
+      return;
+    }
+    if(panel==='payment'){
+      saveTogglePanel(panel, '/settings/payment/api/', 'pm_');
+      return;
+    }
+    if(panel==='notifications'){
+      saveTogglePanel(panel, '/settings/notifications/api/', 'notif_');
+      return;
+    }
+    if(panel==='admin'){
+      saveAdminProfile();
+      return;
+    }
+    const data={};
+    panelFields[panel].forEach(name=>{
+      const inp=form.querySelector(`[name="${name}"]`);
+      if(!inp) return;
+      data[name] = readField(inp);
+    });
+    localStorage.setItem(panelKeys[panel], JSON.stringify(data));
+    toastLocal(panelLabels[panel]+' saved','success');
+  }
+
+  function saveBusiness(panel){
+    const fd = new FormData();
+    ['business_name','phone','email','address'].forEach(name=>{
+      const inp=form.querySelector(`[name="${name}"]`);
+      if(inp) fd.append(name, inp.value);
+    });
+    const logoFile = logoInput ? logoInput.files[0] : null;
+    if(logoFile) fd.append('logo', logoFile);
+
+    const btn = form.querySelector('[data-save-panel="business"]');
+    errStateEl.classList.add('hidden');
+    if(btn) btn.disabled = true;
+    fetch('/settings/business/api/', {
+      method:'POST',
+      credentials:'same-origin',
+      headers:{ 'X-CSRFToken': getCookie('csrftoken') },
+      body: fd
+    })
+    .then(async res=>{
+      let data=null;
+      try{ data = await res.json(); }catch(e){}
+      if(res.ok && data && data.ok){
+        toastLocal('Business Information saved','success');
       } else {
-        errState.classList.remove('hidden'); errState.textContent='Failed to save. Simulated server error — try again.'; toastLocal('Save failed — try again','error');
+        errStateEl.classList.remove('hidden');
+        errStateEl.textContent = (data && data.error) ? 'Failed to save: '+data.error : 'Failed to save business information. Please try again.';
+        toastLocal('Save failed — try again','error');
       }
-    }, 900);
+    })
+    .catch(()=>{
+      errStateEl.classList.remove('hidden');
+      errStateEl.textContent='Failed to save business information. Network error.';
+      toastLocal('Save failed — try again','error');
+    })
+    .finally(()=>{ if(btn) btn.disabled = false; });
+  }
+
+  function saveTogglePanel(panel, url, prefix){
+    const data={};
+    panelFields[panel].forEach(name=>{
+      const inp=form.querySelector(`[name="${name}"]`);
+      if(inp) data[name.replace(prefix,'')] = readField(inp);
+    });
+
+    const btn = form.querySelector(`[data-save-panel="${panel}"]`);
+    errStateEl.classList.add('hidden');
+    if(btn) btn.disabled = true;
+    fetch(url, {
+      method:'POST',
+      credentials:'same-origin',
+      headers:{ 'Content-Type':'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+      body: JSON.stringify(data)
+    })
+    .then(async res=>{
+      let r=null;
+      try{ r = await res.json(); }catch(e){}
+      if(res.ok && r && r.ok){
+        toastLocal(panelLabels[panel]+' saved','success');
+      } else {
+        errStateEl.classList.remove('hidden');
+        errStateEl.textContent = (r && r.error) ? 'Failed to save: '+r.error : 'Failed to save '+panelLabels[panel]+'. Please try again.';
+        toastLocal('Save failed — try again','error');
+      }
+    })
+    .catch(()=>{
+      errStateEl.classList.remove('hidden');
+      errStateEl.textContent='Failed to save '+panelLabels[panel]+'. Network error.';
+      toastLocal('Save failed — try again','error');
+    })
+    .finally(()=>{ if(btn) btn.disabled = false; });
+  }
+
+  function resetBackendPanel(panel, url, prefix){
+    fetch(url, { headers:{ 'Accept':'application/json' } })
+      .then(res=>res.json())
+      .then(data=>{
+        const items = Array.isArray(data) ? data : (data.methods||data.settings||[]);
+        items.forEach(it=>{
+          const inp=form.querySelector(`[name="${prefix}${it.code}"]`);
+          if(inp) writeField(inp, it.enabled);
+        });
+        clearPanelErrors(panel);
+        toastLocal(panelLabels[panel]+' reset to saved values','info');
+      })
+      .catch(()=>toastLocal('Reset failed — try again','error'));
+  }
+
+  function resetFieldPanel(panel, url, fieldNames){
+    fetch(url, { headers:{ 'Accept':'application/json' } })
+      .then(res=>res.json())
+      .then(data=>{
+        fieldNames.forEach(name=>{
+          const inp=form.querySelector(`[name="${name}"]`);
+          if(!inp || !(name in data)) return;
+          writeField(inp, data[name]);
+        });
+        clearPanelErrors(panel);
+        toastLocal(panelLabels[panel]+' reset to saved values','info');
+      })
+      .catch(()=>toastLocal('Reset failed — try again','error'));
+  }
+
+  document.querySelectorAll('[data-save-panel]').forEach(btn=>{
+    btn.addEventListener('click', ()=>savePanel(btn.dataset.savePanel));
+  });
+
+  // Snapshot template defaults for per-panel reset
+  const panelDefaults={};
+  Object.keys(panelFields).forEach(panel=>{
+    panelDefaults[panel]={};
+    panelFields[panel].forEach(name=>{
+      const inp=form.querySelector(`[name="${name}"]`);
+      if(!inp) return;
+      panelDefaults[panel][name] = readField(inp);
+    });
+  });
+
+  document.querySelectorAll('[data-reset-panel]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const panel=btn.dataset.resetPanel;
+      if(panel==='financial'){
+        resetFieldPanel('financial','/settings/financial/api/', ['currency','tax_rate']);
+        return;
+      }
+      if(panel==='payment'){
+        resetBackendPanel('payment','/settings/payment/api/','pm_');
+        return;
+      }
+      if(panel==='notifications'){
+        resetBackendPanel('notifications','/settings/notifications/api/','notif_');
+        return;
+      }
+      if(panel==='admin'){
+        resetAdminProfile();
+        return;
+      }
+      localStorage.removeItem(panelKeys[panel]);
+      if(logoPreview){ logoPreview.classList.add('hidden'); logoPreview.src=''; }
+      if(logoPlaceholder) logoPlaceholder.classList.remove('hidden');
+      if(logoFilename) logoFilename.textContent='';
+      const defs=panelDefaults[panel];
+      panelFields[panel].forEach(name=>{
+        const inp=form.querySelector(`[name="${name}"]`);
+        if(!inp || !(name in defs)) return;
+        writeField(inp, defs[name]);
+      });
+      clearPanelErrors(panel);
+      toastLocal(panelLabels[panel]+' reset','info');
+    });
   });
 
   form.querySelectorAll('input, select, textarea').forEach(inp=>{

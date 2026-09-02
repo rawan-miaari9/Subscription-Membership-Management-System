@@ -49,7 +49,7 @@
     const row=document.querySelector(`[data-assign-service="${currentService}"]`)?.closest('tr');
     if(row){ const countEl=row.querySelector('td:nth-child(4) span'); if(countEl) countEl.textContent=membersByService[currentService].length+' members'; }
     assignModal.classList.add('hidden');
-    toast(name+' assigned to '+currentService+' (frontend demo)','success');
+    toast(name+' assigned to '+currentService,'success');
   });
   document.querySelectorAll('[data-view-members]').forEach(btn=>{
     btn.addEventListener('click',()=>{

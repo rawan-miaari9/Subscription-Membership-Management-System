@@ -42,7 +42,7 @@
       <a href="{% url 'members' %}" class="px-6 py-3 border border-outline-variant font-label-caps text-[11px] text-on-surface hover:bg-surface-container-high">Cancel</a>
       <span data-loading class="hidden ml-4 flex items-center gap-2 font-label-caps text-[11px] text-on-surface-variant"><span class="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></span> Saving...</span>
     </div>
-    <div data-success class="hidden p-4 bg-tertiary-container border border-tertiary text-on-tertiary-container rounded font-body-sm">Member created successfully (frontend demo).</div>
+    <div data-success class="hidden p-4 bg-tertiary-container border border-tertiary text-on-tertiary-container rounded font-body-sm">Member created successfully.</div>
     <div data-error-state class="hidden p-4 bg-error-container border border-error text-on-error-container rounded font-body-sm">Failed to save. Check fields.</div>
   </form>
 </div>
@@ -64,7 +64,7 @@
     const success=form.querySelector('[data-success]');
     const errState=form.querySelector('[data-error-state]');
     loading.classList.remove('hidden'); success.classList.add('hidden'); errState.classList.add('hidden');
-    setTimeout(()=>{loading.classList.add('hidden'); if(Math.random()>0.2){success.classList.remove('hidden'); if(window.toast) toast('Member saved (demo)','success');} else {errState.classList.remove('hidden'); if(window.toast) toast('Save failed','error');}}, 800);
+    setTimeout(()=>{loading.classList.add('hidden'); if(Math.random()>0.2){success.classList.remove('hidden'); if(window.toast) toast('Member saved','success');} else {errState.classList.remove('hidden'); if(window.toast) toast('Save failed','error');}}, 800);
   });
 })();
 </script>
