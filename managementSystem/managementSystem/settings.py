@@ -131,6 +131,23 @@ LOGOUT_REDIRECT_URL = '/login/'
 SESSION_COOKIE_AGE = 60 * 60 * 8  # 8 hours default
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 
+# Cache (locmem for dev - reduces DB hits for metrics & auto-suspend)
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'gymcore-cache',
+    }
+}
+
+# DB performance: pooler = pgbouncer, keep connection 60s (faster than 0)
+DATABASES['default']['CONN_MAX_AGE'] = 60
+DATABASES['default']['CONN_HEALTH_CHECKS'] = True
+
+# Page cache timeout (5 minutes)
+PAGE_CACHE_TIMEOUT = 60 * 5
+
+# Optional: use dummy cache for sessions? keep DB sessions
+
 # Email
 # https://docs.djangoproject.com/en/6.1/topics/email/#topic-email-configuration
 

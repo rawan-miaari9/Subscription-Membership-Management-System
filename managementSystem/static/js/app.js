@@ -105,19 +105,30 @@ document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('[data-close-drawer]').forEach(b => b.addEventListener('click', closeDrawer));
   if (overlay) overlay.addEventListener('click', closeDrawer);
 
-  // ── Status filter (members) ──
-  const statusFilter = document.querySelector('[data-status-filter]');
-  if (statusFilter) {
+  // ── Status filters (members & subscriptions) ──
+  document.querySelectorAll('[data-status-filter]').forEach(statusFilter => {
     statusFilter.addEventListener('change', () => {
       const v = statusFilter.value.toLowerCase();
-      const tbody = document.querySelector('[data-members-tbody]');
+      const target = statusFilter.dataset.filterTarget || '[data-members-tbody]';
+      const tbody = document.querySelector(target) || document.querySelector('[data-members-tbody]') || document.querySelector('[data-subscriptions-tbody]');
       if (!tbody) return;
+      // for subscriptions status is 5th column, for members 4th - try both
       tbody.querySelectorAll('tr').forEach(tr => {
-        const statusCell = tr.querySelector('td:nth-child(4)')?.textContent.toLowerCase() || '';
+        const c4 = tr.querySelector('td:nth-child(4)')?.textContent.toLowerCase() || '';
+        const c5 = tr.querySelector('td:nth-child(5)')?.textContent.toLowerCase() || '';
+        const statusCell = (c4 + ' ' + c5).toLowerCase();
         tr.style.display = (v === 'all statuses' || v === '' || statusCell.includes(v)) ? '' : 'none';
       });
     });
-  }
+  });
+  // also support filter button click
+  document.querySelectorAll('[data-filter-apply]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const sel = btn.closest('.flex')?.querySelector('[data-status-filter]') || document.querySelector('[data-status-filter]');
+      if (sel) sel.dispatchEvent(new Event('change'));
+      toast('Filter applied', 'info');
+    });
+  });
 
   // ── Add member demo ──
   const addBtn = document.querySelector('[data-add-member]');
@@ -218,7 +229,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const row = btn.closest('tr');
       pendingAction = ()=>{
         if(!row) return;
-        const chip = row.querySelector('td:nth-child(4) div');
+        const chip = row.querySelector('td:nth-child(5) div, td:nth-child(4) div, .bg-secondary-container');
         const suspendBtn = row.querySelector('[data-action="suspend"]');
         const activateBtn = row.querySelector('[data-action="activate"]');
         if(isSuspend){

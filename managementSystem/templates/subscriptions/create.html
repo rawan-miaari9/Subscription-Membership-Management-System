@@ -62,8 +62,13 @@
   </div>
 
   <!-- Form Wrapper -->
-  <form id="create-subscription-form" data-create-subscription-form class="bg-surface-container border border-outline-variant rounded-lg p-6 md:p-8 space-y-0" novalidate>
+  <form id="create-subscription-form" data-create-subscription-form method="post" action="{% url 'subscription-create' %}" class="bg-surface-container border border-outline-variant rounded-lg p-6 md:p-8 space-y-0" novalidate>
     {% csrf_token %}
+    {% if messages %}
+      {% for message in messages %}
+        <div class="p-3 rounded border mb-4 {% if message.tags == 'error' %}border-error bg-error-container text-on-error-container{% else %}border-tertiary bg-tertiary-container text-on-tertiary-container{% endif %} font-body-sm text-sm">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
     <div data-form-msg class="hidden p-3 rounded border border-error bg-error-container text-on-error-container font-body-sm text-sm mb-6"></div>
 
     <!-- ============ STEP 1 : MEMBER ============ -->
@@ -94,41 +99,23 @@
               </tr>
             </thead>
             <tbody class="font-data-md text-data-md text-on-surface">
+              {% for member in members %}
               <tr class="border-b border-outline-variant hover:bg-surface-container-highest transition-colors">
-                <td class="py-3 px-4"><input type="radio" name="member_select" value="MBR-9921A|Marcus Thorne" class="accent-primary" /></td>
-                <td class="py-3 px-4 font-bold">Marcus Thorne</td>
-                <td class="py-3 px-4 text-on-surface-variant text-[12px]">MBR-9921A</td>
-                <td class="py-3 px-4 text-on-surface-variant text-[12px]">555-0199</td>
-                <td class="py-3 px-4"><span class="inline-flex items-center gap-1.5 bg-secondary-container px-2 py-0.5 border border-outline-variant rounded-sm"><span class="w-1.5 h-1.5 bg-tertiary-container"></span><span class="font-label-caps text-[10px] uppercase">Active</span></span></td>
+                <td class="py-3 px-4"><input type="radio" name="member_select" value="{{ member.member_code }}|{{ member.full_name }}" data-member-id="{{ member.id }}" class="accent-primary" /></td>
+                <td class="py-3 px-4 font-bold">{{ member.full_name }}</td>
+                <td class="py-3 px-4 text-on-surface-variant text-[12px]">{{ member.member_code }}</td>
+                <td class="py-3 px-4 text-on-surface-variant text-[12px]">{{ member.phone|default:"—" }}</td>
+                <td class="py-3 px-4">
+                  {% if member.status == "active" %}<span class="inline-flex items-center gap-1.5 bg-secondary-container px-2 py-0.5 border border-outline-variant rounded-sm"><span class="w-1.5 h-1.5 bg-tertiary-container"></span><span class="font-label-caps text-[10px] uppercase">Active</span></span>
+                  {% elif member.status == "suspended" %}<span class="inline-flex items-center gap-1.5 bg-secondary-container px-2 py-0.5 border border-outline-variant rounded-sm"><span class="w-1.5 h-1.5 bg-surface-variant border border-outline"></span><span class="font-label-caps text-[10px] uppercase">Suspended</span></span>
+                  {% elif member.status == "expired" %}<span class="inline-flex items-center gap-1.5 bg-secondary-container px-2 py-0.5 border border-outline-variant rounded-sm"><span class="w-1.5 h-1.5 bg-error"></span><span class="font-label-caps text-[10px] uppercase">Expired</span></span>
+                  {% else %}<span class="inline-flex items-center gap-1.5 bg-secondary-container px-2 py-0.5 border border-outline-variant rounded-sm"><span class="w-1.5 h-1.5 bg-primary-container"></span><span class="font-label-caps text-[10px] uppercase">{{ member.status|upper }}</span></span>
+                  {% endif %}
+                </td>
               </tr>
-              <tr class="border-b border-outline-variant hover:bg-surface-container-highest transition-colors">
-                <td class="py-3 px-4"><input type="radio" name="member_select" value="MBR-8834B|Sarah Jenkins" class="accent-primary" /></td>
-                <td class="py-3 px-4 font-bold">Sarah Jenkins</td>
-                <td class="py-3 px-4 text-on-surface-variant text-[12px]">MBR-8834B</td>
-                <td class="py-3 px-4 text-on-surface-variant text-[12px]">555-0142</td>
-                <td class="py-3 px-4"><span class="inline-flex items-center gap-1.5 bg-secondary-container px-2 py-0.5 border border-outline-variant rounded-sm"><span class="w-1.5 h-1.5 bg-primary-container"></span><span class="font-label-caps text-[10px] uppercase">Expiring</span></span></td>
-              </tr>
-              <tr class="border-b border-outline-variant hover:bg-surface-container-highest transition-colors">
-                <td class="py-3 px-4"><input type="radio" name="member_select" value="MBR-7719C|David Cho" class="accent-primary" /></td>
-                <td class="py-3 px-4 font-bold">David Cho</td>
-                <td class="py-3 px-4 text-on-surface-variant text-[12px]">MBR-7719C</td>
-                <td class="py-3 px-4 text-on-surface-variant text-[12px]">555-0231</td>
-                <td class="py-3 px-4"><span class="inline-flex items-center gap-1.5 bg-secondary-container px-2 py-0.5 border border-outline-variant rounded-sm"><span class="w-1.5 h-1.5 bg-error"></span><span class="font-label-caps text-[10px] uppercase">Expired</span></span></td>
-              </tr>
-              <tr class="border-b border-outline-variant hover:bg-surface-container-highest transition-colors">
-                <td class="py-3 px-4"><input type="radio" name="member_select" value="MBR-6652D|Elena Rostova" class="accent-primary" /></td>
-                <td class="py-3 px-4 font-bold">Elena Rostova</td>
-                <td class="py-3 px-4 text-on-surface-variant text-[12px]">MBR-6652D</td>
-                <td class="py-3 px-4 text-on-surface-variant text-[12px]">555-0187</td>
-                <td class="py-3 px-4"><span class="inline-flex items-center gap-1.5 bg-secondary-container px-2 py-0.5 border border-outline-variant rounded-sm"><span class="w-1.5 h-1.5 bg-surface-variant border border-outline"></span><span class="font-label-caps text-[10px] uppercase">Suspended</span></span></td>
-              </tr>
-              <tr class="hover:bg-surface-container-highest transition-colors">
-                <td class="py-3 px-4"><input type="radio" name="member_select" value="MBR-5541E|Omar Fallah" class="accent-primary" /></td>
-                <td class="py-3 px-4 font-bold">Omar Fallah</td>
-                <td class="py-3 px-4 text-on-surface-variant text-[12px]">MBR-5541E</td>
-                <td class="py-3 px-4 text-on-surface-variant text-[12px]">555-0366</td>
-                <td class="py-3 px-4"><span class="inline-flex items-center gap-1.5 bg-secondary-container px-2 py-0.5 border border-outline-variant rounded-sm"><span class="w-1.5 h-1.5 bg-tertiary-container"></span><span class="font-label-caps text-[10px] uppercase">Active</span></span></td>
-              </tr>
+              {% empty %}
+              <tr><td colspan="5" class="py-8 text-center text-on-surface-variant">No members found. Add members first.</td></tr>
+              {% endfor %}
             </tbody>
           </table>
         </div>
@@ -163,40 +150,22 @@
         <button type="button" data-plan-toggle="custom" class="px-5 py-2 rounded font-label-caps text-[11px] uppercase tracking-widest bg-transparent text-on-surface-variant border border-transparent hover:bg-surface-container-high transition-colors">Custom Plan</button>
       </div>
 
-      <!-- Standard Plan Cards -->
+      <!-- Standard Plan Cards (from DB) -->
       <div data-plan-panel="standard" class="grid grid-cols-1 md:grid-cols-3 gap-bento-gap">
+        {% for plan in standard_plans %}
         <label class="group cursor-pointer bg-surface-container-lowest border border-outline-variant rounded-lg p-4 flex flex-col gap-3 hover:border-primary-container transition-colors has-[input:checked]:border-primary-container has-[input:checked]:bg-surface-container-high relative">
-          <input type="radio" name="standard_plan" value="Silver|$40/mo" class="absolute top-3 right-3 accent-primary" />
-          <span class="font-label-caps text-[10px] uppercase tracking-widest text-on-surface-variant">Tier 01</span>
-          <h3 class="font-headline-md text-headline-md text-on-surface uppercase">Silver</h3>
-          <p class="font-display text-[24px] font-bold text-primary-container">$40 <span class="font-label-caps text-[11px] text-on-surface-variant">/ mo</span></p>
+          <input type="radio" name="standard_plan" value="{{ plan.id }}|{{ plan.name }}|{{ plan.price }}" class="absolute top-3 right-3 accent-primary" />
+          <span class="font-label-caps text-[10px] uppercase tracking-widest {% if forloop.counter == 2 %}text-primary{% else %}text-on-surface-variant{% endif %}">{% if forloop.counter == 2 %}Popular · {% endif %}Tier 0{{ forloop.counter }}</span>
+          <h3 class="font-headline-md text-headline-md text-on-surface uppercase">{{ plan.name }}</h3>
+          <p class="font-display text-[24px] font-bold text-primary-container">${{ plan.price }} <span class="font-label-caps text-[11px] text-on-surface-variant">/ {% if plan.duration_days >= 365 %}yr{% else %}mo{% endif %}</span></p>
           <ul class="font-body-sm text-xs text-on-surface-variant space-y-1">
-            <li class="flex items-center gap-1.5"><span class="material-symbols-outlined text-primary-container text-[14px]">check</span>24/7 Facility Access</li>
-            <li class="flex items-center gap-1.5"><span class="material-symbols-outlined text-primary-container text-[14px]">check</span>Standard Equipment</li>
+            <li class="flex items-center gap-1.5"><span class="material-symbols-outlined text-primary-container text-[14px]">check</span>{{ plan.duration_days }} Days Access</li>
+            <li class="flex items-center gap-1.5"><span class="material-symbols-outlined text-primary-container text-[14px]">check</span>Full Facility Access</li>
           </ul>
         </label>
-        <label class="group cursor-pointer bg-surface-container-lowest border border-outline-variant rounded-lg p-4 flex flex-col gap-3 hover:border-primary-container transition-colors has-[input:checked]:border-primary-container has-[input:checked]:bg-surface-container-high relative">
-          <input type="radio" name="standard_plan" value="Gold|$400/yr" class="absolute top-3 right-3 accent-primary" />
-          <span class="font-label-caps text-[10px] uppercase tracking-widest text-primary">Popular · Tier 02</span>
-          <h3 class="font-headline-md text-headline-md text-on-surface uppercase">Gold</h3>
-          <p class="font-display text-[24px] font-bold text-primary-container">$400 <span class="font-label-caps text-[11px] text-on-surface-variant">/ yr</span></p>
-          <ul class="font-body-sm text-xs text-on-surface-variant space-y-1">
-            <li class="flex items-center gap-1.5"><span class="material-symbols-outlined text-primary-container text-[14px]">check</span>All Silver Benefits</li>
-            <li class="flex items-center gap-1.5"><span class="material-symbols-outlined text-primary-container text-[14px]">check</span>2 Guest Passes / Month</li>
-            <li class="flex items-center gap-1.5"><span class="material-symbols-outlined text-primary-container text-[14px]">check</span>Powerlifting Zone</li>
-          </ul>
-        </label>
-        <label class="group cursor-pointer bg-surface-container-lowest border border-outline-variant rounded-lg p-4 flex flex-col gap-3 hover:border-primary-container transition-colors has-[input:checked]:border-primary-container has-[input:checked]:bg-surface-container-high relative">
-          <input type="radio" name="standard_plan" value="Premium|$60/mo" class="absolute top-3 right-3 accent-primary" />
-          <span class="font-label-caps text-[10px] uppercase tracking-widest text-on-surface-variant">Tier 03</span>
-          <h3 class="font-headline-md text-headline-md text-on-surface uppercase">Premium</h3>
-          <p class="font-display text-[24px] font-bold text-primary-container">$60 <span class="font-label-caps text-[11px] text-on-surface-variant">/ mo</span></p>
-          <ul class="font-body-sm text-xs text-on-surface-variant space-y-1">
-            <li class="flex items-center gap-1.5"><span class="material-symbols-outlined text-primary-container text-[14px]">check</span>All Gold Benefits</li>
-            <li class="flex items-center gap-1.5"><span class="material-symbols-outlined text-primary-container text-[14px]">check</span>Priority Rack Booking</li>
-            <li class="flex items-center gap-1.5"><span class="material-symbols-outlined text-primary-container text-[14px]">check</span>1 Recovery / Week</li>
-          </ul>
-        </label>
+        {% empty %}
+        <p class="text-on-surface-variant text-sm">No plans available. Create plans in DB first.</p>
+        {% endfor %}
       </div>
       <p class="hidden text-error text-xs mt-2 font-body-sm" data-error="standard_plan">Please select a standard plan.</p>
 
@@ -279,21 +248,11 @@
           </div>
           <p class="hidden text-error text-xs mt-1.5 font-body-sm" data-error="discount">Discount cannot exceed base price.</p>
         </div>
-        <div class="md:col-span-2 flex flex-col gap-3 p-4 border border-outline-variant rounded bg-surface-container-lowest">
-          <label class="flex items-center gap-3 cursor-pointer">
-            <input type="checkbox" id="tax-toggle" name="tax_enabled" class="w-4 h-4 rounded border-outline-variant bg-surface-container text-primary focus:ring-primary accent-primary" />
-            <span class="font-label-caps text-[11px] uppercase tracking-widest text-on-surface">Apply Tax</span>
-            <span id="tax-rate-display" class="hidden ml-2 inline-flex items-center gap-1 font-data-md text-xs text-primary-container border border-primary-container/30 bg-primary-container/10 px-2 py-0.5 rounded">Tax Rate: 14%</span>
-          </label>
-          <p class="font-body-sm text-xs text-on-surface-variant">When enabled, tax is computed on the discounted subtotal (Base − Discount) × 14%.</p>
-        </div>
         <div class="md:col-span-2 bg-surface-container-high border border-outline-variant rounded p-4">
           <h3 class="font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-3">Live Calculation</h3>
           <div class="space-y-2 font-data-md text-[12px] text-on-surface">
             <div class="flex justify-between"><span class="text-on-surface-variant">Base Price</span><span id="calc-base">$0.00</span></div>
             <div class="flex justify-between"><span class="text-on-surface-variant">Discount</span><span id="calc-discount" class="text-error">-$0.00</span></div>
-            <div class="flex justify-between"><span class="text-on-surface-variant">Subtotal</span><span id="calc-subtotal">$0.00</span></div>
-            <div class="flex justify-between"><span class="text-on-surface-variant">Tax (14%)</span><span id="calc-tax">$0.00</span></div>
             <div class="flex justify-between font-bold border-t border-outline-variant pt-2 text-[14px]"><span>Final Amount</span><span id="final-amount" data-final-amount class="text-primary-container">$0.00</span></div>
           </div>
         </div>
@@ -357,7 +316,6 @@
           <div class="space-y-3">
             <div class="flex justify-between gap-4"><span class="text-on-surface-variant shrink-0">Base Price</span><span class="text-on-surface text-right" data-summary-base>—</span></div>
             <div class="flex justify-between gap-4"><span class="text-on-surface-variant shrink-0">Discount</span><span class="text-error text-right" data-summary-discount>—</span></div>
-            <div class="flex justify-between gap-4"><span class="text-on-surface-variant shrink-0">Tax</span><span class="text-on-surface text-right" data-summary-tax>—</span></div>
             <div class="flex justify-between gap-4 font-bold border-t border-outline-variant pt-2 text-[13px]"><span class="text-on-surface">Total</span><span class="text-primary-container text-right" data-summary-total>—</span></div>
           </div>
         </div>
@@ -392,7 +350,6 @@
   const form = document.getElementById('create-subscription-form');
   if(!form) return;
 
-  const TAX_RATE = 0.14;
   let currentStep = 1;
   const totalSteps = 6;
   let planMode = 'standard';
@@ -414,15 +371,11 @@
   const selectedIdEl = document.getElementById('selected-member-id');
   const clearMemberBtn = document.getElementById('clear-member');
 
-  // Pricing elements
+  // Pricing elements (no tax)
   const baseInput = document.getElementById('base-price');
   const discountInput = document.getElementById('discount');
-  const taxToggle = document.getElementById('tax-toggle');
-  const taxRateDisplay = document.getElementById('tax-rate-display');
   const calcBase = document.getElementById('calc-base');
   const calcDiscount = document.getElementById('calc-discount');
-  const calcSubtotal = document.getElementById('calc-subtotal');
-  const calcTax = document.getElementById('calc-tax');
   const finalAmountEl = document.getElementById('final-amount');
   const fullAmountDisplay = document.getElementById('full-amount-display');
 
@@ -483,29 +436,18 @@
   function calcFinal(){
     const base = parseFloat(baseInput.value) || 0;
     const discount = parseFloat(discountInput.value) || 0;
-    const subtotal = Math.max(0, base - discount);
-    const tax = taxToggle.checked ? subtotal * TAX_RATE : 0;
-    const total = subtotal + tax;
+    const total = Math.max(0, base - discount);
     calcBase.textContent = '$' + base.toFixed(2);
     calcDiscount.textContent = '-$' + discount.toFixed(2);
-    calcSubtotal.textContent = '$' + subtotal.toFixed(2);
-    calcTax.textContent = '$' + tax.toFixed(2);
     finalAmountEl.textContent = '$' + total.toFixed(2);
     fullAmountDisplay.textContent = '$' + total.toFixed(2);
-    return {base, discount, subtotal, tax, total};
+    return {base, discount, total};
   }
 
   // Listeners for live calc
   [baseInput, discountInput].forEach(inp=>{
     if(inp) inp.addEventListener('input', calcFinal);
   });
-  if(taxToggle){
-    taxToggle.addEventListener('change', function(){
-      if(this.checked) taxRateDisplay.classList.remove('hidden');
-      else taxRateDisplay.classList.add('hidden');
-      calcFinal();
-    });
-  }
 
   // Plan toggle
   document.querySelectorAll('[data-plan-toggle]').forEach(btn=>{
@@ -529,6 +471,62 @@
       }
     });
   });
+
+  // Auto-fill pricing when standard plan selected (DB: id|name|price)
+  form.querySelectorAll('input[name="standard_plan"]').forEach(radio=>{
+    radio.addEventListener('change', ()=>{
+      if(!radio.checked) return;
+      const val = radio.value || ''; // e.g. "1|Silver|40.00"
+      const parts = val.split('|');
+      const price = parts[2] || parts[1] || '';
+      // try | split first, fallback to $ regex for old static data
+      let num = parseFloat(price);
+      if(isNaN(num)){
+        const m = val.match(/\$([\d.]+)/);
+        if(m) num = parseFloat(m[1]);
+      }
+      if(!isNaN(num) && baseInput){
+        baseInput.value = num.toFixed(2);
+        baseInput.dispatchEvent(new Event('input', {bubbles:true}));
+        calcFinal();
+      }
+    });
+  });
+  // Also watch custom price to sync if user edits custom
+  const customPriceInput = document.getElementById('custom-price');
+  if(customPriceInput && baseInput){
+    customPriceInput.addEventListener('input', ()=>{
+      if(planMode === 'custom'){
+        const v = parseFloat(customPriceInput.value);
+        if(!isNaN(v) && v > 0){
+          baseInput.value = v.toFixed(2);
+          calcFinal();
+        }
+      }
+    });
+    // when switching to custom, prefill base with custom price if exists
+    document.querySelectorAll('[data-plan-toggle]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        setTimeout(()=>{
+          if(planMode === 'custom' && customPriceInput.value){
+            const v = parseFloat(customPriceInput.value);
+            if(!isNaN(v) && baseInput) { baseInput.value = v.toFixed(2); calcFinal(); }
+          } else if(planMode === 'standard'){
+            const checked = form.querySelector('input[name="standard_plan"]:checked');
+            if(checked){
+              const parts = checked.value.split('|');
+              let num = parseFloat(parts[2] || '');
+              if(isNaN(num)){
+                const m = checked.value.match(/\$([\d.]+)/);
+                if(m) num = parseFloat(m[1]);
+              }
+              if(!isNaN(num) && baseInput){ baseInput.value = num.toFixed(2); calcFinal(); }
+            }
+          }
+        }, 50);
+      });
+    });
+  }
 
   // Member search
   if(memberSearch && memberTable){
@@ -672,7 +670,15 @@
     if(planEl){
       if(planMode === 'standard'){
         const checked = form.querySelector('input[name="standard_plan"]:checked');
-        planEl.textContent = checked ? checked.value : '—';
+        if(checked){
+          const parts = checked.value.split('|');
+          // new format id|name|price, old format name|price
+          const name = parts[1] || parts[0];
+          const price = parts[2] || (checked.value.match(/\$([\d.]+)/)||[])[1] || '';
+          planEl.textContent = name + (price ? ' ($' + parseFloat(price).toFixed(2) + ')' : '');
+        } else {
+          planEl.textContent = '—';
+        }
       } else {
         const duration = form.querySelector('[name="custom_duration"]').value || '—';
         const price = form.querySelector('[name="custom_price"]').value || '0';
@@ -689,15 +695,6 @@
 
     const baseEl = form.querySelector('[data-summary-base]');
     if(baseEl) baseEl.textContent = '$' + calc.base.toFixed(2);
-
-    const taxEl = form.querySelector('[data-summary-tax]');
-    if(taxEl){
-      if(taxToggle.checked){
-        taxEl.textContent = '$' + calc.tax.toFixed(2) + ' (14%)';
-      } else {
-        taxEl.textContent = '$0.00 (exempt)';
-      }
-    }
 
     const totalEl = form.querySelector('[data-summary-total]');
     if(totalEl) totalEl.textContent = '$' + calc.total.toFixed(2);
@@ -724,28 +721,73 @@
     }
   });
 
-  // Submit
+  // Submit -> backend POST (no tax)
   form.addEventListener('submit', (e)=>{
-    e.preventDefault();
-    // Validate current and all prior? At submit we should validate steps 1-5 again
+    // Validate all steps first
     for(let s=1; s<=5; s++){
       if(!validateStep(s)){
+        e.preventDefault();
         currentStep = s;
         updateStepper();
         return;
       }
     }
-    populateSummary();
-    showToast('Subscription created successfully (frontend demo)', 'success');
-    // simulate success state - disable submit briefly
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = '<span class="w-4 h-4 border-2 border-on-primary border-t-transparent rounded-full animate-spin"></span> Processing...';
-    setTimeout(()=>{
-      submitBtn.disabled = false;
-      submitBtn.innerHTML = '<span class="material-symbols-outlined text-[16px]">check_circle</span> Confirm Subscription';
-      // optional redirect demo
-      // showToast('Redirecting to subscriptions...','info');
-    }, 900);
+    // If backend is available, use fetch; otherwise allow normal POST
+    // We intercept to use fetch for better UX (stay on page, show toast, redirect)
+    const isBackend = form.action && form.action.includes('/subscriptions/create');
+    if(isBackend){
+      e.preventDefault();
+      populateSummary();
+      submitBtn.disabled = true;
+      const origHTML = submitBtn.innerHTML;
+      submitBtn.innerHTML = '<span class="w-4 h-4 border-2 border-on-primary border-t-transparent rounded-full animate-spin inline-block align-middle"></span> Processing...';
+      const formData = new FormData(form);
+      // ensure member_select is present (fallback to checked radio)
+      if(!formData.get('member_select')){
+        const checked = form.querySelector('input[name="member_select"]:checked');
+        if(checked) formData.set('member_select', checked.value);
+      }
+      if(!formData.get('standard_plan')){
+        const checked = form.querySelector('input[name="standard_plan"]:checked');
+        if(checked) formData.set('standard_plan', checked.value);
+      }
+      fetch(form.action, {
+        method: 'POST',
+        body: formData,
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+      }).then(r=>{
+        if(r.redirected){
+          showToast('Subscription created successfully', 'success');
+          setTimeout(()=> window.location.href = r.url || '/subscriptions/', 700);
+          return null;
+        }
+        return r.json().catch(()=> r.text().then(t=> ({success: r.ok, html: t})));
+      }).then(data=>{
+        if(!data) return;
+        if(data.success){
+          showToast('Subscription ' + (data.code||'') + ' created ($' + (data.total||'') + ')', 'success');
+          setTimeout(()=> window.location.href = data.redirect || '/subscriptions/', 800);
+        } else if(data.html && data.html.includes('error')){
+          msg.textContent = 'Please check form errors.';
+          msg.classList.remove('hidden');
+          showToast('Failed - check errors', 'error');
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = origHTML;
+        } else {
+          // fallback: if backend rendered HTML with errors, reload page
+          window.location.reload();
+        }
+      }).catch(err=>{
+        showToast('Network error: ' + err, 'error');
+        msg.textContent = 'Network error. Trying normal submit...';
+        msg.classList.remove('hidden');
+        // fallback to normal submit
+        setTimeout(()=> form.submit(), 800);
+      });
+    } else {
+      populateSummary();
+      showToast('Subscription created successfully (frontend demo)', 'success');
+    }
   });
 
   // initial

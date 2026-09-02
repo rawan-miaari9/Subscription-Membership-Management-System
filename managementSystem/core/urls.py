@@ -27,6 +27,7 @@ urlpatterns = [
     path("plans/custom/", views.plan_custom_view, name="plan-custom"),
     path("subscriptions/detail/", views.subscription_detail_view, name="subscription-detail"),
     path("subscriptions/create/", views.subscription_create_view, name="subscription-create"),
+    path("subscriptions/renew/<str:code>/", views.subscription_renew_view, name="subscription-renew"),
     path("payments/detail/", views.payment_detail_view, name="payment-detail"),
     path("refunds/detail/", views.refund_detail_view, name="refund-detail"),
     path("refunds/history/", views.refund_history_view, name="refund-history"),

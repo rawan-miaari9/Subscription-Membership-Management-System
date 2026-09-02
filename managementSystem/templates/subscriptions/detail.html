@@ -1,18 +1,35 @@
 {% extends "layouts/dashboard.html" %}
 {% block title %}Subscription Details - Iron Core{% endblock %}
 {% block dashboard_content %}
+{% if subscription %}
 <div class="flex flex-col gap-6">
-  <div class="flex justify-between"><div><h1 class="font-headline-lg text-headline-lg text-on-surface uppercase">SUB-9921A</h1><p class="font-data-md text-on-surface-variant">Marcus Thorne • Elite Powerlifting</p></div><div class="flex gap-2"><button data-toast="Renew (demo)" class="px-4 py-2 bg-primary text-surface-dim font-label-caps text-[11px]">Renew</button><button data-toast="Suspend (demo)" class="px-4 py-2 border border-outline-variant font-label-caps text-[11px]">Suspend</button><button data-toast="Cancel (demo)" class="px-4 py-2 border border-error text-error font-label-caps text-[11px]">Cancel</button></div></div>
+  <div class="flex flex-col md:flex-row justify-between gap-4"><div><h1 class="font-headline-lg text-headline-lg text-on-surface uppercase">{{ subscription.subscription_code }}</h1><p class="font-data-md text-on-surface-variant">{{ subscription.member.full_name|default:"—" }} • {{ subscription.plan.name|default:"—" }} {% if subscription.member.member_code %}({{ subscription.member.member_code }}){% endif %}</p><p class="font-label-caps text-[11px] text-on-surface-variant mt-1">Created {{ subscription.created_at|date:"Y-m-d" }}</p></div><div class="flex items-center gap-2 flex-wrap"><a href="{% url 'subscriptions' %}" class="inline-flex items-center justify-center h-9 px-4 border border-outline-variant bg-transparent text-on-surface font-label-caps text-[11px] uppercase rounded hover:bg-surface-container-high transition-colors">Back to List</a><form method="post" action="{% url 'subscription-renew' subscription.subscription_code %}" class="inline-flex">{% csrf_token %}<button type="submit" class="inline-flex items-center justify-center h-9 px-4 bg-primary text-surface-dim border border-primary font-label-caps text-[11px] uppercase rounded hover:bg-primary-container transition-colors">Renew</button></form><button data-toast="Suspend {{ subscription.subscription_code }} (demo)" class="inline-flex items-center justify-center h-9 px-4 border border-outline-variant bg-transparent text-on-surface font-label-caps text-[11px] uppercase rounded hover:bg-surface-container-high transition-colors">Suspend</button><button data-confirm="Cancel {{ subscription.subscription_code }}?" data-confirm-title="Cancel Subscription" class="inline-flex items-center justify-center h-9 px-4 border border-error bg-transparent text-error font-label-caps text-[11px] uppercase rounded hover:bg-error-container hover:text-on-error-container transition-colors">Cancel</button></div></div>
   <div class="grid grid-cols-12 gap-bento-gap">
+    <div class="col-span-6 md:col-span-3 bg-surface-container border border-outline-variant p-4 rounded"><p class="font-label-caps text-[11px] text-on-surface-variant">Plan</p><p class="font-data-md mt-1">{{ subscription.plan.name|default:"—" }} {% if subscription.plan.price %}${{ subscription.plan.price }}{% endif %}</p><p class="font-body-sm text-xs text-on-surface-variant mt-1">{{ subscription.plan.duration_days }} days</p></div>
+    <div class="col-span-6 md:col-span-3 bg-surface-container border border-outline-variant p-4 rounded"><p class="font-label-caps text-[11px] text-on-surface-variant">Dates</p><p class="font-data-md mt-1">{{ subscription.start_date|date:"Y-m-d" }} → {{ subscription.end_date|date:"Y-m-d" }}</p></div>
+    <div class="col-span-6 md:col-span-3 bg-surface-container border border-outline-variant p-4 rounded"><p class="font-label-caps text-[11px] text-on-surface-variant">Amount</p><p class="font-data-md mt-1">{% if subscription.plan.price %}${{ subscription.plan.price }}{% else %}—{% endif %}</p></div>
+    <div class="col-span-6 md:col-span-3 bg-surface-container border border-outline-variant p-4 rounded"><p class="font-label-caps text-[11px] text-on-surface-variant">Status</p><p class="font-data-md mt-1 {% if subscription.status == 'active' %}text-tertiary{% elif subscription.status == 'suspended' %}text-error{% else %}text-on-surface{% endif %}">{{ subscription.status|upper }}</p></div>
+  </div>
+  <div class="bg-surface-container border border-outline-variant p-6 rounded">
+    <h3 class="font-label-caps text-[11px] text-on-surface-variant mb-4">Pricing Breakdown (No Tax)</h3>
+    <div class="space-y-2 font-data-md text-[12px]"><div class="flex justify-between"><span>Base Price</span><span>{% if subscription.plan.price %}${{ subscription.plan.price }}{% else %}—{% endif %}</span></div><div class="flex justify-between font-bold border-t border-outline-variant pt-2"><span>Total</span><span class="text-primary">{% if subscription.plan.price %}${{ subscription.plan.price }}{% else %}—{% endif %}</span></div></div>
+  </div>
+  <div class="flex gap-2"><button data-toast="View Invoice for {{ subscription.subscription_code }} (demo)" class="px-4 py-2 border border-outline-variant font-label-caps text-[11px]">View Invoice</button><button data-toast="View Receipt for {{ subscription.subscription_code }} (demo)" class="px-4 py-2 bg-surface-container-high font-label-caps text-[11px]">View Receipt</button></div>
+</div>
+{% else %}
+<div class="flex flex-col gap-6">
+  <div class="flex justify-between"><div><h1 class="font-headline-lg text-headline-lg text-on-surface uppercase">No Subscription Selected</h1><p class="font-data-md text-on-surface-variant">Pass ?code=SUB-... or create a new one.</p></div><a href="{% url 'subscriptions' %}" class="px-4 py-2 border border-outline-variant font-label-caps text-[11px]">Back to List</a></div>
+  <div class="bg-surface-container border border-outline-variant p-12 rounded text-center">
+    <span class="material-symbols-outlined text-[48px] text-on-surface-variant">card_membership</span>
+    <p class="font-body-sm text-body-sm text-on-surface-variant mt-4">No subscription found. Create one from the list.</p>
+    <a href="{% url 'subscription-create' %}" class="inline-block mt-4 px-6 py-3 bg-primary-container text-on-primary-container font-label-caps text-[11px] rounded">Create Subscription</a>
+  </div>
+  <div class="grid grid-cols-12 gap-bento-gap opacity-60">
     <div class="col-span-6 md:col-span-3 bg-surface-container border border-outline-variant p-4 rounded"><p class="font-label-caps text-[11px] text-on-surface-variant">Plan</p><p class="font-data-md mt-1">Elite Powerlifting $120/mo</p></div>
     <div class="col-span-6 md:col-span-3 bg-surface-container border border-outline-variant p-4 rounded"><p class="font-label-caps text-[11px] text-on-surface-variant">Dates</p><p class="font-data-md mt-1">2023-10-01 → 2024-10-01</p></div>
     <div class="col-span-6 md:col-span-3 bg-surface-container border border-outline-variant p-4 rounded"><p class="font-label-caps text-[11px] text-on-surface-variant">Amount</p><p class="font-data-md mt-1">$1,296.00</p></div>
     <div class="col-span-6 md:col-span-3 bg-surface-container border border-outline-variant p-4 rounded"><p class="font-label-caps text-[11px] text-on-surface-variant">Status</p><p class="font-data-md mt-1 text-tertiary">Active</p></div>
   </div>
-  <div class="bg-surface-container border border-outline-variant p-6 rounded">
-    <h3 class="font-label-caps text-[11px] text-on-surface-variant mb-4">Pricing Breakdown</h3>
-    <div class="space-y-2 font-data-md text-[12px]"><div class="flex justify-between"><span>Base Price</span><span>$120.00</span></div><div class="flex justify-between"><span>Discount 10%</span><span class="text-error">-$12.00</span></div><div class="flex justify-between"><span>Subtotal</span><span>$108.00</span></div><div class="flex justify-between font-bold border-t border-outline-variant pt-2"><span>Total</span><span class="text-primary">$108.00</span></div></div>
-  </div>
-  <div class="flex gap-2"><button data-toast="View Invoice (demo)" class="px-4 py-2 border border-outline-variant font-label-caps text-[11px]">View Invoice</button><button data-toast="View Receipt (demo)" class="px-4 py-2 bg-surface-container-high font-label-caps text-[11px]">View Receipt</button></div>
 </div>
+{% endif %}
 {% endblock %}

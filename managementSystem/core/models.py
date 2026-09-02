@@ -48,3 +48,66 @@ class User(models.Model):
     @property
     def is_anonymous(self):
         return False
+
+
+class Member(models.Model):
+    id = models.AutoField(primary_key=True)
+    member_code = models.CharField(max_length=20, unique=True)
+    full_name = models.CharField(max_length=120)
+    email = models.EmailField(max_length=254, blank=True, null=True)
+    phone = models.CharField(max_length=20, blank=True, null=True)
+    join_date = models.DateField(blank=True, null=True)
+    status = models.CharField(max_length=10, default="active")
+    balance = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    initials = models.CharField(max_length=5, blank=True, null=True)
+
+    class Meta:
+        db_table = "members"
+        managed = False
+
+    def __str__(self):
+        return f"{self.full_name} ({self.member_code})"
+
+
+class MembershipPlan(models.Model):
+    id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=100)
+    slug = models.CharField(max_length=100, blank=True, null=True)
+    duration_days = models.IntegerField()
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+    is_fixed = models.BooleanField(default=True)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        db_table = "membership_plans"
+        managed = False
+
+    def __str__(self):
+        return f"{self.name} - ${self.price}"
+
+
+class Subscription(models.Model):
+    STATUS_CHOICES = [
+        ("active", "Active"),
+        ("expiring", "Expiring"),
+        ("expired", "Expired"),
+        ("suspended", "Suspended"),
+        ("cancelled", "Cancelled"),
+    ]
+    id = models.AutoField(primary_key=True)
+    subscription_code = models.CharField(max_length=20, blank=True, null=True, unique=True)
+    member = models.ForeignKey(Member, on_delete=models.DO_NOTHING, db_column="member_id", blank=True, null=True)
+    plan = models.ForeignKey(MembershipPlan, on_delete=models.DO_NOTHING, db_column="plan_id", blank=True, null=True)
+    start_date = models.DateField()
+    end_date = models.DateField()
+    status = models.CharField(max_length=10, default="active")
+    auto_renew = models.BooleanField(default=True)
+    created_at = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        db_table = "subscriptions"
+        managed = False
+
+    def __str__(self):
+        return f"{self.subscription_code} - {self.member} - {self.status}"
