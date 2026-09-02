@@ -1,0 +1,106 @@
+{% comment %}
+    Searchable member picker. Searches /api/members/search/?q= on the server,
+    so it scales to thousands of members without shipping a giant dropdown.
+    Usage:
+      {% include "components/member_search.html" with preload_id=receipt.member_id preload_name=receipt.member.full_name %}
+    The hidden field is submitted as `member_id` (override with `name="..."`).
+{% endcomment %}
+<div data-member-search class="relative">
+  <div class="relative">
+    <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[16px] text-on-surface-variant pointer-events-none">search</span>
+    <input type="hidden" name="{{ name|default:'member_id' }}" data-field-member value="{{ preload_id|default:'' }}">
+    <input type="text" data-member-search-input value="{{ preload_name|default:'' }}" placeholder="Search member by name, code or phone…" autocomplete="off" class="w-full bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 text-[13px] pl-10" >
+    <button type="button" data-member-clear class="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-primary hidden" aria-label="Clear member">
+      <span class="material-symbols-outlined text-[18px]">close</span>
+    </button>
+  </div>
+  <div data-member-search-results class="hidden absolute left-0 right-0 top-full mt-1 z-30 bg-surface-container border border-outline-variant rounded shadow-xl max-h-72 overflow-y-auto text-[13px]"></div>
+</div>
+<script>
+(function(){
+  const root = document.currentScript.parentElement.querySelector('[data-member-search]');
+  if (!root) return;
+  const input = root.querySelector('[data-member-search-input]');
+  const hidden = root.querySelector('[data-field-member]');
+  const results = root.querySelector('[data-member-search-results]');
+  const clearBtn = root.querySelector('[data-member-clear]');
+  const billto = document.querySelector('[data-field-billto]');
+  const previewMember = document.querySelector('[data-preview-member]');
+  let timer = null;
+
+  function sync(){
+    clearBtn.classList.toggle('hidden', !input.value.trim());
+  }
+  function pick(id, text, plain){
+    hidden.value = id;
+    input.value = text;
+    results.classList.add('hidden');
+    results.innerHTML = '';
+    sync();
+    if (billto) {
+      if (!billto.value || billto.hasAttribute('data-filled-by-member')) {
+        billto.value = plain;
+        billto.setAttribute('data-filled-by-member', '1');
+      }
+    }
+    if (previewMember) previewMember.textContent = plain;
+  }
+  function clearMember(){
+    hidden.value = '';
+    input.value = '';
+    results.classList.add('hidden');
+    results.innerHTML = '';
+    sync();
+    if (billto && billto.hasAttribute('data-filled-by-member')) {
+      billto.value = '';
+      billto.removeAttribute('data-filled-by-member');
+    }
+    if (previewMember) previewMember.textContent = 'Walk-in / Guest';
+  }
+
+  input.addEventListener('input', () => {
+    sync();
+    clearTimeout(timer);
+    const q = input.value.trim();
+    if (!q) { hidden.value = ''; results.classList.add('hidden'); results.innerHTML = ''; return; }
+    timer = setTimeout(() => {
+      fetch('/api/members/search/?q=' + encodeURIComponent(q))
+        .then(r => { if (!r.ok) throw 0; return r.json(); })
+        .then(data => {
+          if (!data || !data.length) {
+            results.innerHTML = '<div class="px-4 py-3 text-on-surface-variant">No members found</div>';
+            results.classList.remove('hidden');
+            return;
+          }
+          results.innerHTML = '';
+          data.forEach(m => {
+            const div = document.createElement('button');
+            div.type = 'button';
+            div.className = 'w-full text-left px-4 py-3 hover:bg-surface-container-high flex items-center justify-between gap-3 border-b border-outline-variant/50 last:border-b-0';
+            div.innerHTML = '<span class="truncate"><span class="text-on-surface">' + m.full_name + '</span>' +
+              (m.member_code ? ' <span class="text-on-surface-variant font-data-md text-[11px]">— ' + m.member_code + '</span>' : '') +
+              (m.status ? ' <span class="font-label-caps text-[10px] text-on-surface-variant uppercase">· ' + m.status + '</span>' : '') +
+              '</span>' +
+              (m.phone ? '<span class="font-data-md text-[11px] text-on-surface-variant shrink-0">' + m.phone + '</span>' : '');
+            div.addEventListener('mousedown', (e) => {
+              e.preventDefault();
+              pick(m.id, m.full_name + (m.member_code ? ' — ' + m.member_code : ''), m.full_name);
+            });
+            results.appendChild(div);
+          });
+          results.classList.remove('hidden');
+        })
+        .catch(() => {
+          results.innerHTML = '<div class="px-4 py-3 text-error">Could not search members. Try again.</div>';
+          results.classList.remove('hidden');
+        });
+    }, 200);
+  });
+
+  clearBtn.addEventListener('click', (e) => { e.stopPropagation(); clearMember(); });
+  document.addEventListener('click', (e) => {
+    if (!root.contains(e.target)) { results.classList.add('hidden'); }
+  });
+  sync();
+})();
+</script>

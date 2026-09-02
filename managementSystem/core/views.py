@@ -19,15 +19,20 @@ from django.contrib.auth.hashers import make_password
 from .forms import MemberForm, PlanForm, ServiceForm, UserAddForm
 from .permissions import role_required
 
-from .models import User, Member, MembershipPlan, Subscription, BusinessInformation, FinancialSetting, PaymentMethod, NotificationSetting, Payment, Attendance, UserProfile
+from .models import User, Member, MembershipPlan, Subscription, BusinessInformation, FinancialSetting, PaymentMethod, NotificationSetting, Payment, Attendance, Service, PlanService, UserProfile, Invoice, Receipt, Financial
+
+def _decimal(value, default=Decimal('0.00')):
+    try:
+        return Decimal(str(value).strip())
+    except (TypeError, ValueError, InvalidOperation):
+        return default
+
 
 def _parse_date(value):
     try:
         return datetime.date.fromisoformat(value)
     except (TypeError, ValueError):
         return None
-
-from .models import Attendance, Member, Subscription
 
 def _checkin_block_reason(member, today):
     """Return (reason, subscription_status). reason is None when check-in is allowed.
@@ -320,7 +325,500 @@ def payments_view(request):
 
 @login_required_custom
 def invoices_view(request):
-    return render(request, "invoices/detail.html", {"current_user": get_current_user(request)})
+    invoices_qs = Invoice.objects.select_related('member').order_by('-issued_date', '-id')
+
+    status = request.GET.get('status', '').strip()
+    search = request.GET.get('q', '').strip()
+    today = timezone.localdate()
+
+    if search:
+        invoices_qs = invoices_qs.filter(
+            Q(invoice_no__icontains=search) | Q(member__full_name__icontains=search)
+        )
+    if status == 'overdue':
+        invoices_qs = invoices_qs.exclude(status__in=['paid', 'void']).filter(
+            due_date__lt=today, amount_paid__lt=F('total')
+        )
+    elif status == 'partial':
+        invoices_qs = invoices_qs.filter(amount_paid__gt=0, amount_paid__lt=F('total'))
+    elif status == 'paid':
+        invoices_qs = invoices_qs.filter(status='paid')
+    elif status in ('draft', 'sent', 'void'):
+        invoices_qs = invoices_qs.filter(status=status)
+
+    paginator = Paginator(invoices_qs, 15)
+    page_obj = paginator.get_page(request.GET.get('page'))
+
+    # Preserve active filters across Previous/Next links.
+    filters_querydict = request.GET.copy()
+    filters_querydict.pop('page', None)
+    filters_querystring = filters_querydict.urlencode()
+
+    # Summary stats (only for the current filter set).
+    stats_qs = invoices_qs
+    totals = stats_qs.aggregate(
+        total_billed=Sum('total'),
+        total_paid=Sum('amount_paid'),
+    )
+    outstanding = (totals['total_billed'] or 0) - (totals['total_paid'] or 0)
+    overdue_count = stats_qs.exclude(status__in=['paid', 'void']).filter(
+        due_date__lt=today, amount_paid__lt=F('total')
+    ).count()
+
+    context = {
+        'invoices': page_obj.object_list,
+        'page_obj': page_obj,
+        'filters_querystring': filters_querystring,
+        'filter_status': status,
+        'filter_search': search,
+        'filters_active': bool(status or search),
+        'stat_total': stats_qs.count(),
+        'stat_billed': totals['total_billed'] or 0,
+        'stat_outstanding': outstanding,
+        'stat_overdue': overdue_count,
+        'today': today,
+    }
+    return render(request, "invoices/list.html", context)
+
+def _next_invoice_no():
+    year = timezone.now().year
+    prefix = f"INV-{year}-"
+    count = Invoice.objects.filter(invoice_no__startswith=prefix).count()
+    number = count + 1
+    while True:
+        candidate = f"{prefix}{number:04d}"
+        if not Invoice.objects.filter(invoice_no=candidate).exists():
+            return candidate
+        number += 1
+
+def invoice_create_view(request):
+    if request.method == "POST":
+        member_id = request.POST.get('member_id') or None
+        bill_to = request.POST.get('bill_to', '').strip()
+        description = request.POST.get('description', '').strip()
+        amount = _decimal(request.POST.get('amount'))
+        discount_type = request.POST.get('discount_type', 'flat').strip()
+        discount_value = _decimal(request.POST.get('discount_value'))
+        tax_rate = Financial.get_tax_rate()
+        payment_terms = request.POST.get('payment_terms', 'due_on_receipt').strip()
+        issued_date = _parse_date(request.POST.get('issued_date')) or timezone.localdate()
+        due_date = _parse_date(request.POST.get('due_date'))
+        status = request.POST.get('status', 'draft').strip()
+        amount_paid = _decimal(request.POST.get('amount_paid'))
+        invoice_no = request.POST.get('invoice_no', '').strip()
+        notes = request.POST.get('notes', '').strip()
+
+        member = None
+        if member_id:
+            try:
+                member = Member.objects.get(pk=member_id)
+            except (Member.DoesNotExist, ValueError):
+                return render(request, "invoices/create.html", {
+                    'error': "Selected member no longer exists.",
+                })
+
+        if invoice_no and Invoice.objects.filter(invoice_no=invoice_no).exclude(pk=None).exists():
+            invoice_no = _next_invoice_no()
+        if not invoice_no:
+            invoice_no = _next_invoice_no()
+
+        invoice = Invoice(
+            invoice_no=invoice_no,
+            bill_to=bill_to or None,
+            member=member,
+            description=description or None,
+            subtotal=amount,
+            discount_type=discount_type if discount_type in ('flat', 'percent') else 'flat',
+            discount=discount_value,
+            tax_rate=tax_rate,
+            payment_terms=payment_terms,
+            issued_date=issued_date,
+            due_date=due_date,
+            status=status if status in dict(Invoice.STATUS_CHOICES) else 'draft',
+            amount_paid=amount_paid,
+            notes=notes or None,
+        )
+        invoice.recalculate()
+        if invoice.status == 'paid':
+            invoice.amount_paid = invoice.total
+
+        try:
+            invoice.save()
+        except IntegrityError:
+            invoice.invoice_no = _next_invoice_no()
+            invoice.save()
+
+        return redirect('invoice-detail', pk=invoice.pk)
+
+    context = {
+        'terms': Invoice.TERM_CHOICES,
+        'status_choices': Invoice.STATUS_CHOICES,
+        'next_invoice_no': _next_invoice_no(),
+        'today': timezone.localdate(),
+        'settings_tax_rate': Financial.get_tax_rate(),
+    }
+    return render(request, "invoices/create.html", context)
+
+def invoice_edit_view(request, pk):
+    invoice = get_object_or_404(Invoice, pk=pk)
+
+    if request.method == "POST":
+        member_id = request.POST.get('member_id') or None
+        bill_to = request.POST.get('bill_to', '').strip()
+        description = request.POST.get('description', '').strip()
+        amount = _decimal(request.POST.get('amount'))
+        discount_type = request.POST.get('discount_type', 'flat').strip()
+        discount_value = _decimal(request.POST.get('discount_value'))
+        tax_rate = Financial.get_tax_rate()
+        payment_terms = request.POST.get('payment_terms', 'due_on_receipt').strip()
+        issued_date = _parse_date(request.POST.get('issued_date')) or timezone.localdate()
+        due_date = _parse_date(request.POST.get('due_date'))
+        status = request.POST.get('status', 'draft').strip()
+        amount_paid = _decimal(request.POST.get('amount_paid'))
+        invoice_no = request.POST.get('invoice_no', '').strip() or invoice.invoice_no
+        notes = request.POST.get('notes', '').strip()
+
+        member = None
+        if member_id:
+            try:
+                member = Member.objects.get(pk=member_id)
+            except (Member.DoesNotExist, ValueError):
+                return render(request, "invoices/create.html", {
+                    'invoice': invoice,
+                    'error': "Selected member no longer exists.",
+                })
+
+        if invoice_no and Invoice.objects.filter(invoice_no=invoice_no).exclude(pk=invoice.pk).exists():
+            invoice_no = _next_invoice_no()
+
+        invoice.invoice_no = invoice_no
+        invoice.bill_to = bill_to or None
+        invoice.member = member
+        invoice.description = description or None
+        invoice.subtotal = amount
+        invoice.discount_type = discount_type if discount_type in ('flat', 'percent') else 'flat'
+        invoice.discount = discount_value
+        invoice.tax_rate = tax_rate
+        invoice.payment_terms = payment_terms
+        invoice.issued_date = issued_date
+        invoice.due_date = due_date
+        invoice.status = status if status in dict(Invoice.STATUS_CHOICES) else 'draft'
+        invoice.amount_paid = amount_paid
+        invoice.notes = notes or None
+        invoice.recalculate()
+        if invoice.status == 'paid':
+            invoice.amount_paid = invoice.total
+
+        try:
+            invoice.save()
+        except IntegrityError:
+            invoice.invoice_no = _next_invoice_no()
+            invoice.save()
+
+        return redirect('invoice-detail', pk=invoice.pk)
+
+    context = {
+        'invoice': invoice,
+        'terms': Invoice.TERM_CHOICES,
+        'status_choices': Invoice.STATUS_CHOICES,
+        'next_invoice_no': _next_invoice_no(),
+        'today': timezone.localdate(),
+        'settings_tax_rate': Financial.get_tax_rate(),
+    }
+    return render(request, "invoices/create.html", context)
+
+def invoice_detail_view(request, pk):
+    invoice = get_object_or_404(Invoice.objects.select_related('member'), pk=pk)
+    return render(request, "invoices/detail.html", {'invoice': invoice, 'today': timezone.localdate()})
+
+def invoice_pdf_view(request, pk):
+    invoice = get_object_or_404(Invoice.objects.select_related('member'), pk=pk)
+    try:
+        from weasyprint import HTML
+        html = render_to_string("invoices/pdf.html", {'invoice': invoice})
+        pdf_bytes = HTML(string=html, base_url=request.build_absolute_uri("/")).write_pdf()
+    except Exception as exc:
+        import traceback
+        traceback.print_exc()
+        if request.GET.get('debug'):
+            return HttpResponse(
+                f"PDF error: {type(exc).__name__}: {exc}\n\n{traceback.format_exc()}"
+                .replace('\n', '<br>'),
+                status=500,
+            )
+        return HttpResponse(
+            "PDF rendering failed. The invoice cannot be exported right now; "
+            "try View in browser or contact support.",
+            status=503,
+        )
+    response = HttpResponse(pdf_bytes, content_type="application/pdf")
+    disposition = "attachment" if request.GET.get('download') == '1' else "inline"
+    response['Content-Disposition'] = f'{disposition}; filename="{invoice.invoice_no}.pdf"'
+    return response
+
+def invoice_status_view(request, pk):
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+    invoice = get_object_or_404(Invoice, pk=pk)
+    action = request.POST.get('action')
+    if action == 'mark_paid':
+        invoice.amount_paid = invoice.total
+        invoice.status = 'paid'
+    elif action == 'mark_sent':
+        invoice.status = 'sent'
+    elif action == 'void':
+        invoice.status = 'void'
+    else:
+        return JsonResponse({'error': 'Unknown action.'}, status=400)
+    invoice.save()
+    return redirect('invoice-detail', pk=invoice.pk)
+
+def receipts_view(request):
+    receipts_qs = Receipt.objects.select_related('member').order_by('-paid_date', '-id')
+
+    search = request.GET.get('q', '').strip()
+    method = request.GET.get('method', '').strip()
+
+    if search:
+        receipts_qs = receipts_qs.filter(
+            Q(receipt_no__icontains=search) | Q(member__full_name__icontains=search) | Q(bill_to__icontains=search)
+        )
+    if method:
+        receipts_qs = receipts_qs.filter(method=method)
+
+    paginator = Paginator(receipts_qs, 15)
+    page_obj = paginator.get_page(request.GET.get('page'))
+
+    filters_querydict = request.GET.copy()
+    filters_querydict.pop('page', None)
+    filters_querystring = filters_querydict.urlencode()
+
+    stats = receipts_qs.aggregate(stat_total=Sum('total'), stat_tax=Sum('tax_amount'))
+    discount_expr = Case(
+        When(discount_type='percent', then=F('subtotal') * F('discount') / Decimal('100')),
+        default=F('discount'),
+        output_field=DecimalField(max_digits=12, decimal_places=2),
+    )
+    stats['stat_discount'] = receipts_qs.aggregate(d=Sum(discount_expr))['d'] or 0
+
+    context = {
+        'receipts': page_obj.object_list,
+        'page_obj': page_obj,
+        'filters_querystring': filters_querystring,
+        'filter_method': method,
+        'filter_search': search,
+        'filters_active': bool(method or search),
+        'stat_count': receipts_qs.count(),
+        'stat_total': stats['stat_total'] or 0,
+        'stat_tax': stats['stat_tax'] or 0,
+        'stat_discount': stats['stat_discount'] or 0,
+        'methods': Receipt.METHOD_CHOICES,
+        'today': timezone.localdate(),
+    }
+    return render(request, "receipts/list.html", context)
+
+def _next_receipt_no():
+    year = timezone.now().year
+    prefix = f"RCT-{year}-"
+    count = Receipt.objects.filter(receipt_no__startswith=prefix).count()
+    number = count + 1
+    while True:
+        candidate = f"{prefix}{number:04d}"
+        if not Receipt.objects.filter(receipt_no=candidate).exists():
+            return candidate
+        number += 1
+
+def _process_logo(request, receipt=None):
+    """Return a stored logo value (data URI) from an optional upload.
+    New file → base64 data URI; remove_logo → None; otherwise keep existing."""
+    upload = request.FILES.get('logo')
+    if upload:
+        data = upload.read()
+        if len(data) > 512 * 1024:
+            raise ValueError("Logo image must be smaller than 512 KB.")
+        import base64
+        mime = upload.content_type or 'image/png'
+        return f"data:{mime};base64,{base64.b64encode(data).decode('ascii')}"
+    if request.POST.get('remove_logo') == '1':
+        return None
+    if receipt is not None:
+        return receipt.logo
+    return None
+
+def receipt_create_view(request):
+    if request.method == "POST":
+        member_id = request.POST.get('member_id') or None
+        bill_to = request.POST.get('bill_to', '').strip()
+        description = request.POST.get('description', '').strip()
+        amount = _decimal(request.POST.get('amount'))
+        discount_type = request.POST.get('discount_type', 'flat').strip()
+        discount_value = _decimal(request.POST.get('discount_value'))
+        tax_rate = Financial.get_tax_rate()
+        method = request.POST.get('method', 'cash').strip()
+        paid_date = _parse_date(request.POST.get('paid_date')) or timezone.localdate()
+        notes = request.POST.get('notes', '').strip()
+
+        member = None
+        if member_id:
+            try:
+                member = Member.objects.get(pk=member_id)
+            except (Member.DoesNotExist, ValueError):
+                return render(request, "receipts/create.html", {
+                    'error': "Selected member no longer exists.",
+                    'methods': Receipt.METHOD_CHOICES,
+                    'today': timezone.localdate(),
+                    'next_receipt_no': _next_receipt_no(),
+                })
+
+        try:
+            logo = _process_logo(request)
+        except ValueError as exc:
+            return render(request, "receipts/create.html", {
+                'error': str(exc),
+                'methods': Receipt.METHOD_CHOICES,
+                'today': timezone.localdate(),
+                'next_receipt_no': _next_receipt_no(),
+            })
+
+        receipt_no = request.POST.get('receipt_no', '').strip() or _next_receipt_no()
+        if Receipt.objects.filter(receipt_no=receipt_no).exists():
+            receipt_no = _next_receipt_no()
+
+        receipt = Receipt(
+            receipt_no=receipt_no,
+            bill_to=bill_to or None,
+            member=member,
+            description=description or None,
+            subtotal=amount,
+            discount_type=discount_type if discount_type in ('flat', 'percent') else 'flat',
+            discount=discount_value,
+            tax_rate=tax_rate,
+            method=method if method in dict(Receipt.METHOD_CHOICES) else 'cash',
+            paid_date=paid_date,
+            notes=notes or None,
+            logo=logo,
+        )
+        receipt.recalculate()
+
+        try:
+            receipt.save()
+        except IntegrityError:
+            receipt.receipt_no = _next_receipt_no()
+            receipt.save()
+
+        return redirect('receipt-detail', pk=receipt.pk)
+
+    context = {
+        'methods': Receipt.METHOD_CHOICES,
+        'next_receipt_no': _next_receipt_no(),
+        'today': timezone.localdate(),
+        'settings_tax_rate': Financial.get_tax_rate(),
+    }
+    return render(request, "receipts/create.html", context)
+
+def receipt_edit_view(request, pk):
+    receipt = get_object_or_404(Receipt, pk=pk)
+
+    if request.method == "POST":
+        member_id = request.POST.get('member_id') or None
+        bill_to = request.POST.get('bill_to', '').strip()
+        description = request.POST.get('description', '').strip()
+        amount = _decimal(request.POST.get('amount'))
+        discount_type = request.POST.get('discount_type', 'flat').strip()
+        discount_value = _decimal(request.POST.get('discount_value'))
+        tax_rate = Financial.get_tax_rate()
+        method = request.POST.get('method', 'cash').strip()
+        paid_date = _parse_date(request.POST.get('paid_date')) or timezone.localdate()
+        receipt_no = request.POST.get('receipt_no', '').strip() or receipt.receipt_no
+        notes = request.POST.get('notes', '').strip()
+
+        member = None
+        if member_id:
+            try:
+                member = Member.objects.get(pk=member_id)
+            except (Member.DoesNotExist, ValueError):
+                return render(request, "receipts/create.html", {
+                    'receipt': receipt,
+                    'error': "Selected member no longer exists.",
+                })
+
+        try:
+            logo = _process_logo(request, receipt)
+        except ValueError as exc:
+            return render(request, "receipts/create.html", {
+                'receipt': receipt,
+                'error': str(exc),
+            })
+
+        if receipt_no and Receipt.objects.filter(receipt_no=receipt_no).exclude(pk=receipt.pk).exists():
+            receipt_no = _next_receipt_no()
+
+        receipt.receipt_no = receipt_no
+        receipt.bill_to = bill_to or None
+        receipt.member = member
+        receipt.description = description or None
+        receipt.subtotal = amount
+        receipt.discount_type = discount_type if discount_type in ('flat', 'percent') else 'flat'
+        receipt.discount = discount_value
+        receipt.tax_rate = tax_rate
+        receipt.method = method if method in dict(Receipt.METHOD_CHOICES) else 'cash'
+        receipt.paid_date = paid_date
+        receipt.notes = notes or None
+        receipt.logo = logo
+        receipt.recalculate()
+
+        try:
+            receipt.save()
+        except IntegrityError:
+            receipt.receipt_no = _next_receipt_no()
+            receipt.save()
+
+        return redirect('receipt-detail', pk=receipt.pk)
+
+    context = {
+        'receipt': receipt,
+        'methods': Receipt.METHOD_CHOICES,
+        'next_receipt_no': _next_receipt_no(),
+        'today': timezone.localdate(),
+        'settings_tax_rate': Financial.get_tax_rate(),
+    }
+    return render(request, "receipts/create.html", context)
+
+def receipt_detail_view(request, pk):
+    receipt = get_object_or_404(Receipt.objects.select_related('member'), pk=pk)
+    return render(request, "receipts/detail.html", {'receipt': receipt, 'today': timezone.localdate()})
+
+def receipt_delete_view(request, pk):
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+    receipt = get_object_or_404(Receipt, pk=pk)
+    receipt_no = receipt.receipt_no
+    receipt.delete()
+    return redirect('receipts')
+
+def receipt_pdf_view(request, pk):
+    receipt = get_object_or_404(Receipt.objects.select_related('member'), pk=pk)
+    try:
+        from weasyprint import HTML
+        html = render_to_string("receipts/pdf.html", {'receipt': receipt})
+        pdf_bytes = HTML(string=html, base_url=request.build_absolute_uri("/")).write_pdf()
+    except Exception as exc:
+        import traceback
+        traceback.print_exc()
+        if request.GET.get('debug'):
+            return HttpResponse(
+                f"PDF error: {type(exc).__name__}: {exc}\n\n{traceback.format_exc()}"
+                .replace('\n', '<br>'),
+                status=500,
+            )
+        return HttpResponse(
+            "PDF rendering failed. The receipt cannot be exported right now; try again.",
+            status=503,
+        )
+    response = HttpResponse(pdf_bytes, content_type="application/pdf")
+    disposition = "attachment" if request.GET.get('download') == '1' else "inline"
+    response['Content-Disposition'] = f'{disposition}; filename="{receipt.receipt_no}.pdf"'
+    return response
 
 @login_required_custom
 def renewals_view(request):

@@ -10,6 +10,12 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.1/ref/settings/
 """
 
+import os
+# Ensure WeasyPrint/GTK3 runtime DLLs are discoverable
+_gtk_bin = r'C:\Program Files\GTK3-Runtime Win64\bin'
+if os.path.isdir(_gtk_bin):
+    os.environ['PATH'] = _gtk_bin + os.pathsep + os.environ.get('PATH', '')
+
 from pathlib import Path
 from decouple import config
 
