@@ -26,7 +26,7 @@ SECRET_KEY = config('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=False, cast=bool)
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -123,6 +123,13 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 
+
+# Auth - custom session-based (public.users)
+LOGIN_URL = '/login/'
+LOGIN_REDIRECT_URL = '/dashboard/'
+LOGOUT_REDIRECT_URL = '/login/'
+SESSION_COOKIE_AGE = 60 * 60 * 8  # 8 hours default
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 
 # Email
 # https://docs.djangoproject.com/en/6.1/topics/email/#topic-email-configuration

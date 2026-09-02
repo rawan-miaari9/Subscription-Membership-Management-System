@@ -44,7 +44,7 @@
             <h1 class="font-display text-display text-on-surface uppercase tracking-tight mb-2">GYM CORE LOGIN</h1>
             <p data-login-subtitle class="font-body-sm text-body-sm text-on-surface-variant">Access your administrative dashboard.</p>
         </div>
-        <!-- Role Selector (UI only - no backend) -->
+        <!-- Role Selector (backend-aware) -->
         <div class="flex gap-2 mb-6 p-1 bg-surface-container-lowest border border-outline-variant rounded-DEFAULT">
             <button data-role="admin" class="flex-1 py-2 font-label-caps text-label-caps uppercase text-primary bg-surface-container-high border border-outline-variant rounded-DEFAULT transition-colors" type="button">
                 Admin
@@ -53,8 +53,18 @@
                 Accountant
             </button>
         </div>
-        <form data-login-form class="space-y-5" method="post" action="" novalidate>
+        <form data-login-form class="space-y-5" method="post" action="{% url 'login' %}{% if next %}?next={{ next }}{% endif %}" novalidate>
             {% csrf_token %}
+            <input type="hidden" name="role" id="role-input" value="Admin">
+            {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+            {% if error %}
+            <div class="p-3 rounded border border-error bg-error-container text-on-error-container font-body-sm text-sm">{{ error }}</div>
+            {% endif %}
+            {% if messages %}
+                {% for message in messages %}
+                <div class="p-3 rounded border {% if message.tags == 'error' %}border-error bg-error-container text-on-error-container{% else %}border-tertiary bg-tertiary-container text-on-tertiary-container{% endif %} font-body-sm text-sm">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
             <div data-form-msg class="hidden p-3 rounded border border-error bg-error-container text-on-error-container font-body-sm text-sm"></div>
             <!-- Email Field -->
             <div>
@@ -63,7 +73,7 @@
                     <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <span class="material-symbols-outlined text-on-surface-variant text-[18px]">mail</span>
                     </span>
-                    <input class="w-full pl-10 pr-4 py-3 bg-surface-container-lowest border border-outline-variant rounded-DEFAULT font-body-sm text-body-sm text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all placeholder-on-surface-variant/50" id="email" name="email" placeholder="admin@ironcore.gym" type="email"/>
+                    <input class="w-full pl-10 pr-4 py-3 bg-surface-container-lowest border border-outline-variant rounded-DEFAULT font-body-sm text-body-sm text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all placeholder-on-surface-variant/50" id="email" name="email" placeholder="admin@ironcore.gym" type="email" value="{{ email|default:'' }}" required/>
                 </div>
             </div>
             <!-- Password Field -->
@@ -73,7 +83,7 @@
                     <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <span class="material-symbols-outlined text-on-surface-variant text-[18px]">lock</span>
                     </span>
-                    <input class="w-full pl-10 pr-4 py-3 bg-surface-container-lowest border border-outline-variant rounded-DEFAULT font-body-sm text-body-sm text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all placeholder-on-surface-variant/50" id="password" name="password" placeholder="••••••••" type="password"/>
+                    <input class="w-full pl-10 pr-4 py-3 bg-surface-container-lowest border border-outline-variant rounded-DEFAULT font-body-sm text-body-sm text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all placeholder-on-surface-variant/50" id="password" name="password" placeholder="••••••••" type="password" required/>
                 </div>
             </div>
             <!-- Options -->

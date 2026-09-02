@@ -1,7 +1,8 @@
 // Frontend-only interactivity - no backend
 document.addEventListener('DOMContentLoaded', () => {
-  // ── Login: role toggle + form validation + demo redirect ──
+  // ── Login: role toggle + backend-aware validation ──
   const roleBtns = document.querySelectorAll('[data-role]');
+  const roleInput = document.getElementById('role-input');
   roleBtns.forEach(btn => {
     btn.addEventListener('click', () => {
       roleBtns.forEach(b => {
@@ -11,27 +12,36 @@ document.addEventListener('DOMContentLoaded', () => {
       const role = btn.dataset.role;
       const subtitle = document.querySelector('[data-login-subtitle]');
       if (subtitle) subtitle.textContent = role === 'accountant' ? 'Accountant access - billing & reports.' : 'Access your administrative dashboard.';
+      if (roleInput) roleInput.value = role === 'accountant' ? 'Accountant' : 'Admin';
     });
   });
 
   const loginForm = document.querySelector('[data-login-form]');
   if (loginForm) {
+    // restore role from hidden input on load
+    if (roleInput) {
+      const cur = (roleInput.value || 'Admin').toLowerCase();
+      roleBtns.forEach(b => {
+        if (b.dataset.role === cur) b.click();
+      });
+    }
     loginForm.addEventListener('submit', (e) => {
-      e.preventDefault();
       const email = loginForm.querySelector('#email')?.value.trim();
       const pwd = loginForm.querySelector('#password')?.value.trim();
       const msg = loginForm.querySelector('[data-form-msg]');
       if (!email || !pwd) {
+        e.preventDefault();
         if (msg) { msg.textContent = 'Please fill email and password.'; msg.classList.remove('hidden'); }
         toast('Please fill all fields', 'error');
         return;
       }
       if (!email.includes('@')) {
+        e.preventDefault();
         if (msg) { msg.textContent = 'Invalid email format.'; msg.classList.remove('hidden'); }
+        toast('Invalid email format', 'error');
         return;
       }
-      toast('Welcome back! Redirecting...', 'success');
-      setTimeout(() => window.location.href = '/dashboard/', 700);
+      // allow normal POST to backend - no preventDefault
     });
   }
 
