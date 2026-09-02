@@ -1,13 +1,71 @@
 {% extends "layouts/dashboard.html" %}
 {% block title %}Services & Benefits - Iron Core{% endblock %}
 {% block dashboard_content %}
+{% if messages %}
+<div class="space-y-2 mb-4">
+{% for message in messages %}
+<div class="p-4 rounded border flex items-center gap-2 font-body-sm text-sm {% if message.tags == 'success' %}bg-tertiary-container border-tertiary text-on-tertiary-container{% elif message.tags == 'error' %}bg-error-container border-error text-on-error-container{% else %}bg-surface-container-high border-outline-variant text-on-surface{% endif %}">
+<span class="material-symbols-outlined text-[18px]">{% if message.tags == 'success' %}check_circle{% elif message.tags == 'error' %}error{% else %}info{% endif %}</span>
+{{ message }}
+</div>
+{% endfor %}
+</div>
+{% endif %}
 <div class="flex justify-between items-center mb-6">
   <div><h1 class="font-headline-lg text-headline-lg text-on-surface uppercase">SERVICES & BENEFITS</h1><p class="font-body-sm text-on-surface-variant">Manage gym services and plan benefits.</p></div>
-  <button data-toast="Add service (demo)" class="px-4 py-2 bg-primary text-surface-dim font-label-caps text-[11px]">Add Service</button>
+  <a href="{% url 'service-add' %}" class="px-4 py-2 bg-primary text-surface-dim font-label-caps text-[11px]">Add Service</a>
 </div>
 <div class="bg-surface-container border border-outline-variant rounded overflow-hidden">
-  <table class="w-full text-left font-data-md text-[12px]"><thead><tr class="border-b border-outline-variant bg-surface-container-high"><th class="py-3 px-4">Service ID</th><th class="py-3 px-4">Service Name</th><th class="py-3 px-4">Description</th><th class="py-3 px-4">Members</th><th class="py-3 px-4">Status</th><th class="py-3 px-4 text-right">Actions</th></tr></thead><tbody><tr class="border-b border-outline-variant"><td class="py-3 px-4">SRV-001</td><td class="py-3">Personal Training</td><td class="py-3 text-on-surface-variant">1-on-1 coaching</td><td class="py-3"><span class="px-2 py-1 bg-surface-container-high text-[11px] border border-outline-variant">3 members</span> <button data-view-members="SRV-001" class="ml-2 text-primary text-[11px] underline">View</button></td><td class="py-3"><span class="px-2 py-1 bg-tertiary-container text-[10px]">ACTIVE</span></td><td class="py-3 px-4 text-right"><button data-assign-service="SRV-001" class="px-3 py-1 bg-primary-container text-on-primary-container font-label-caps text-[11px] rounded mr-1">Assign Member</button><button data-toast="Edit (demo)" class="text-primary font-label-caps text-[11px]">Edit</button></td></tr><tr class="border-b border-outline-variant"><td class="py-3 px-4">SRV-002</td><td class="py-3">Group Classes</td><td class="py-3 text-on-surface-variant">Yoga, HIIT</td><td class="py-3"><span class="px-2 py-1 bg-surface-container-high text-[11px] border border-outline-variant">0 members</span> <button data-view-members="SRV-002" class="ml-2 text-primary text-[11px] underline">View</button></td><td class="py-3"><span class="px-2 py-1 bg-surface-container-high text-[10px]">INACTIVE</span></td><td class="py-3 px-4 text-right"><button data-assign-service="SRV-002" class="px-3 py-1 bg-primary-container text-on-primary-container font-label-caps text-[11px] rounded mr-1">Assign Member</button><button data-toast="Activate (demo)" class="text-primary font-label-caps text-[11px]">Activate</button></td></tr></tbody></table>
+  <table class="w-full text-left font-data-md text-[12px]">
+  <thead>
+  <tr class="border-b border-outline-variant bg-surface-container-high">
+  <th class="py-3 px-4">Service ID</th>
+  <th class="py-3 px-4">Service Name</th>
+  <th class="py-3 px-4">Description</th>
+  <th class="py-3 px-4">Status</th>
+  <th class="py-3 px-4 text-right">Actions</th>
+  </tr>
+  </thead>
+  <tbody>
+  {% for service in services %}
+  <tr class="border-b border-outline-variant">
+  <td class="py-3 px-4">{{ service.service_code|default:"—" }}</td>
+  <td class="py-3">{{ service.name }}</td>
+  <td class="py-3 text-on-surface-variant">{{ service.description|default:"—" }}</td>
+  <td class="py-3"><span class="px-2 py-1 {% if service.is_active %}bg-tertiary-container{% else %}bg-surface-container-high{% endif %} text-[10px]">{% if service.is_active %}ACTIVE{% else %}INACTIVE{% endif %}</span></td>
+  <td class="py-3 px-4 text-right"><button data-toast="{% if service.is_active %}Edit{% else %}Activate{% endif %} (demo)" class="text-primary font-label-caps text-[11px]">{% if service.is_active %}Edit{% else %}Activate{% endif %}</button></td>
+  </tr>
+  {% empty %}
+  <tr>
+  <td colspan="5" class="py-8 px-4 text-center text-on-surface-variant">No services found.</td>
+  </tr>
+  {% endfor %}
+  </tbody>
+  </table>
 </div>
+{% if services %}
+<div class="bg-surface-container-low border border-outline-variant rounded p-4 flex flex-wrap justify-between items-center gap-2 mt-4">
+<span class="font-label-caps text-[11px] text-on-surface-variant uppercase">Showing {{ page_obj.start_index }}-{{ page_obj.end_index }} of {{ page_obj.paginator.count }}</span>
+<div class="flex gap-4 items-center">
+{% if page_obj.has_previous %}
+<a href="?page={{ page_obj.previous_page_number }}" class="font-label-caps text-[11px] text-on-surface-variant hover:text-primary transition-colors">Previous</a>
+{% else %}
+<span class="font-label-caps text-[11px] text-on-surface-variant/40">Previous</span>
+{% endif %}
+<span class="font-label-caps text-[11px] text-on-surface-variant">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+{% if page_obj.has_next %}
+<a href="?page={{ page_obj.next_page_number }}" class="font-label-caps text-[11px] text-on-surface-variant hover:text-primary transition-colors">Next</a>
+{% else %}
+<span class="font-label-caps text-[11px] text-on-surface-variant/40">Next</span>
+{% endif %}
+</div>
+</div>
+{% endif %}
+<!-- Note: the "Members" column (member_services) was removed from this real
+     listing — that's a different table than plan_services, isn't modeled on
+     this branch, and assigning members to services is out of scope for this
+     task. The Assign Member / View Members modal system below is left as-is
+     (untouched, per scope) but is no longer triggered by any row above. -->
 <!-- Assign Member Modal -->
 <div id="assign-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
   <div class="absolute inset-0 bg-background/80 backdrop-blur-sm" data-close-assign></div>

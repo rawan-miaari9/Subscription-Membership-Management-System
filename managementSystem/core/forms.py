@@ -1,8 +1,9 @@
 import re
 
 from django import forms
+from django.utils.text import slugify
 
-from .models import Member, User, UserProfile
+from .models import Member, MembershipPlan, Service, User, UserProfile
 
 
 class MemberForm(forms.Form):
@@ -80,3 +81,111 @@ class UserAddForm(forms.Form):
         if qs.exists():
             raise forms.ValidationError('This email is already in use.')
         return email
+
+
+class PlanForm(forms.Form):
+    # 'Status' dropdown in the frontend (templates/plans/create.html) offers
+    # exactly these two options — kept as a string here (not converted to a
+    # boolean) so the save step (SMM2-150) does that mapping explicitly, same
+    # pattern used for MemberForm.status elsewhere in this project.
+    STATUS_CHOICES = [
+        ('active', 'Active'),
+        ('inactive', 'Inactive'),
+    ]
+
+    name = forms.CharField(max_length=150, label='Plan Name')
+    duration_days = forms.IntegerField(min_value=1, label='Duration (days)')
+    price = forms.DecimalField(max_digits=10, decimal_places=2, min_value=0, label='Price')
+    # The current Create Plan template (templates/plans/create.html) has no
+    # explicit "is this a fixed-duration plan?" toggle — the closest thing is
+    # its Duration dropdown's "Custom" option, but that option has no real
+    # numeric duration attached to it there, and "Custom" plans are actually
+    # their own separate flow in this app (templates/plans/custom.html /
+    # plan_custom_view — a different creation page entirely, out of scope for
+    # this form per the task breakdown). Rather than guess at a day-count
+    # bucketing scheme the frontend doesn't actually implement, I'm exposing
+    # is_fixed as its own plain checkbox, defaulting to True (this form is for
+    # the *standard* plan flow, where a fixed duration is the normal case).
+    is_fixed = forms.BooleanField(required=False, initial=True, label='Fixed Duration')
+    status = forms.ChoiceField(choices=STATUS_CHOICES, initial='active', label='Status')
+
+    def __init__(self, *args, instance_plan=None, **kwargs):
+        # Used below to exclude the plan's own current row from the
+        # uniqueness check when editing (member_code-style instance pattern
+        # used elsewhere in this project).
+        self.instance_plan = instance_plan
+        super().__init__(*args, **kwargs)
+
+    def clean_name(self):
+        name = self.cleaned_data['name'].strip()
+        qs = MembershipPlan.objects.filter(name__iexact=name)
+        if self.instance_plan is not None:
+            qs = qs.exclude(pk=self.instance_plan.pk)
+        if qs.exists():
+            raise forms.ValidationError('A plan with this name already exists.')
+        return name
+
+    @staticmethod
+    def generate_slug(name, instance_plan=None):
+        """Slugify `name` and disambiguate against existing plans with a -2, -3, ... suffix.
+
+        slug isn't a form field — it's not user-facing on the Create Plan page
+        at all — so it's derived here from the (already-validated-unique) name
+        instead. A unique `name` doesn't guarantee a unique slug on its own
+        (e.g. "Gold!" and "Gold" both slugify to "gold"), so this still checks
+        for collisions and appends a numeric suffix the same way
+        MemberForm.generate_member_code() disambiguates member_code.
+        """
+        base_slug = slugify(name)
+        slug = base_slug
+        suffix = 1
+
+        def taken(candidate):
+            qs = MembershipPlan.objects.filter(slug=candidate)
+            if instance_plan is not None:
+                qs = qs.exclude(pk=instance_plan.pk)
+            return qs.exists()
+
+        while taken(slug):
+            suffix += 1
+            slug = f"{base_slug}-{suffix}"
+        return slug
+
+
+class ServiceForm(forms.Form):
+    name = forms.CharField(max_length=150, label='Service Name')
+    description = forms.CharField(required=False, widget=forms.Textarea, label='Description')
+    # The real `services.is_active` column is a genuine boolean (not a
+    # status string like Member/Plan use elsewhere in this project), and
+    # there's no pre-existing frontend convention to match here (no add-form
+    # template existed before this task) — so it's represented directly as a
+    # checkbox rather than an Active/Inactive dropdown needing translation.
+    is_active = forms.BooleanField(required=False, initial=True, label='Active')
+
+    def __init__(self, *args, instance_service=None, **kwargs):
+        # Not used for any validation yet (services.name has no UNIQUE
+        # constraint in the DB, unlike Member/Plan names, so there's nothing
+        # to exclude-self from). Accepted now anyway so a future Edit Service
+        # view can pass it in without changing this form's signature —
+        # deferred building that view itself, since this task's scope is
+        # List + Add only.
+        self.instance_service = instance_service
+        super().__init__(*args, **kwargs)
+
+    @staticmethod
+    def generate_service_code():
+        """Next sequential "SRV-<n>" code, based on the highest existing numeric suffix.
+
+        Same numeric-max approach as MemberForm.generate_member_code(): scan
+        existing codes in Python rather than sort them as text in the DB
+        (avoids "SRV-9" sorting after "SRV-10"), matching the SRV-NNN pattern
+        already visible in this page's previous fake data (SRV-001, SRV-002).
+        """
+        pattern = re.compile(r'^SRV-(\d+)$')
+        max_num = 0
+        codes = Service.objects.filter(service_code__startswith='SRV-').values_list('service_code', flat=True)
+        for code in codes:
+            match = pattern.match(code)
+            if match:
+                max_num = max(max_num, int(match.group(1)))
+        return f"SRV-{max_num + 1:03d}"

@@ -16,7 +16,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 from django.contrib.auth.hashers import make_password
 
-from .forms import MemberForm, UserAddForm
+from .forms import MemberForm, PlanForm, ServiceForm, UserAddForm
 from .permissions import role_required
 
 from .models import User, Member, MembershipPlan, Subscription, BusinessInformation, FinancialSetting, PaymentMethod, NotificationSetting, Payment, Attendance, UserProfile
@@ -231,7 +231,44 @@ def members_view(request):
 
 @login_required_custom
 def plans_view(request):
-    return render(request, "plans/list.html", {"current_user": get_current_user(request)})
+    plans_qs = MembershipPlan.objects.all().order_by('name')
+    paginator = Paginator(plans_qs, 20)
+    page_obj = paginator.get_page(request.GET.get('page'))
+    context = {
+        'plans': page_obj.object_list,
+        'page_obj': page_obj,
+    }
+    return render(request, "plans/list.html", context)
+
+def plan_activate_view(request, pk):
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+
+    plan = get_object_or_404(MembershipPlan, pk=pk)
+
+    if plan.is_active:
+        messages.info(request, f'"{plan.name}" is already active.')
+    else:
+        plan.is_active = True
+        plan.save(update_fields=['is_active'])
+        messages.success(request, f'"{plan.name}" was activated.')
+
+    return redirect('plans')
+
+def plan_deactivate_view(request, pk):
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+
+    plan = get_object_or_404(MembershipPlan, pk=pk)
+
+    if not plan.is_active:
+        messages.info(request, f'"{plan.name}" is already inactive.')
+    else:
+        plan.is_active = False
+        plan.save(update_fields=['is_active'])
+        messages.success(request, f'"{plan.name}" was deactivated.')
+
+    return redirect('plans')
 
 @login_required_custom
 @per_user_page_cache(300)
@@ -864,15 +901,314 @@ def member_delete_view(request, pk):
 
 @login_required_custom
 def services_view(request):
-    return render(request, "services/list.html", {"current_user": get_current_user(request)})
+    services_qs = Service.objects.all().order_by('name')
+    paginator = Paginator(services_qs, 20)
+    page_obj = paginator.get_page(request.GET.get('page'))
+    context = {
+        'services': page_obj.object_list,
+        'page_obj': page_obj,
+    }
+    return render(request, "services/list.html", context)
+
+def _create_service(data, attempt=1):
+    """Insert a Service with a freshly generated service_code.
+
+    Raw INSERT (not Service.objects.create()) — no GENERATED-column concern
+    here, but kept consistent with the raw-INSERT pattern used for
+    Member/Plan so only the real columns this form collects are ever touched.
+
+    service_code is an app-level generated sequence (see
+    ServiceForm.generate_service_code), not an atomic DB one, so retry once on
+    a UNIQUE violation before giving up — same pattern as Member/Plan.
+    """
+    service_code = ServiceForm.generate_service_code()
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "INSERT INTO services (service_code, name, description, is_active) VALUES (%s, %s, %s, %s) RETURNING id",
+                [service_code, data['name'], data['description'] or None, data['is_active']],
+            )
+            new_id = cursor.fetchone()[0]
+        return Service.objects.get(pk=new_id)
+    except IntegrityError:
+        if attempt >= 2:
+            return None
+        return _create_service(data, attempt=attempt + 1)
+
+def service_add_view(request):
+    if request.method == "POST":
+        form = ServiceForm(request.POST)
+        if form.is_valid():
+            service = _create_service(form.cleaned_data)
+            if service is None:
+                messages.error(request, "Could not save this service due to a conflict — please try again.")
+                return render(request, "services/add.html", {"form": form})
+
+            messages.success(request, f'Service "{service.name}" was added successfully ({service.service_code}).')
+            return redirect('services')
+    else:
+        form = ServiceForm()
+
+    return render(request, "services/add.html", {"form": form})
+
+# The frontend's Duration dropdown only offers these buckets, not a raw day
+# count — approximated as flat day-counts since a plan *template* has no
+# anchor start date for genuine calendar-month arithmetic (that only applies
+# once a real Subscription exists with a start_date). 12 months is treated
+# as a full year (365 days) rather than 12*30=360, matching how an "annual"
+# plan is commonly billed elsewhere.
+PLAN_DURATION_DAYS_BY_BUCKET = {
+    '1_month': 30,
+    '3_months': 90,
+    '6_months': 180,
+    '12_months': 365,
+}
+
+def _plan_service_context(plan):
+    """Assigned vs. available Service records for the Services/Benefits section
+    on the Edit Plan page — only meaningful once a plan actually exists (has a
+    pk), so callers only include this when is_edit is True.
+    """
+    if plan is None:
+        return {}
+    assigned_services = Service.objects.filter(plan_services__plan=plan).order_by('name')
+    available_services = Service.objects.exclude(
+        id__in=assigned_services.values_list('id', flat=True)
+    ).order_by('name')
+    return {
+        'assigned_services': assigned_services,
+        'available_services': available_services,
+    }
+
+def plan_assign_service_view(request, pk):
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+
+    plan = get_object_or_404(MembershipPlan, pk=pk)
+    # service_id comes from the POST body (a single dropdown of available
+    # services), not the URL — unlike unassign below, there's no single
+    # "which service" implied by the page itself, since the add control has
+    # to let the admin pick from N available ones.
+    service_id = request.POST.get('service_id')
+    if not service_id:
+        messages.error(request, "Select a service to add.")
+        return redirect('plan-edit', pk=plan.pk)
+    service = get_object_or_404(Service, pk=service_id)
+
+    try:
+        _, created = PlanService.objects.get_or_create(plan=plan, service=service)
+    except IntegrityError:
+        # Lost a race with a concurrent assign of the same plan+service pair.
+        created = False
+
+    if created:
+        messages.success(request, f'"{service.name}" was added to "{plan.name}".')
+    else:
+        messages.info(request, f'"{service.name}" is already assigned to "{plan.name}".')
+
+    return redirect('plan-edit', pk=plan.pk)
+
+def plan_unassign_service_view(request, pk, service_pk):
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+
+    plan = get_object_or_404(MembershipPlan, pk=pk)
+    service = get_object_or_404(Service, pk=service_pk)
+
+    deleted_count, _ = PlanService.objects.filter(plan=plan, service=service).delete()
+    if deleted_count:
+        messages.success(request, f'"{service.name}" was removed from "{plan.name}".')
+    else:
+        messages.info(request, f'"{service.name}" was not assigned to "{plan.name}".')
+
+    return redirect('plan-edit', pk=plan.pk)
 
 @login_required_custom
-def plan_create_view(request):
-    return render(request, "plans/create.html", {"current_user": get_current_user(request)})
+def plan_create_view(request, pk=None):
+    plan = None
+    if pk is not None:
+        plan = get_object_or_404(MembershipPlan, pk=pk)
+
+    if request.method == "POST":
+        duration_bucket = request.POST.get('duration', '')
+
+        if duration_bucket == 'custom':
+            # Custom-duration plans are a separate flow (templates/plans/custom.html,
+            # its own sibling task) with a different set of fields entirely
+            # (services checkboxes, etc.) — this form can't represent one, so
+            # send the admin to the flow that actually can rather than showing
+            # a dead-end validation error. Applies the same way whether adding
+            # or editing — "convert this plan to custom" isn't something this
+            # form can do either.
+            messages.info(
+                request,
+                'This form is for standard, fixed-duration plans. Use "Create Custom Plan" for custom/negotiated tiers.',
+            )
+            return redirect('plan-custom')
+
+        post_data = request.POST.copy()
+        if duration_bucket == '__current__' and plan is not None:
+            # Editing a plan whose duration_days doesn't match any preset
+            # bucket (see the GET branch below) — leave it exactly as-is
+            # rather than run it through the bucket map (which would resolve
+            # to '' and fail validation), silently overwriting a value that
+            # was presumably set deliberately outside this form.
+            post_data['duration_days'] = str(plan.duration_days)
+        else:
+            post_data['duration_days'] = str(PLAN_DURATION_DAYS_BY_BUCKET.get(duration_bucket, ''))
+        # This view only ever handles standard (non-custom) plans — force
+        # is_fixed True regardless of the checkbox's absence from this
+        # template, rather than let an unchecked/missing checkbox silently
+        # default to False.
+        post_data['is_fixed'] = 'on'
+
+        form = PlanForm(post_data, instance_plan=plan)
+        if form.is_valid():
+            data = form.cleaned_data
+
+            if plan is not None:
+                # Only regenerate the slug if the name actually changed.
+                # instance_plan is passed to generate_slug() either way so its
+                # collision check correctly excludes the plan's own current
+                # slug (otherwise re-saving a plan with an unchanged name
+                # would see its own slug as "taken" and bump it to "-2").
+                slug = plan.slug if data['name'] == plan.name else PlanForm.generate_slug(data['name'], instance_plan=plan)
+                try:
+                    with connection.cursor() as cursor:
+                        cursor.execute(
+                            "UPDATE membership_plans SET name = %s, slug = %s, duration_days = %s, "
+                            "price = %s, is_fixed = %s, is_active = %s WHERE id = %s",
+                            [data['name'], slug, data['duration_days'], data['price'], data['is_fixed'], data['status'] == 'active', plan.pk],
+                        )
+                except IntegrityError:
+                    messages.error(request, "Could not save this plan due to a conflict — please try again.")
+                    return render(request, "plans/create.html", {
+                        "form": form,
+                        "submitted_duration": duration_bucket,
+                        "is_edit": True,
+                        "edit_plan": plan,
+                        "current_duration_days": plan.duration_days,
+                        **_plan_service_context(plan),
+                    })
+
+                updated = MembershipPlan.objects.get(pk=plan.pk)
+                messages.success(request, f'Membership plan "{updated.name}" was updated successfully.')
+                return redirect('plans')
+
+            # Add path (no pk) — unchanged from SMM2-151.
+            slug = PlanForm.generate_slug(data['name'])
+            try:
+                # Raw INSERT naming only the real columns this form collects —
+                # same reasoning as Member/Attendance elsewhere in this
+                # project: leaving created_at out entirely lets Postgres apply
+                # its own now() default instead of Django writing an explicit
+                # NULL for a column we never touched.
+                with connection.cursor() as cursor:
+                    cursor.execute(
+                        "INSERT INTO membership_plans (name, slug, duration_days, price, is_fixed, is_active) "
+                        "VALUES (%s, %s, %s, %s, %s, %s) RETURNING id",
+                        [data['name'], slug, data['duration_days'], data['price'], data['is_fixed'], data['status'] == 'active'],
+                    )
+                    new_id = cursor.fetchone()[0]
+            except IntegrityError:
+                messages.error(request, "Could not save this plan due to a conflict — please try again.")
+                return render(request, "plans/create.html", {"form": form, "submitted_duration": duration_bucket, "is_edit": False})
+
+            created = MembershipPlan.objects.get(pk=new_id)
+            messages.success(request, f'Membership plan "{created.name}" was created successfully.')
+            return redirect('plans')
+
+        return render(request, "plans/create.html", {
+            "form": form,
+            "submitted_duration": duration_bucket,
+            "is_edit": plan is not None,
+            "edit_plan": plan,
+            "current_duration_days": plan.duration_days if plan is not None else None,
+            **_plan_service_context(plan),
+        })
+
+    # GET
+    initial = None
+    submitted_duration = ""
+    current_duration_days = None
+    if plan is not None:
+        reverse_bucket_map = {days: bucket for bucket, days in PLAN_DURATION_DAYS_BY_BUCKET.items()}
+        submitted_duration = reverse_bucket_map.get(plan.duration_days, '__current__')
+        if submitted_duration == '__current__':
+            current_duration_days = plan.duration_days
+        initial = {
+            'name': plan.name,
+            'price': plan.price,
+            'status': 'active' if plan.is_active else 'inactive',
+        }
+    form = PlanForm(initial=initial, instance_plan=plan)
+    return render(request, "plans/create.html", {
+        "form": form,
+        "submitted_duration": submitted_duration,
+        "is_edit": plan is not None,
+        "edit_plan": plan,
+        "current_duration_days": current_duration_days,
+        **_plan_service_context(plan),
+    })
 
 @login_required_custom
 def plan_custom_view(request):
-    return render(request, "plans/custom.html", {"current_user": get_current_user(request)})
+    if request.method == "POST":
+        duration_bucket = request.POST.get('duration', '')
+        post_data = request.POST.copy()
+
+        # Unlike the standard Create Plan flow, "custom" duration here has
+        # nowhere further to redirect to — this page IS the custom-plan flow.
+        # The existing template had no real day-count input backing that
+        # option, so I added one (custom_duration_days, required only in this
+        # branch) rather than silently picking an arbitrary default. Leaving
+        # it blank simply fails PlanForm's normal "required" validation on
+        # duration_days.
+        if duration_bucket == 'custom':
+            post_data['duration_days'] = post_data.get('custom_duration_days', '')
+        else:
+            post_data['duration_days'] = str(PLAN_DURATION_DAYS_BY_BUCKET.get(duration_bucket, ''))
+
+        # Template field is "custom_plan_name", not "name" — map it onto the
+        # PlanForm field it actually corresponds to.
+        post_data['name'] = post_data.get('custom_plan_name', '')
+
+        # Deliberately do NOT set post_data['is_fixed'] here (unlike the
+        # standard Create Plan view, which forces it to 'on'). This template
+        # has no is_fixed checkbox either, so PlanForm's
+        # BooleanField(required=False) resolves its absence to False — the
+        # correct value for a custom plan, the explicit non-fixed counterpart
+        # to the standard flow.
+
+        # The 10 "services" checkboxes on this page are read here but there is
+        # no MembershipPlan column to store them in yet — that's SMM2-156+
+        # (Services/Benefits) territory. They are intentionally NOT persisted
+        # anywhere; nothing selected here survives this request.
+
+        form = PlanForm(post_data)
+        if form.is_valid():
+            data = form.cleaned_data
+            slug = PlanForm.generate_slug(data['name'])
+            try:
+                with connection.cursor() as cursor:
+                    cursor.execute(
+                        "INSERT INTO membership_plans (name, slug, duration_days, price, is_fixed, is_active) "
+                        "VALUES (%s, %s, %s, %s, %s, %s) RETURNING id",
+                        [data['name'], slug, data['duration_days'], data['price'], data['is_fixed'], data['status'] == 'active'],
+                    )
+                    new_id = cursor.fetchone()[0]
+            except IntegrityError:
+                messages.error(request, "Could not save this custom plan due to a conflict — please try again.")
+                return render(request, "plans/custom.html", {"form": form, "submitted_duration": duration_bucket})
+
+            plan = MembershipPlan.objects.get(pk=new_id)
+            messages.success(request, f'Custom plan "{plan.name}" was created successfully.')
+            return redirect('plans')
+
+        return render(request, "plans/custom.html", {"form": form, "submitted_duration": duration_bucket})
+
+    form = PlanForm()
+    return render(request, "plans/custom.html", {"form": form, "submitted_duration": ""})
 
 @login_required_custom
 def subscription_detail_view(request):

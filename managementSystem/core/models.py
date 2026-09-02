@@ -341,6 +341,47 @@ class NotificationSetting(models.Model):
                 rows[code] = cls.objects.create(code=code, name=name, description=description, enabled=enabled)
         return [rows[code] for code in defaults]
 
+class Service(models.Model):
+    service_code = models.CharField(max_length=50, unique=True, null=True, blank=True)
+    name = models.CharField(max_length=150)
+    description = models.TextField(null=True, blank=True)
+    is_active = models.BooleanField(null=True, blank=True, default=True)
+
+    class Meta:
+        managed = False
+        db_table = 'services'
+
+    def __str__(self):
+        return self.name
+
+
+class PlanService(models.Model):
+    plan = models.ForeignKey(
+        MembershipPlan,
+        on_delete=models.CASCADE,
+        db_column='plan_id',
+        null=True,
+        blank=True,
+        related_name='plan_services',
+    )
+    service = models.ForeignKey(
+        Service,
+        on_delete=models.CASCADE,
+        db_column='service_id',
+        null=True,
+        blank=True,
+        related_name='plan_services',
+    )
+
+    class Meta:
+        managed = False
+        db_table = 'plan_services'
+        unique_together = ('plan', 'service')
+
+    def __str__(self):
+        return f"{self.plan} — {self.service}"
+
+
 class UserProfile(models.Model):
     ROLE_ADMIN = 'admin'
     ROLE_ACCOUNTANT = 'accountant'

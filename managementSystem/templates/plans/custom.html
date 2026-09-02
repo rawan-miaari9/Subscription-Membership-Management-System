@@ -21,39 +21,49 @@
   </div>
 
   <!-- Form Card -->
-  <form data-custom-plan-form class="bg-surface-container border border-outline-variant rounded-lg p-6 md:p-8 space-y-6" novalidate>
+  <form method="post" action="{% url 'plan-custom' %}" class="bg-surface-container border border-outline-variant rounded-lg p-6 md:p-8 space-y-6" novalidate>
     {% csrf_token %}
-    <div data-form-msg class="hidden p-3 rounded border border-error bg-error-container text-on-error-container font-body-sm text-sm"></div>
+    {% if form.errors %}
+    <div class="p-3 rounded border border-error bg-error-container text-on-error-container font-body-sm text-sm">Please fix the highlighted fields before saving.</div>
+    {% endif %}
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
       <!-- Custom Plan Name -->
       <div class="md:col-span-2">
         <label class="block font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">Custom Plan Name *</label>
-        <input name="custom_plan_name" required placeholder="e.g. Police Dept. Corp, State Rugby Team" class="w-full bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 font-body-sm text-body-sm text-on-surface placeholder:text-on-surface-variant/60 focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all" />
-        <p class="hidden text-error text-xs mt-1.5 font-body-sm" data-error="custom_plan_name">Custom plan name is required.</p>
+        <input name="custom_plan_name" required value="{{ form.name.value|default:'' }}" placeholder="e.g. Police Dept. Corp, State Rugby Team" class="w-full bg-surface-container-lowest border {% if form.name.errors %}border-error{% else %}border-outline-variant{% endif %} rounded px-4 py-3 font-body-sm text-body-sm text-on-surface placeholder:text-on-surface-variant/60 focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all" />
+        <p class="{% if not form.name.errors %}hidden{% endif %} text-error text-xs mt-1.5 font-body-sm">{{ form.name.errors.0 }}</p>
       </div>
 
       <!-- Description -->
       <div class="md:col-span-2">
         <label class="block font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">Description</label>
         <textarea name="description" rows="3" placeholder="Purpose of this custom tier — client, contract terms, special conditions..." class="w-full bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 font-body-sm text-body-sm text-on-surface placeholder:text-on-surface-variant/60 focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all resize-none"></textarea>
+        <p class="font-body-sm text-[11px] text-on-surface-variant mt-1.5">Not saved yet — there's no field for this on a plan yet.</p>
       </div>
 
       <!-- Duration -->
       <div>
         <label class="block font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">Duration *</label>
         <div class="relative">
-          <select name="duration" required class="w-full appearance-none bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 pr-10 font-body-sm text-body-sm text-on-surface focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all">
-            <option value="" disabled selected>Select duration</option>
-            <option value="1_month">1 Month</option>
-            <option value="3_months">3 Months</option>
-            <option value="6_months">6 Months</option>
-            <option value="12_months">12 Months / Yearly</option>
-            <option value="custom">Custom — negotiable</option>
+          <select name="duration" id="custom-duration-select" required class="w-full appearance-none bg-surface-container-lowest border {% if form.duration_days.errors %}border-error{% else %}border-outline-variant{% endif %} rounded px-4 py-3 pr-10 font-body-sm text-body-sm text-on-surface focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all">
+            <option value="" disabled {% if not submitted_duration %}selected{% endif %}>Select duration</option>
+            <option value="1_month" {% if submitted_duration == "1_month" %}selected{% endif %}>1 Month</option>
+            <option value="3_months" {% if submitted_duration == "3_months" %}selected{% endif %}>3 Months</option>
+            <option value="6_months" {% if submitted_duration == "6_months" %}selected{% endif %}>6 Months</option>
+            <option value="12_months" {% if submitted_duration == "12_months" %}selected{% endif %}>12 Months / Yearly</option>
+            <option value="custom" {% if submitted_duration == "custom" %}selected{% endif %}>Custom — negotiable</option>
           </select>
           <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none text-[20px]">expand_more</span>
         </div>
-        <p class="hidden text-error text-xs mt-1.5 font-body-sm" data-error="duration">Please select a duration.</p>
+        <p class="{% if not form.duration_days.errors %}hidden{% endif %} text-error text-xs mt-1.5 font-body-sm">{{ form.duration_days.errors.0 }}</p>
+      </div>
+
+      <!-- Custom Duration Days (only meaningful when Duration = Custom) -->
+      <div id="custom-duration-days-wrap" class="{% if submitted_duration != 'custom' %}hidden{% endif %}">
+        <label class="block font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">Custom Duration (days) *</label>
+        <input type="number" name="custom_duration_days" min="1" step="1" value="{% if submitted_duration == 'custom' %}{{ form.duration_days.value|default:'' }}{% endif %}" placeholder="e.g. 45" class="w-full bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 font-body-sm text-body-sm text-on-surface placeholder:text-on-surface-variant/60 focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all" />
+        <p class="font-body-sm text-[11px] text-on-surface-variant mt-1.5">Exact number of days for this negotiated tier — required when Duration is "Custom".</p>
       </div>
 
       <!-- Price -->
@@ -61,14 +71,14 @@
         <label class="block font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">Price *</label>
         <div class="relative">
           <span class="absolute left-3 top-1/2 -translate-y-1/2 font-data-md text-data-md text-on-surface-variant">$</span>
-          <input name="price" type="number" min="0" step="0.01" required placeholder="0.00" class="w-full bg-surface-container-lowest border border-outline-variant rounded pl-8 pr-4 py-3 font-body-sm text-body-sm text-on-surface placeholder:text-on-surface-variant/60 focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all" />
+          <input name="price" type="number" min="0" step="0.01" required value="{{ form.price.value|default:'' }}" placeholder="0.00" class="w-full bg-surface-container-lowest border {% if form.price.errors %}border-error{% else %}border-outline-variant{% endif %} rounded pl-8 pr-4 py-3 font-body-sm text-body-sm text-on-surface placeholder:text-on-surface-variant/60 focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all" />
         </div>
-        <p class="hidden text-error text-xs mt-1.5 font-body-sm" data-error="price">Valid price is required (&gt; 0).</p>
+        <p class="{% if not form.price.errors %}hidden{% endif %} text-error text-xs mt-1.5 font-body-sm">{{ form.price.errors.0 }}</p>
       </div>
 
       <!-- Services / Benefits - checkboxes -->
       <div class="md:col-span-2">
-        <label class="block font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-3">Services / Benefits *</label>
+        <label class="block font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-3">Services / Benefits</label>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 p-4 rounded border border-outline-variant bg-surface-container-lowest" data-services-group>
           <label class="flex items-center gap-3 p-3 rounded border border-outline-variant bg-surface-container hover:bg-surface-container-high transition-colors cursor-pointer group">
             <input type="checkbox" name="services" value="personal_training" class="w-4 h-4 rounded border-outline-variant bg-surface-container-lowest text-primary-container focus:ring-primary focus:ring-1" />
@@ -111,21 +121,20 @@
             <span class="flex items-center gap-2 font-body-sm text-sm text-on-surface"><span class="material-symbols-outlined text-[18px] text-on-surface-variant group-hover:text-primary-container">event_available</span> Priority Rack Booking</span>
           </label>
         </div>
-        <p class="hidden text-error text-xs mt-1.5 font-body-sm" data-error="services">Select at least one service / benefit.</p>
-        <p class="font-body-sm text-[11px] text-on-surface-variant mt-1.5">Mapped as inclusions for this custom tier; can be edited later in Service Assignment.</p>
+        <p class="font-body-sm text-[11px] text-on-surface-variant mt-1.5">Not saved yet — service/benefit assignment is a separate upcoming feature. Selections here aren't persisted.</p>
       </div>
 
       <!-- Status -->
       <div>
         <label class="block font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">Status *</label>
         <div class="relative">
-          <select name="status" required class="w-full appearance-none bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 pr-10 font-body-sm text-body-sm text-on-surface focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all">
-            <option value="active" selected>Active</option>
-            <option value="inactive">Inactive</option>
+          <select name="status" required class="w-full appearance-none bg-surface-container-lowest border {% if form.status.errors %}border-error{% else %}border-outline-variant{% endif %} rounded px-4 py-3 pr-10 font-body-sm text-body-sm text-on-surface focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all">
+            <option value="active" {% if form.status.value != "inactive" %}selected{% endif %}>Active</option>
+            <option value="inactive" {% if form.status.value == "inactive" %}selected{% endif %}>Inactive</option>
           </select>
           <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none text-[20px]">expand_more</span>
         </div>
-        <p class="hidden text-error text-xs mt-1.5 font-body-sm" data-error="status">Status is required.</p>
+        <p class="{% if not form.status.errors %}hidden{% endif %} text-error text-xs mt-1.5 font-body-sm">{{ form.status.errors.0 }}</p>
       </div>
 
       <div class="flex items-start gap-2 p-3 rounded border border-outline-variant bg-surface-container-high">
@@ -142,110 +151,21 @@
       <a href="{% url 'plans' %}" class="inline-flex items-center justify-center px-8 py-3 border border-outline-variant bg-transparent text-on-surface font-label-caps text-[11px] uppercase tracking-widest rounded hover:bg-surface-container-high transition-colors">
         Cancel
       </a>
-      <span data-loading class="hidden ml-2 inline-flex items-center gap-2 font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant">
-        <span class="w-4 h-4 border-2 border-primary-container border-t-transparent rounded-full animate-spin"></span> Saving...
-      </span>
-    </div>
-
-    <div data-success class="hidden p-4 bg-tertiary-container border border-tertiary text-on-tertiary-container rounded font-body-sm text-sm flex items-center gap-2">
-      <span class="material-symbols-outlined text-[18px]">check_circle</span> Custom plan created successfully.
-    </div>
-    <div data-error-state class="hidden p-4 bg-error-container border border-error text-on-error-container rounded font-body-sm text-sm flex items-center gap-2">
-      <span class="material-symbols-outlined text-[18px]">error</span> Failed to save. Please check highlighted fields.
     </div>
   </form>
 </div>
 
 <script>
 (function(){
-  const form = document.querySelector('[data-custom-plan-form]');
-  if(!form) return;
-  form.addEventListener('submit', function(e){
-    e.preventDefault();
-    let valid = true;
-    const msg = form.querySelector('[data-form-msg]');
-    form.querySelectorAll('[data-error]').forEach(el => el.classList.add('hidden'));
-    form.querySelectorAll('.border-error').forEach(el => el.classList.remove('border-error'));
-    const servicesGroup = form.querySelector('[data-services-group]');
-    if(servicesGroup) servicesGroup.classList.remove('border-error', '!border-error');
-
-    function markError(name, message){
-      valid = false;
-      const input = form.querySelector(`[name="${name}"]`);
-      const err = form.querySelector(`[data-error="${name}"]`);
-      if(input) input.classList.add('border-error', '!border-error');
-      if(err){
-        if(message) err.textContent = message;
-        err.classList.remove('hidden');
-      }
-    }
-
-    const customName = form.querySelector('[name="custom_plan_name"]');
-    const duration = form.querySelector('[name="duration"]');
-    const price = form.querySelector('[name="price"]');
-    const status = form.querySelector('[name="status"]');
-    const services = form.querySelectorAll('[name="services"]:checked');
-
-    if(!customName.value.trim()) markError('custom_plan_name');
-    if(!duration.value) markError('duration');
-    if(!price.value.trim() || isNaN(parseFloat(price.value)) || parseFloat(price.value) <= 0) markError('price');
-    if(services.length === 0){
-      valid = false;
-      const err = form.querySelector('[data-error="services"]');
-      if(err) err.classList.remove('hidden');
-      if(servicesGroup) servicesGroup.classList.add('border-error', '!border-error');
-    }
-    if(!status.value) markError('status');
-
-    if(!valid){
-      msg.textContent = 'Please fix validation errors before saving.';
-      msg.classList.remove('hidden');
-      if(typeof toast === 'function') toast('Please fix validation errors', 'error');
-      else if(window.toast) window.toast('Please fix validation errors','error');
-      return;
-    }
-    msg.classList.add('hidden');
-
-    const loading = form.querySelector('[data-loading]');
-    const success = form.querySelector('[data-success]');
-    const errState = form.querySelector('[data-error-state]');
-    loading.classList.remove('hidden');
-    success.classList.add('hidden');
-    errState.classList.add('hidden');
-    const submitBtn = form.querySelector('button[type="submit"]');
-    if(submitBtn) submitBtn.disabled = true;
-
-    setTimeout(function(){
-      loading.classList.add('hidden');
-      if(submitBtn) submitBtn.disabled = false;
-      if(Math.random() > 0.2){
-        success.classList.remove('hidden');
-        if(typeof toast === 'function') toast('Custom plan saved', 'success');
-        else if(window.toast) window.toast('Custom plan saved','success');
-      } else {
-        errState.classList.remove('hidden');
-        errState.textContent = 'Failed to save. Simulated server error — try again.';
-        if(typeof toast === 'function') toast('Save failed — try again', 'error');
-        else if(window.toast) window.toast('Save failed — try again','error');
-      }
-    }, 900);
-  });
-
-  form.querySelectorAll('input, select, textarea').forEach(inp => {
-    const handler = () => {
-      inp.classList.remove('border-error', '!border-error');
-      const err = form.querySelector(`[data-error="${inp.name}"]`);
-      if(err) err.classList.add('hidden');
-      if(inp.name === 'services'){
-        const grp = form.querySelector('[data-services-group]');
-        if(grp) grp.classList.remove('border-error', '!border-error');
-        const serr = form.querySelector('[data-error="services"]');
-        if(serr && form.querySelectorAll('[name="services"]:checked').length > 0) serr.classList.add('hidden');
-      }
-    };
-    inp.addEventListener('input', handler);
-    inp.addEventListener('change', handler);
-  });
+  // Purely a visibility toggle for the Custom-Duration-Days input — not a
+  // validation/save simulation. Shown whenever Duration = "Custom", since
+  // that's the only case where the server needs a manually entered day count.
+  const select = document.getElementById('custom-duration-select');
+  const wrap = document.getElementById('custom-duration-days-wrap');
+  if(!select || !wrap) return;
+  function sync(){ wrap.classList.toggle('hidden', select.value !== 'custom'); }
+  select.addEventListener('change', sync);
+  sync();
 })();
 </script>
 {% endblock %}
