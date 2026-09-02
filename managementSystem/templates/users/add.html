@@ -1,5 +1,5 @@
 {% extends "layouts/dashboard.html" %}
-{% block title %}Add User - Iron Core{% endblock %}
+{% block title %}{% if is_edit %}Edit User{% else %}Add User{% endif %} - Iron Core{% endblock %}
 
 {% block dashboard_content %}
 <div class="max-w-3xl mx-auto">
@@ -16,102 +16,95 @@
       </span>
       <span class="font-label-caps text-[11px] uppercase tracking-[0.12em] text-primary-container">Users & Roles</span>
     </div>
-    <h1 class="font-headline-lg text-headline-lg text-on-surface uppercase tracking-tight">ADD / EDIT USER</h1>
-    <p class="font-body-sm text-body-sm text-on-surface-variant mt-2 max-w-2xl">Create or update a system user. This form is frontend-only — validation and states are simulated with JS toast.</p>
+    <h1 class="font-headline-lg text-headline-lg text-on-surface uppercase tracking-tight">{% if is_edit %}EDIT USER{% else %}ADD USER{% endif %}</h1>
+    <p class="font-body-sm text-body-sm text-on-surface-variant mt-2 max-w-2xl">{% if is_edit %}Update this system user's details.{% else %}Create a new system user.{% endif %} Fields marked with * are required.</p>
   </div>
 
   <!-- Form Card -->
-  <form data-add-user-form class="bg-surface-container border border-outline-variant rounded-lg p-6 md:p-8 space-y-6" novalidate>
+  <form data-add-user-form method="post" action="{% if is_edit %}{% url 'user-edit' edit_profile.id %}{% else %}{% url 'user-add' %}{% endif %}" class="bg-surface-container border border-outline-variant rounded-lg p-6 md:p-8 space-y-6" novalidate>
     {% csrf_token %}
-    <div data-form-msg class="hidden p-3 rounded border border-error bg-error-container text-on-error-container font-body-sm text-sm"></div>
+    {% if form.errors %}
+    <div class="p-3 rounded border border-error bg-error-container text-on-error-container font-body-sm text-sm">Please fix the highlighted fields before saving.</div>
+    {% endif %}
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
       <!-- Full Name -->
       <div>
         <label class="block font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">Full Name *</label>
-        <input name="full_name" required placeholder="e.g. Marcus Ruhl" class="w-full bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 font-body-sm text-body-sm text-on-surface placeholder:text-on-surface-variant/60 focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all" />
-        <p class="hidden text-error text-xs mt-1.5 font-body-sm" data-error="full_name">Full name is required.</p>
+        <input name="full_name" required placeholder="e.g. Marcus Ruhl" value="{{ form.full_name.value|default:'' }}" class="w-full bg-surface-container-lowest border {% if form.full_name.errors %}border-error{% else %}border-outline-variant{% endif %} rounded px-4 py-3 font-body-sm text-body-sm text-on-surface placeholder:text-on-surface-variant/60 focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all" />
+        <p class="{% if not form.full_name.errors %}hidden{% endif %} text-error text-xs mt-1.5 font-body-sm">{{ form.full_name.errors.0 }}</p>
       </div>
 
       <!-- Email -->
       <div>
         <label class="block font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">Email *</label>
-        <input name="email" type="email" required placeholder="user@ironcore.gym" class="w-full bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 font-body-sm text-body-sm text-on-surface placeholder:text-on-surface-variant/60 focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all" />
-        <p class="hidden text-error text-xs mt-1.5 font-body-sm" data-error="email">Valid email is required.</p>
+        <input name="email" type="email" required placeholder="user@ironcore.gym" value="{{ form.email.value|default:'' }}" class="w-full bg-surface-container-lowest border {% if form.email.errors %}border-error{% else %}border-outline-variant{% endif %} rounded px-4 py-3 font-body-sm text-body-sm text-on-surface placeholder:text-on-surface-variant/60 focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all" />
+        <p class="{% if not form.email.errors %}hidden{% endif %} text-error text-xs mt-1.5 font-body-sm">{{ form.email.errors.0 }}</p>
       </div>
 
       <!-- Username -->
       <div>
         <label class="block font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">Username *</label>
-        <input name="username" required placeholder="e.g. mruhl" class="w-full bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 font-body-sm text-body-sm text-on-surface placeholder:text-on-surface-variant/60 focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all" />
-        <p class="hidden text-error text-xs mt-1.5 font-body-sm" data-error="username">Username is required (min 3 chars, no spaces).</p>
+        <input name="username" required placeholder="e.g. mruhl" value="{{ form.username.value|default:'' }}" class="w-full bg-surface-container-lowest border {% if form.username.errors %}border-error{% else %}border-outline-variant{% endif %} rounded px-4 py-3 font-body-sm text-body-sm text-on-surface placeholder:text-on-surface-variant/60 focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all" />
+        <p class="{% if not form.username.errors %}hidden{% endif %} text-error text-xs mt-1.5 font-body-sm">{{ form.username.errors.0|default:"Username must be at least 3 characters, no spaces." }}</p>
       </div>
 
       <!-- Password -->
       <div>
-        <label class="block font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">Password *</label>
+        <label class="block font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">Password{% if not is_edit %} *{% endif %}</label>
         <div class="relative">
-          <input name="password" id="password-input" type="password" required placeholder="••••••••" class="w-full bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 pr-10 font-body-sm text-body-sm text-on-surface placeholder:text-on-surface-variant/60 focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all" />
+          <input name="password" id="password-input" type="password" {% if not is_edit %}required{% endif %} placeholder="••••••••" class="w-full bg-surface-container-lowest border {% if form.password.errors %}border-error{% else %}border-outline-variant{% endif %} rounded px-4 py-3 pr-10 font-body-sm text-body-sm text-on-surface placeholder:text-on-surface-variant/60 focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all" />
           <button type="button" data-toggle-password class="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded text-on-surface-variant hover:text-primary transition-colors">
             <span class="material-symbols-outlined text-[18px]">visibility</span>
           </button>
         </div>
-        <p class="hidden text-error text-xs mt-1.5 font-body-sm" data-error="password">Password is required (min 6 chars).</p>
-        <p class="font-body-sm text-[11px] text-on-surface-variant mt-1.5">For edit: leave blank to keep existing (demo allows any value).</p>
+        <p class="{% if not form.password.errors %}hidden{% endif %} text-error text-xs mt-1.5 font-body-sm">{{ form.password.errors.0 }}</p>
+        <p class="font-body-sm text-[11px] text-on-surface-variant mt-1.5">{% if is_edit %}Leave blank to keep the current password.{% else %}Minimum 6 characters.{% endif %}</p>
       </div>
 
       <!-- Role -->
       <div>
         <label class="block font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">Role *</label>
         <div class="relative">
-          <select name="role" required class="w-full appearance-none bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 pr-10 font-body-sm text-body-sm text-on-surface focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all">
-            <option value="" disabled selected>Select role</option>
-            <option value="Admin">Admin</option>
-            <option value="Accountant">Accountant</option>
+          <select name="role" required class="w-full appearance-none bg-surface-container-lowest border {% if form.role.errors %}border-error{% else %}border-outline-variant{% endif %} rounded px-4 py-3 pr-10 font-body-sm text-body-sm text-on-surface focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all">
+            <option value="" disabled {% if not form.role.value %}selected{% endif %}>Select role</option>
+            <option value="admin" {% if form.role.value == "admin" %}selected{% endif %}>Admin</option>
+            <option value="accountant" {% if form.role.value == "accountant" %}selected{% endif %}>Accountant</option>
+            <option value="staff" {% if form.role.value == "staff" %}selected{% endif %}>Staff</option>
           </select>
           <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none text-[20px]">expand_more</span>
         </div>
-        <p class="hidden text-error text-xs mt-1.5 font-body-sm" data-error="role">Role is required.</p>
+        <p class="{% if not form.role.errors %}hidden{% endif %} text-error text-xs mt-1.5 font-body-sm">{{ form.role.errors.0 }}</p>
       </div>
 
       <!-- Status -->
       <div>
         <label class="block font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">Status *</label>
         <div class="relative">
-          <select name="status" required class="w-full appearance-none bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 pr-10 font-body-sm text-body-sm text-on-surface focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all">
-            <option value="Active" selected>Active</option>
-            <option value="Inactive">Inactive</option>
+          <select name="status" required class="w-full appearance-none bg-surface-container-lowest border {% if form.status.errors %}border-error{% else %}border-outline-variant{% endif %} rounded px-4 py-3 pr-10 font-body-sm text-body-sm text-on-surface focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all">
+            <option value="active" {% if form.status.value != "inactive" %}selected{% endif %}>Active</option>
+            <option value="inactive" {% if form.status.value == "inactive" %}selected{% endif %}>Inactive</option>
           </select>
           <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none text-[20px]">expand_more</span>
         </div>
-        <p class="hidden text-error text-xs mt-1.5 font-body-sm" data-error="status">Status is required.</p>
+        <p class="{% if not form.status.errors %}hidden{% endif %} text-error text-xs mt-1.5 font-body-sm">{{ form.status.errors.0 }}</p>
       </div>
 
       <!-- Hint -->
       <div class="md:col-span-2 flex items-start gap-2 p-3 rounded border border-outline-variant bg-surface-container-high">
         <span class="material-symbols-outlined text-primary-container text-[18px] mt-0.5 shrink-0">shield</span>
-        <p class="font-body-sm text-xs leading-relaxed text-on-surface-variant"><span class="text-on-surface font-semibold">Admin</span> has full access. <span class="text-on-surface font-semibold">Accountant</span> is limited to billing, invoices, and reports. Inactive users cannot log in (frontend simulation).</p>
+        <p class="font-body-sm text-xs leading-relaxed text-on-surface-variant"><span class="text-on-surface font-semibold">Admin</span> has full access. <span class="text-on-surface font-semibold">Accountant</span> is limited to billing, invoices, and reports. Inactive users cannot log in.</p>
       </div>
     </div>
 
     <!-- Actions -->
     <div class="flex flex-wrap items-center gap-3 pt-6 border-t border-outline-variant">
       <button type="submit" class="inline-flex items-center justify-center gap-2 px-8 py-3 bg-primary-container text-on-primary-container border border-primary-container font-label-caps text-[11px] uppercase tracking-widest font-bold rounded hover:bg-primary-container/90 transition-colors">
-        <span class="material-symbols-outlined text-[16px]">save</span> Save User
+        <span class="material-symbols-outlined text-[16px]">save</span> {% if is_edit %}Update User{% else %}Save User{% endif %}
       </button>
       <a href="{% url 'users' %}" class="inline-flex items-center justify-center px-8 py-3 border border-outline-variant bg-transparent text-on-surface font-label-caps text-[11px] uppercase tracking-widest rounded hover:bg-surface-container-high transition-colors">
         Cancel
       </a>
-      <span data-loading class="hidden ml-2 inline-flex items-center gap-2 font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant">
-        <span class="w-4 h-4 border-2 border-primary-container border-t-transparent rounded-full animate-spin"></span> Saving...
-      </span>
-    </div>
-
-    <div data-success class="hidden p-4 bg-tertiary-container border border-tertiary text-on-tertiary-container rounded font-body-sm text-sm flex items-center gap-2">
-      <span class="material-symbols-outlined text-[18px]">check_circle</span> User saved successfully.
-    </div>
-    <div data-error-state class="hidden p-4 bg-error-container border border-error text-on-error-container rounded font-body-sm text-sm flex items-center gap-2">
-      <span class="material-symbols-outlined text-[18px]">error</span> Failed to save. Please check highlighted fields.
     </div>
   </form>
 </div>
@@ -120,15 +113,6 @@
 (function(){
   const form = document.querySelector('[data-add-user-form]');
   if(!form) return;
-  function toastLocal(msg, type){
-    if(typeof toast === 'function') toast(msg, type);
-    else if(window.toast) window.toast(msg, type);
-    else {
-      let c = document.getElementById('toast-container');
-      if(!c){ c=document.createElement('div'); c.id='toast-container'; c.className='fixed bottom-4 right-4 z-50 flex flex-col gap-2'; document.body.appendChild(c); }
-      const el=document.createElement('div'); el.className='px-4 py-3 rounded border text-sm font-label-caps shadow-lg '+(type==='error'?'bg-error text-on-error border-error':type==='success'?'bg-tertiary-container text-on-tertiary-container border-tertiary':'bg-surface-container-high border-outline-variant text-on-surface'); el.textContent=msg; c.appendChild(el); setTimeout(()=>{el.style.opacity='0'; setTimeout(()=>el.remove(),300);},2500);
-    }
-  }
   // password toggle
   const toggleBtn = form.querySelector('[data-toggle-password]');
   const pwdInput = form.querySelector('#password-input');
@@ -138,83 +122,6 @@
       pwdInput.type = isPwd ? 'text' : 'password';
       toggleBtn.querySelector('span').textContent = isPwd ? 'visibility_off' : 'visibility';
     });
-  }
-  form.addEventListener('submit', function(e){
-    e.preventDefault();
-    let valid = true;
-    const msg = form.querySelector('[data-form-msg]');
-    form.querySelectorAll('[data-error]').forEach(el => el.classList.add('hidden'));
-    form.querySelectorAll('.border-error').forEach(el => el.classList.remove('border-error','!border-error'));
-    function markError(name, message){
-      valid = false;
-      const input = form.querySelector(`[name="${name}"]`);
-      const err = form.querySelector(`[data-error="${name}"]`);
-      if(input) input.classList.add('border-error','!border-error');
-      if(err){ if(message) err.textContent = message; err.classList.remove('hidden'); }
-    }
-    const fullName = form.querySelector('[name="full_name"]');
-    const email = form.querySelector('[name="email"]');
-    const username = form.querySelector('[name="username"]');
-    const password = form.querySelector('[name="password"]');
-    const role = form.querySelector('[name="role"]');
-    const status = form.querySelector('[name="status"]');
-
-    if(!fullName.value.trim()) markError('full_name');
-    if(!email.value.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value.trim())) markError('email');
-    if(!username.value.trim() || username.value.trim().length < 3 || /\s/.test(username.value.trim())) markError('username');
-    // password optional for edit simulation: if empty, skip? But spec says required — enforce for demo add. Allow edit by keeping required but show hint.
-    // We'll require if visible add: enforce min 6
-    if(!password.value.trim() || password.value.trim().length < 6) markError('password');
-    if(!role.value) markError('role');
-    if(!status.value) markError('status');
-
-    if(!valid){
-      msg.textContent = 'Please fix validation errors before saving.';
-      msg.classList.remove('hidden');
-      toastLocal('Please fix validation errors','error');
-      return;
-    }
-    msg.classList.add('hidden');
-    const loading = form.querySelector('[data-loading]');
-    const success = form.querySelector('[data-success]');
-    const errState = form.querySelector('[data-error-state]');
-    loading.classList.remove('hidden');
-    success.classList.add('hidden');
-    errState.classList.add('hidden');
-    const submitBtn = form.querySelector('button[type="submit"]');
-    if(submitBtn) submitBtn.disabled = true;
-    setTimeout(function(){
-      loading.classList.add('hidden');
-      if(submitBtn) submitBtn.disabled = false;
-      if(Math.random() > 0.2){
-        success.classList.remove('hidden');
-        toastLocal('User saved','success');
-      } else {
-        errState.classList.remove('hidden');
-        errState.textContent = 'Failed to save. Simulated server error — try again.';
-        toastLocal('Save failed — try again','error');
-      }
-    }, 900);
-  });
-  form.querySelectorAll('input, select').forEach(inp=>{
-    ['input','change'].forEach(evt=>{
-      inp.addEventListener(evt, ()=>{
-        inp.classList.remove('border-error','!border-error');
-        const err = form.querySelector(`[data-error="${inp.name}"]`);
-        if(err) err.classList.add('hidden');
-      });
-    });
-  });
-  // Pre-fill demo for edit mode via query ?edit=1
-  const params = new URLSearchParams(window.location.search);
-  if(params.get('edit') === '1' || params.get('id')){
-    const demo = {full_name:'Sarah Jenkins', email:'sarah.j@ironcore.gym', username:'sjenkins', password:'password123', role:'Accountant', status:'Active'};
-    Object.keys(demo).forEach(k=>{
-      const el = form.querySelector(`[name="${k}"]`);
-      if(el) el.value = demo[k];
-    });
-    const title = document.querySelector('h1');
-    if(title) title.textContent = 'EDIT USER';
   }
 })();
 </script>

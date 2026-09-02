@@ -1,0 +1,46 @@
+from functools import wraps
+
+from django.shortcuts import redirect, render
+
+
+def role_required(*allowed_roles):
+    """Restrict a view to logged-in users whose role is in allowed_roles.
+
+    Supports both:
+    - Django auth User + UserProfile (users-backend original)
+    - Dev's custom session User (get_current_user) with role string
+    """
+    def decorator(view_func):
+        @wraps(view_func)
+        def wrapped_view(request, *args, **kwargs):
+            # First try dev's custom session auth (priority, as dev is main auth)
+            try:
+                from .views import get_current_user
+                custom_user = get_current_user(request)
+            except Exception:
+                custom_user = None
+            if custom_user:
+                role = (custom_user.role or "").lower()
+                allowed_lower = [r.lower() for r in allowed_roles]
+                try:
+                    profile = getattr(custom_user, 'profile', None)
+                    if profile and getattr(profile, 'role', None):
+                        role = profile.role.lower()
+                except Exception:
+                    pass
+                if role not in allowed_lower:
+                    return render(request, "errors/403.html", status=403)
+                return view_func(request, *args, **kwargs)
+
+            if not getattr(request.user, 'is_authenticated', False):
+                return redirect('login')
+            profile = getattr(request.user, 'profile', None)
+            role = getattr(profile, 'role', None)
+            if role not in allowed_roles:
+                if role and role.lower() not in [r.lower() for r in allowed_roles]:
+                    return render(request, "errors/403.html", status=403)
+                elif not role:
+                    return render(request, "errors/403.html", status=403)
+            return view_func(request, *args, **kwargs)
+        return wrapped_view
+    return decorator

@@ -43,6 +43,9 @@ urlpatterns = [
     path("attendance/checkin/", views.attendance_checkin_view, name="attendance-checkin"),
     path("expenses/add/", views.expense_add_view, name="expense-add"),
     path("users/add/", views.user_add_view, name="user-add"),
+    path("users/edit/<int:pk>/", views.user_add_view, name="user-edit"),
+    path("users/toggle/<int:pk>/", views.user_toggle_status_view, name="user-toggle-status"),
+    path("users/role/<int:pk>/", views.user_change_role_view, name="user-change-role"),
     path("reports/generate/", views.reports_generate_view, name="reports-generate"),
     path("receipts/custom/", views.receipt_custom_view, name="receipt-custom"),
 ]

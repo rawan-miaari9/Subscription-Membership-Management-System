@@ -16,8 +16,10 @@ from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 from django.contrib.auth.hashers import make_password
 
-from .forms import MemberForm
-from .models import User, Member, MembershipPlan, Subscription, BusinessInformation, FinancialSetting, PaymentMethod, NotificationSetting, Payment, Attendance
+from .forms import MemberForm, UserAddForm
+from .permissions import role_required
+
+from .models import User, Member, MembershipPlan, Subscription, BusinessInformation, FinancialSetting, PaymentMethod, NotificationSetting, Payment, Attendance, UserProfile
 
 
 def per_user_page_cache(timeout=None):
@@ -266,7 +268,37 @@ def reports_view(request):
 
 @login_required_custom
 def users_view(request):
-    return render(request, "users/list.html", {"current_user": get_current_user(request)})
+    # Enhanced from users-backend: show counts, but using dev's User model
+    # Try to show UserProfile counts if table exists, fallback to dev User
+    try:
+        user_profiles = UserProfile.objects.select_related('user').order_by('user__full_name') if hasattr(UserProfile.objects, 'select_related') else []
+        # Count via dev User if UserProfile empty
+        if not user_profiles:
+            raise Exception("empty")
+        context = {
+            'current_user': get_current_user(request),
+            'user_profiles': user_profiles,
+            'total_active': User.objects.filter(status='Active').count(),
+            'admin_count': User.objects.filter(role='Admin').count(),
+            'accountant_count': User.objects.filter(role='Accountant').count(),
+            'staff_count': UserProfile.objects.filter(role=UserProfile.ROLE_STAFF).count(),
+        }
+    except Exception:
+        # Fallback to simple dev User counts
+        try:
+            all_users = User.objects.all().order_by('full_name')
+            context = {
+                'current_user': get_current_user(request),
+                'users': all_users,
+                'user_profiles': UserProfile.objects.select_related('user').all() if 'UserProfile' in globals() else [],
+                'total_active': User.objects.filter(status='Active').count(),
+                'admin_count': User.objects.filter(role='Admin').count(),
+                'accountant_count': User.objects.filter(role='Accountant').count(),
+                'staff_count': 0,
+            }
+        except Exception:
+            context = {'current_user': get_current_user(request)}
+    return render(request, "users/list.html", context)
 
 def _get_admin_user():
     """Helper compatible with current User model (CharField avatar, no get_admin)."""
@@ -1025,8 +1057,142 @@ def subscription_renew_view(request, code):
     return redirect(next_url)
 
 @login_required_custom
-def user_add_view(request):
-    return render(request, "users/add.html", {"current_user": get_current_user(request)})
+def user_add_view(request, pk=None):
+    # Adapted from users-backend to use dev's User model
+    profile = None
+    instance_user = None
+    if pk is not None:
+        try:
+            profile = UserProfile.objects.select_related('user').get(pk=pk)
+            instance_user = profile.user
+        except Exception:
+            # Fallback: treat pk as User pk
+            try:
+                instance_user = User.objects.get(pk=pk)
+                profile = getattr(instance_user, 'profile', None)
+            except Exception:
+                instance_user = None
+
+    if request.method == "POST":
+        form = UserAddForm(request.POST, instance_user=instance_user)
+        if form.is_valid():
+            data = form.cleaned_data
+            # Split full_name for dev's full_name field (dev stores full_name, not first/last)
+            full_name = data['full_name'].strip()
+            status_val = 'Active' if data['status'] == 'active' else 'Inactive'
+            role_map = {'admin': 'Admin', 'accountant': 'Accountant', 'staff': 'Staff'}
+            role_val = role_map.get(data['role'], data['role'].title() if isinstance(data['role'], str) else 'Admin')
+
+            if instance_user is not None:
+                instance_user.username = data['username']
+                instance_user.email = data['email']
+                instance_user.full_name = full_name
+                instance_user.status = status_val
+                instance_user.role = role_val if role_val in ['Admin','Accountant','Staff'] else 'Admin'
+                if data['password']:
+                    instance_user.set_password(data['password'])
+                instance_user.save()
+                if profile:
+                    profile.role = data['role']
+                    try:
+                        profile.save(update_fields=['role'])
+                    except Exception:
+                        pass
+                elif data['role']:
+                    try:
+                        UserProfile.objects.create(user=instance_user, role=data['role'])
+                    except Exception:
+                        pass
+                messages.success(request, f'User "{instance_user.username}" was updated successfully.')
+            else:
+                new_user = User(
+                    username=data['username'],
+                    email=data['email'],
+                    full_name=full_name,
+                    role=role_val if role_val in ['Admin','Accountant'] else 'Admin',
+                    status=status_val,
+                )
+                new_user.set_password(data['password'])
+                new_user.save()
+                try:
+                    UserProfile.objects.create(user=new_user, role=data['role'])
+                except Exception:
+                    pass
+                messages.success(request, f'User "{data["username"]}" was created successfully.')
+            return redirect('users')
+    else:
+        initial = None
+        if instance_user is not None:
+            initial = {
+                'full_name': instance_user.full_name,
+                'email': instance_user.email,
+                'username': instance_user.username,
+                'role': getattr(profile, 'role', instance_user.role.lower()) if profile and getattr(profile, 'role', None) else instance_user.role.lower(),
+                'status': 'active' if instance_user.status == 'Active' else 'inactive',
+            }
+        form = UserAddForm(initial=initial, instance_user=instance_user)
+
+    return render(request, "users/add.html", {
+        "form": form,
+        "is_edit": instance_user is not None,
+        "edit_profile": profile,
+        "current_user": get_current_user(request),
+    })
+
+@login_required_custom
+def user_toggle_status_view(request, pk):
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+    # Try UserProfile first, fallback to User
+    try:
+        profile = UserProfile.objects.select_related('user').get(pk=pk)
+        user = profile.user
+    except Exception:
+        user = get_object_or_404(User, pk=pk)
+        profile = None
+    # Toggle status
+    user.status = 'Inactive' if user.status == 'Active' else 'Active'
+    user.save(update_fields=['status'])
+    if profile and hasattr(user, 'is_active'):
+        pass
+    messages.success(request, "User enabled." if user.status == 'Active' else "User disabled.")
+    return redirect('users')
+
+@login_required_custom
+def user_change_role_view(request, pk):
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+    try:
+        profile = UserProfile.objects.select_related('user').get(pk=pk)
+        user = profile.user
+    except Exception:
+        user = get_object_or_404(User, pk=pk)
+        profile = None
+    new_role = request.POST.get('role')
+    valid_roles = dict(UserProfile.ROLE_CHOICES) if 'UserProfile' in globals() else {'admin':'Admin','accountant':'Accountant','staff':'Staff'}
+    # also allow dev roles
+    role_lower_map = {'admin':'Admin','accountant':'Accountant','staff':'Staff'}
+    if new_role not in valid_roles and new_role.lower() not in role_lower_map:
+        messages.error(request, "Invalid role selected.")
+        return redirect('users')
+    # Update both User and Profile
+    mapped_role = role_lower_map.get(new_role.lower(), new_role)
+    if mapped_role in ['Admin','Accountant']:
+        user.role = mapped_role
+        user.save(update_fields=['role'])
+    if profile:
+        profile.role = new_role.lower()
+        try:
+            profile.save(update_fields=['role'])
+        except Exception:
+            pass
+    else:
+        try:
+            UserProfile.objects.create(user=user, role=new_role.lower())
+        except Exception:
+            pass
+    messages.success(request, f"Role updated.")
+    return redirect('users')
 
 @login_required_custom
 def reports_generate_view(request):
