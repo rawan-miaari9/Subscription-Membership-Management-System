@@ -520,7 +520,6 @@ def member_detail_view_legacy(request):
         sub = Subscription.objects.select_related("member", "plan").order_by("-created_at").first()
     return render(request, "members/detail.html", {"current_user": get_current_user(request), "subscription": sub, "member": None})
 
-
 @login_required_custom
 def member_detail_view(request, pk):
     member = get_object_or_404(Member, pk=pk)
@@ -706,48 +705,6 @@ def member_delete_view(request, pk):
 
     messages.success(request, f'Member "{member.full_name}" was deleted.')
     return redirect('members')
-
-def services_view(request):
-    return render(request, "services/list.html")
-
-def plan_create_view(request):
-    return render(request, "plans/create.html")
-
-def plan_custom_view(request):
-    return render(request, "plans/custom.html")
-
-def subscription_detail_view(request):
-    return render(request, "subscriptions/detail.html")
-
-def subscription_create_view(request):
-    return render(request, "subscriptions/create.html")
-
-def payment_detail_view(request):
-    return render(request, "payments/detail.html")
-
-def refund_detail_view(request):
-    return render(request, "refunds/detail.html")
-
-def refund_history_view(request):
-    return render(request, "refunds/history.html")
-
-def statement_view(request):
-    return render(request, "statement/list.html")
-
-def attendance_checkin_view(request):
-    return render(request, "attendance/checkin.html")
-
-def expense_add_view(request):
-    return render(request, "expenses/add.html")
-
-def user_add_view(request):
-    return render(request, "users/add.html")
-
-def reports_generate_view(request):
-    return render(request, "reports/generate.html")
-
-def receipt_custom_view(request):
-    return render(request, "receipts/custom.html")
 
 @login_required_custom
 def services_view(request):
