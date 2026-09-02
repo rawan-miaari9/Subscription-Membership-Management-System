@@ -6,19 +6,39 @@
   <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-outline-variant pb-4">
     <div>
       <h2 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface uppercase tracking-tight">Customer Statement</h2>
-      <p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Marcus Vance • MBR-8421 • Statement as of Oct 28, 2023</p>
+      <p class="font-body-sm text-body-sm text-on-surface-variant mt-1">
+        {% if selected_member %}{{ selected_member.full_name }} • {{ selected_member.member_code }}{% else %}No member selected{% endif %}
+        • Statement as of {{ today|date:"M j, Y" }}
+      </p>
     </div>
-    <div class="flex flex-wrap gap-2">
-      <button data-action="print" class="inline-flex items-center gap-1.5 px-4 py-2 border border-outline-variant text-on-surface-variant font-label-caps text-[11px] uppercase hover:bg-surface-container-highest hover:text-on-surface transition-colors">
-        <span class="material-symbols-outlined text-[16px]">print</span> Print
-      </button>
-      <button data-action="pdf" class="inline-flex items-center gap-1.5 px-4 py-2 bg-primary-container text-on-primary-container font-label-caps text-[11px] font-bold uppercase hover:bg-primary transition-colors">
-        <span class="material-symbols-outlined text-[16px]">picture_as_pdf</span> PDF
-      </button>
-      <button data-action="csv" class="inline-flex items-center gap-1.5 px-4 py-2 border border-outline-variant text-on-surface-variant font-label-caps text-[11px] uppercase hover:bg-surface-container-highest hover:text-on-surface transition-colors">
-        <span class="material-symbols-outlined text-[16px]">download</span> CSV
-      </button>
-    </div>
+    <form method="get" action="{% url 'statement' %}" class="flex items-center gap-2">
+      <div class="relative">
+        <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none text-[18px]">person</span>
+        <select name="member" data-statement-member class="appearance-none bg-surface-container border border-outline-variant rounded h-10 pl-10 pr-10 text-on-surface font-label-caps text-label-caps uppercase focus:ring-1 focus:ring-primary focus:border-primary outline-none cursor-pointer min-w-[220px]">
+          <option value="">Select member…</option>
+          {% for member in members %}
+          <option value="{{ member.pk }}" {% if selected_member and selected_member.pk == member.pk %}selected{% endif %}>{{ member.full_name }} • {{ member.member_code }}</option>
+          {% endfor %}
+        </select>
+        <span class="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none">arrow_drop_down</span>
+      </div>
+    </form>
+  </div>
+
+  {% if not selected_member %}
+  <div class="bg-surface-container border border-outline-variant rounded-lg p-10 text-center">
+    <span class="material-symbols-outlined text-[48px] text-on-surface-variant mb-3 block">receipt_long</span>
+    <p class="font-body-lg text-body-lg text-on-surface-variant">Select a member above to view their statement.</p>
+  </div>
+  {% else %}
+
+  <div class="flex flex-wrap gap-2">
+    <button data-action="print" class="inline-flex items-center gap-1.5 px-4 py-2 border border-outline-variant text-on-surface-variant font-label-caps text-[11px] uppercase hover:bg-surface-container-highest hover:text-on-surface transition-colors">
+      <span class="material-symbols-outlined text-[16px]">print</span> Print
+    </button>
+    <button data-action="csv" class="inline-flex items-center gap-1.5 px-4 py-2 border border-outline-variant text-on-surface-variant font-label-caps text-[11px] uppercase hover:bg-surface-container-highest hover:text-on-surface transition-colors">
+      <span class="material-symbols-outlined text-[16px]">download</span> CSV
+    </button>
   </div>
 
   <!-- Summary Cards -->
@@ -26,32 +46,32 @@
     <div class="bg-surface-container border border-outline-variant rounded p-4 flex flex-col gap-1">
       <span class="font-label-caps text-[11px] text-on-surface-variant uppercase tracking-wider">Opening Balance</span>
       <span class="font-data-lg text-data-lg text-on-surface">$0.00</span>
-      <span class="font-body-sm text-[11px] text-on-surface-variant">As of Sep 01</span>
+      <span class="font-body-sm text-[11px] text-on-surface-variant">As of first transaction</span>
     </div>
     <div class="bg-surface-container border border-outline-variant rounded p-4 flex flex-col gap-1">
       <span class="font-label-caps text-[11px] text-on-surface-variant uppercase tracking-wider">Total Charges</span>
-      <span class="font-data-lg text-data-lg text-on-surface">$650.00</span>
-      <span class="font-body-sm text-[11px] text-on-surface-variant">+2 invoices</span>
+      <span class="font-data-lg text-data-lg text-on-surface">${{ totals.charge|floatformat:2 }}</span>
+      <span class="font-body-sm text-[11px] text-on-surface-variant">Invoices</span>
     </div>
     <div class="bg-surface-container border border-outline-variant rounded p-4 flex flex-col gap-1">
       <span class="font-label-caps text-[11px] text-on-surface-variant uppercase tracking-wider">Total Payments</span>
-      <span class="font-data-lg text-data-lg text-tertiary">-$400.00</span>
-      <span class="font-body-sm text-[11px] text-on-surface-variant">2 payments</span>
-    </div>
-    <div class="bg-surface-container border border-outline-variant rounded p-4 flex flex-col gap-1">
-      <span class="font-label-caps text-[11px] text-on-surface-variant uppercase tracking-wider">Total Refunds</span>
-      <span class="font-data-lg text-data-lg text-primary">-$45.00</span>
-      <span class="font-body-sm text-[11px] text-on-surface-variant">1 refund</span>
+      <span class="font-data-lg text-data-lg text-tertiary">-${{ totals.payment|floatformat:2 }}</span>
+      <span class="font-body-sm text-[11px] text-on-surface-variant">Received</span>
     </div>
     <div class="bg-surface-container border border-outline-variant rounded p-4 flex flex-col gap-1">
       <span class="font-label-caps text-[11px] text-on-surface-variant uppercase tracking-wider">Total Discounts</span>
-      <span class="font-data-lg text-data-lg text-tertiary">-$50.00</span>
-      <span class="font-body-sm text-[11px] text-on-surface-variant">Loyalty 10%</span>
+      <span class="font-data-lg text-data-lg text-tertiary">-${{ totals.discount|floatformat:2 }}</span>
+      <span class="font-body-sm text-[11px] text-on-surface-variant">Invoice discounts</span>
+    </div>
+    <div class="bg-surface-container border border-outline-variant rounded p-4 flex flex-col gap-1">
+      <span class="font-label-caps text-[11px] text-on-surface-variant uppercase tracking-wider">Total Refunds</span>
+      <span class="font-data-lg text-data-lg text-primary">-${{ totals.refund|floatformat:2 }}</span>
+      <span class="font-body-sm text-[11px] text-on-surface-variant">Approved refunds</span>
     </div>
     <div class="bg-primary-container border border-primary rounded p-4 flex flex-col gap-1">
       <span class="font-label-caps text-[11px] text-on-primary-container/80 uppercase tracking-wider">Current Balance</span>
-      <span class="font-data-lg text-data-lg text-on-primary-container">$155.00</span>
-      <span class="font-body-sm text-[11px] text-on-primary-container/80">Due</span>
+      <span class="font-data-lg text-data-lg text-on-primary-container">${{ balance|floatformat:2 }}</span>
+      <span class="font-body-sm text-[11px] text-on-primary-container/80">{% if balance > 0 %}Due{% elif balance < 0 %}In credit{% else %}Settled{% endif %}</span>
     </div>
   </div>
 
@@ -61,10 +81,10 @@
       <h3 class="font-label-caps text-[11px] text-on-surface uppercase tracking-wider flex items-center gap-2">
         <span class="material-symbols-outlined text-primary text-[18px]">receipt_long</span> Transaction Ledger
       </h3>
-      <span class="font-data-md text-[11px] text-on-surface-variant">MBR-8421 • Marcus Vance</span>
+      <span class="font-data-md text-[11px] text-on-surface-variant">{{ selected_member.member_code }} • {{ selected_member.full_name }}</span>
     </div>
     <div class="overflow-x-auto">
-      <table class="w-full text-left border-collapse min-w-[900px]">
+      <table id="statement-table" class="w-full text-left border-collapse min-w-[900px]">
         <thead>
           <tr class="bg-background border-b border-outline-variant">
             <th class="p-3 font-label-caps text-[11px] text-on-surface-variant uppercase">Date</th>
@@ -77,118 +97,72 @@
           </tr>
         </thead>
         <tbody class="font-data-md text-[12px] divide-y divide-outline-variant">
+          {% for row in rows %}
           <tr class="hover:bg-surface-container-high transition-colors">
-            <td class="p-3 text-on-surface-variant">2023-09-01</td>
-            <td class="p-3 text-on-surface">Opening Balance</td>
-            <td class="p-3 text-right text-on-surface">—</td>
-            <td class="p-3 text-right text-on-surface">—</td>
-            <td class="p-3 text-right text-on-surface">—</td>
-            <td class="p-3 text-right text-on-surface">—</td>
-            <td class="p-3 text-right font-bold text-on-surface">$0.00</td>
+            <td class="p-3 text-on-surface-variant whitespace-nowrap">{{ row.date|date:"Y-m-d"|default:"—" }}</td>
+            <td class="p-3 text-on-surface">{{ row.description }}</td>
+            <td class="p-3 text-right text-on-surface">{% if row.charge is not None %}${{ row.charge|floatformat:2 }}{% else %}—{% endif %}</td>
+            <td class="p-3 text-right text-tertiary">{% if row.payment is not None %}-${{ row.payment|floatformat:2 }}{% else %}—{% endif %}</td>
+            <td class="p-3 text-right text-tertiary">{% if row.discount is not None %}-${{ row.discount|floatformat:2 }}{% else %}—{% endif %}</td>
+            <td class="p-3 text-right text-primary">{% if row.refund is not None %}-${{ row.refund|floatformat:2 }}{% else %}—{% endif %}</td>
+            <td class="p-3 text-right font-bold text-on-surface">${{ row.balance|floatformat:2 }}</td>
           </tr>
-          <tr class="hover:bg-surface-container-high transition-colors">
-            <td class="p-3 text-on-surface-variant">2023-09-15</td>
-            <td class="p-3 text-on-surface">Elite Powerlifting — Monthly</td>
-            <td class="p-3 text-right text-on-surface">$150.00</td>
-            <td class="p-3 text-right text-on-surface">—</td>
-            <td class="p-3 text-right text-tertiary">-$15.00</td>
-            <td class="p-3 text-right text-on-surface">—</td>
-            <td class="p-3 text-right font-bold text-on-surface">$135.00</td>
+          {% empty %}
+          <tr>
+            <td colspan="7" class="p-10 text-center font-body-sm text-body-sm text-on-surface-variant">No transactions for this member yet.</td>
           </tr>
-          <tr class="hover:bg-surface-container-high transition-colors">
-            <td class="p-3 text-on-surface-variant">2023-09-15</td>
-            <td class="p-3 text-on-surface">Payment — VISA ****4242 (INV-0844)</td>
-            <td class="p-3 text-right text-on-surface">—</td>
-            <td class="p-3 text-right text-tertiary">-$150.00</td>
-            <td class="p-3 text-right text-on-surface">—</td>
-            <td class="p-3 text-right text-on-surface">—</td>
-            <td class="p-3 text-right font-bold text-tertiary">-$15.00</td>
-          </tr>
-          <tr class="hover:bg-surface-container-high transition-colors">
-            <td class="p-3 text-on-surface-variant">2023-10-01</td>
-            <td class="p-3 text-on-surface">Annual Elite Membership (12 Mo)</td>
-            <td class="p-3 text-right text-on-surface">$450.00</td>
-            <td class="p-3 text-right text-on-surface">—</td>
-            <td class="p-3 text-right text-tertiary">-$35.00</td>
-            <td class="p-3 text-right text-on-surface">—</td>
-            <td class="p-3 text-right font-bold text-on-surface">$400.00</td>
-          </tr>
-          <tr class="hover:bg-surface-container-high transition-colors">
-            <td class="p-3 text-on-surface-variant">2023-10-01</td>
-            <td class="p-3 text-on-surface">Locker Rental</td>
-            <td class="p-3 text-right text-on-surface">$50.00</td>
-            <td class="p-3 text-right text-on-surface">—</td>
-            <td class="p-3 text-right text-on-surface">—</td>
-            <td class="p-3 text-right text-on-surface">—</td>
-            <td class="p-3 text-right font-bold text-on-surface">$450.00</td>
-          </tr>
-          <tr class="hover:bg-surface-container-high transition-colors">
-            <td class="p-3 text-on-surface-variant">2023-10-24</td>
-            <td class="p-3 text-on-surface">Payment — VISA ****4242 (INV-2023-089)</td>
-            <td class="p-3 text-right text-on-surface">—</td>
-            <td class="p-3 text-right text-tertiary">-$250.00</td>
-            <td class="p-3 text-right text-on-surface">—</td>
-            <td class="p-3 text-right text-on-surface">—</td>
-            <td class="p-3 text-right font-bold text-on-surface">$200.00</td>
-          </tr>
-          <tr class="hover:bg-surface-container-high transition-colors">
-            <td class="p-3 text-on-surface-variant">2023-10-26</td>
-            <td class="p-3 text-on-surface">Refund — RFD-2023-1039 (Service cancellation)</td>
-            <td class="p-3 text-right text-on-surface">—</td>
-            <td class="p-3 text-right text-on-surface">—</td>
-            <td class="p-3 text-right text-on-surface">—</td>
-            <td class="p-3 text-right text-primary">-$45.00</td>
-            <td class="p-3 text-right font-bold text-on-surface">$155.00</td>
-          </tr>
+          {% endfor %}
         </tbody>
         <tfoot>
           <tr class="bg-surface-container-high border-t-2 border-outline-variant font-bold">
             <td colspan="2" class="p-3 text-right font-label-caps text-[11px] text-on-surface uppercase">Totals</td>
-            <td class="p-3 text-right font-data-md text-on-surface">$650.00</td>
-            <td class="p-3 text-right font-data-md text-tertiary">-$400.00</td>
-            <td class="p-3 text-right font-data-md text-tertiary">-$50.00</td>
-            <td class="p-3 text-right font-data-md text-primary">-$45.00</td>
-            <td class="p-3 text-right font-data-md text-primary">$155.00</td>
+            <td class="p-3 text-right font-data-md text-on-surface">${{ totals.charge|floatformat:2 }}</td>
+            <td class="p-3 text-right font-data-md text-tertiary">-${{ totals.payment|floatformat:2 }}</td>
+            <td class="p-3 text-right font-data-md text-tertiary">-${{ totals.discount|floatformat:2 }}</td>
+            <td class="p-3 text-right font-data-md text-primary">-${{ totals.refund|floatformat:2 }}</td>
+            <td class="p-3 text-right font-data-md text-primary">${{ balance|floatformat:2 }}</td>
           </tr>
         </tfoot>
       </table>
     </div>
     <div class="p-4 border-t border-outline-variant bg-background flex justify-between items-center">
-      <span class="font-body-sm text-[11px] text-on-surface-variant">Generated on Oct 28, 2023 • Iron Core Gym</span>
-      <span class="font-data-md text-[11px] text-on-surface-variant">7 transactions</span>
+      <span class="font-body-sm text-[11px] text-on-surface-variant">Generated on {{ today|date:"M j, Y" }} • Iron Core Gym</span>
+      <span class="font-data-md text-[11px] text-on-surface-variant">{{ rows|length }} transactions</span>
     </div>
   </div>
+  {% endif %}
 </div>
+{% endblock %}
 
+{% block extra_js %}
 <script>
-(function(){
-  function toast(msg,type='info'){
-    if(window.toast) return window.toast(msg,type);
-    let c=document.getElementById('toast-container'); if(!c){c=document.createElement('div'); c.id='toast-container'; c.className='fixed bottom-4 right-4 z-50 flex flex-col gap-2'; document.body.appendChild(c);}
-    const el=document.createElement('div'); const bg=type==='error'?'bg-error text-on-error-container border-error':type==='success'?'bg-tertiary-container text-on-tertiary-container border-tertiary':'bg-surface-container-high border-outline-variant text-on-surface';
-    el.className=`px-4 py-3 rounded border text-sm font-label-caps shadow-lg ${bg}`; el.textContent=msg; c.appendChild(el); setTimeout(()=>{el.style.opacity='0'; setTimeout(()=>el.remove(),300);},2500);
+document.addEventListener('DOMContentLoaded', () => {
+  const sel = document.querySelector('[data-statement-member]');
+  if (sel) sel.addEventListener('change', () => { if (sel.value) window.location.search = 'member=' + encodeURIComponent(sel.value); });
+
+  function toast(msg, type = 'info') {
+    if (window.toast) return window.toast(msg, type);
+    let c = document.getElementById('toast-container');
+    if (!c) { c = document.createElement('div'); c.id = 'toast-container'; c.className = 'fixed bottom-4 right-4 z-50 flex flex-col gap-2'; document.body.appendChild(c); }
+    const el = document.createElement('div');
+    const bg = type === 'error' ? 'bg-error text-on-error-container border-error' : type === 'success' ? 'bg-tertiary-container text-on-tertiary-container border-tertiary' : 'bg-surface-container-high border-outline-variant text-on-surface';
+    el.className = `px-4 py-3 rounded border text-sm font-label-caps shadow-lg ${bg}`; el.textContent = msg; c.appendChild(el);
+    setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 300); }, 2500);
   }
-  document.querySelector('[data-action="print"]')?.addEventListener('click',()=>{
-    toast('Print statement (demo) — use browser print','info');
-    // Uncomment to enable real print: window.print();
-  });
-  document.querySelector('[data-action="pdf"]')?.addEventListener('click',()=>{
-    toast('Downloading PDF statement (frontend demo)','success');
-  });
-  document.querySelector('[data-action="csv"]')?.addEventListener('click',()=>{
-    const csv = `Date,Description,Charge,Payment,Discount,Refund,Balance
-2023-09-01,Opening Balance,,,,,0.00
-2023-09-15,Elite Powerlifting - Monthly,150.00,,-15.00,,135.00
-2023-09-15,Payment - VISA ****4242,, -150.00,,, -15.00
-2023-10-01,Annual Elite Membership (12 Mo),450.00,,-35.00,,400.00
-2023-10-01,Locker Rental,50.00,,,,450.00
-2023-10-24,Payment - VISA ****4242,, -250.00,,,200.00
-2023-10-26,Refund - RFD-2023-1039,,,,-45.00,155.00`;
-    const blob = new Blob([csv], {type:'text/csv'});
+
+  document.querySelector('[data-action="print"]')?.addEventListener('click', () => window.print());
+
+  document.querySelector('[data-action="csv"]')?.addEventListener('click', () => {
+    const table = document.getElementById('statement-table');
+    if (!table) return;
+    const rows = [...table.querySelectorAll('tr')].map(r =>
+      [...r.querySelectorAll('th, td')].map(c => (c.textContent || '').trim().replace(/,/g, '')).join(',')
+    ).join('\n');
+    const blob = new Blob([rows], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href=url; a.download='statement-MBR-8421.csv'; a.click(); URL.revokeObjectURL(url);
-    toast('CSV downloaded (frontend demo)','success');
+    const a = document.createElement('a'); a.href = url; a.download = 'statement.csv'; a.click(); URL.revokeObjectURL(url);
+    toast('CSV downloaded', 'success');
   });
-})();
+});
 </script>
 {% endblock %}

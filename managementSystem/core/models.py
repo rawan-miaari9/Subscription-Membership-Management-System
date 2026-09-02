@@ -1,6 +1,7 @@
 from decimal import Decimal
 
 from django.db import models
+from django.db.models import Sum
 from django.utils import timezone
 
 
@@ -300,3 +301,150 @@ class Financial(models.Model):
 
     def __str__(self):
         return f"Financial (id={self.pk})"
+
+
+class Expense(models.Model):
+    """A single facility expense — maps to the existing 'expenses' table."""
+
+    CATEGORY_CHOICES = [
+        ('rent', 'Rent'),
+        ('equipment', 'Equipment'),
+        ('salaries', 'Salaries'),
+        ('utilities', 'Utilities'),
+        ('maintenance', 'Maintenance'),
+        ('operations', 'Operations'),
+        ('other', 'Other'),
+    ]
+
+    PAYMENT_METHOD_CHOICES = [
+        ('cash', 'Cash'),
+        ('card', 'Card'),
+        ('bank_transfer', 'Bank Transfer'),
+        ('online', 'Online'),
+        ('other', 'Other'),
+    ]
+
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('cleared', 'Cleared'),
+    ]
+
+    expense_code = models.CharField(max_length=50, null=True, blank=True)
+    category = models.CharField(max_length=50, null=True, blank=True)
+    description = models.TextField(null=True, blank=True)
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    payment_method = models.CharField(max_length=50, null=True, blank=True)
+    expense_date = models.DateField(null=True, blank=True)
+    notes = models.TextField(null=True, blank=True)
+    status = models.CharField(max_length=20, null=True, blank=True)
+
+    class Meta:
+        managed = False
+        db_table = 'expenses'
+        ordering = ['-expense_date', '-id']
+
+    def __str__(self):
+        return self.expense_code or f"Expense #{self.pk}"
+
+
+class Payment(models.Model):
+    """A payment received — maps to the existing 'payments' table."""
+
+    METHOD_CHOICES = [
+        ('cash', 'Cash'),
+        ('card', 'Card'),
+        ('bank_transfer', 'Bank Transfer'),
+        ('online', 'Online'),
+    ]
+
+    STATUS_CHOICES = [
+        ('success', 'Success'),
+        ('pending', 'Pending'),
+        ('failed', 'Failed'),
+    ]
+
+    payment_code = models.CharField(max_length=50, null=True, blank=True)
+    receipt_no = models.CharField(max_length=50, null=True, blank=True)
+    member = models.ForeignKey(
+        Member,
+        on_delete=models.CASCADE,
+        db_column='member_id',
+        null=True,
+        blank=True,
+        related_name='payments',
+    )
+    subscription_id = models.IntegerField(null=True, blank=True)
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    discount = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    total = models.DecimalField(max_digits=12, decimal_places=2)
+    method = models.CharField(max_length=20, choices=METHOD_CHOICES, null=True, blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, null=True, blank=True)
+    paid_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        managed = False
+        db_table = 'payments'
+        ordering = ['-paid_at', '-id']
+
+    @property
+    def member_name(self):
+        if self.member:
+            return self.member.full_name
+        return "Walk-in / Guest"
+
+    def refunded_amount(self):
+        """Total of non-rejected refunds already issued against this payment."""
+        total = self.refunds.exclude(status='rejected').aggregate(Sum('amount'))['amount__sum']
+        return total or Decimal('0.00')
+
+    def refundable_amount(self):
+        return (self.total or Decimal('0.00')) - self.refunded_amount()
+
+    def __str__(self):
+        return self.payment_code or f"Payment #{self.pk}"
+
+
+class Refund(models.Model):
+    """A refund issued against a payment — maps to the existing 'refunds' table."""
+
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+    ]
+
+    refund_code = models.CharField(max_length=50, null=True, blank=True)
+    payment = models.ForeignKey(
+        Payment,
+        on_delete=models.CASCADE,
+        db_column='payment_id',
+        related_name='refunds',
+    )
+    member = models.ForeignKey(
+        Member,
+        on_delete=models.CASCADE,
+        db_column='member_id',
+        null=True,
+        blank=True,
+        related_name='refunds',
+    )
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    reason = models.TextField(null=True, blank=True)
+    status = models.CharField(max_length=20, null=True, blank=True)
+    created_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        managed = False
+        db_table = 'refunds'
+        ordering = ['-created_at', '-id']
+
+    def save(self, *args, **kwargs):
+        if self.created_at is None:
+            from django.utils import timezone
+            self.created_at = timezone.now()
+        if self.member_id is None and self.payment_id and self.payment.member_id:
+            self.member_id = self.payment.member_id
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.refund_code or f"Refund #{self.pk}"

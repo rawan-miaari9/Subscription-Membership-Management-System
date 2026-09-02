@@ -2,186 +2,207 @@
 {% block title %}Expenses - Iron Core{% endblock %}
 
 {% block dashboard_content %}
-<!-- Page Header & Action -->
-<div class="flex justify-between items-end mb-8">
-<div>
-<h2 class="font-headline-lg text-headline-lg text-on-surface uppercase tracking-tight text-white">EXPENSE TRACKING</h2>
-<p class="font-body-sm text-body-sm text-on-surface-variant mt-2">Manage and monitor facility outgoings.</p>
+<div class="w-full flex flex-col gap-6">
+  <!-- Page Header & Action Bar -->
+  <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+    <div>
+      <h2 class="font-headline-lg text-headline-lg text-on-surface uppercase tracking-tight">EXPENSES</h2>
+      <p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Manage and monitor facility outgoings.</p>
+    </div>
+    <div class="flex items-center gap-3">
+      <a href="{% url 'expense-add' %}" class="bg-primary-container text-on-primary-container font-label-caps text-label-caps uppercase px-6 h-10 rounded border border-primary hover:bg-primary-fixed-dim transition-colors flex items-center gap-2 inline-flex">
+        <span class="material-symbols-outlined text-[18px]">add</span>
+        Add Expense
+      </a>
+    </div>
+  </div>
+
+  <!-- Stat Bento -->
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-bento-gap">
+    <div class="bg-surface-container border border-outline-variant rounded-lg p-6">
+      <span class="font-label-caps text-label-caps text-on-surface-variant uppercase block mb-1">Total Expenses</span>
+      <span class="font-display text-display text-on-surface tracking-tighter">${{ stat_total|floatformat:2 }}</span>
+    </div>
+    <div class="bg-surface-container border border-outline-variant rounded-lg p-6">
+      <span class="font-label-caps text-label-caps text-on-surface-variant uppercase block mb-1">Number of Items</span>
+      <span class="font-display text-display text-on-surface tracking-tighter">{{ stat_count }}</span>
+    </div>
+    <div class="bg-surface-container border border-outline-variant rounded-lg p-6">
+      <span class="font-label-caps text-label-caps text-on-surface-variant uppercase block mb-1">Pending</span>
+      <span class="font-display text-display text-amber-400 tracking-tighter">${{ stat_pending|floatformat:2 }}</span>
+    </div>
+    <div class="bg-surface-container border border-outline-variant rounded-lg p-6">
+      <span class="font-label-caps text-label-caps text-on-surface-variant uppercase block mb-1">Cleared</span>
+      <span class="font-display text-display text-emerald-400 tracking-tighter">${{ stat_cleared|floatformat:2 }}</span>
+    </div>
+  </div>
+
+  <!-- Filter Bar -->
+  <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-wrap">
+    <div class="relative flex-1 max-w-xs">
+      <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">search</span>
+      <form method="get" action="{% url 'expenses' %}" class="contents">
+        {% if filter_category %}<input type="hidden" name="category" value="{{ filter_category }}">{% endif %}
+        {% if filter_status %}<input type="hidden" name="status" value="{{ filter_status }}">{% endif %}
+        {% if filter_date_from %}<input type="hidden" name="date_from" value="{{ filter_date_from|date:'Y-m-d' }}">{% endif %}
+        {% if filter_date_to %}<input type="hidden" name="date_to" value="{{ filter_date_to|date:'Y-m-d' }}">{% endif %}
+        <input name="q" value="{{ filter_search }}" placeholder="Search by code, description..." class="w-full bg-surface-container border border-outline-variant rounded h-10 pl-10 pr-4 text-on-surface font-body-sm focus:ring-1 focus:ring-primary focus:border-primary outline-none placeholder:text-on-surface-variant"/>
+      </form>
+    </div>
+    <div class="relative">
+      <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">category</span>
+      <select data-expense-category-filter class="appearance-none bg-surface-container border border-outline-variant rounded h-10 pl-10 pr-10 text-on-surface font-label-caps text-label-caps uppercase focus:ring-1 focus:ring-primary focus:border-primary outline-none cursor-pointer">
+        <option value="" {% if not filter_category %}selected{% endif %}>All Categories</option>
+        {% for value, label in categories %}
+        <option value="{{ value }}" {% if filter_category == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+      <span class="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none">arrow_drop_down</span>
+    </div>
+    <div class="relative">
+      <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">flag</span>
+      <select data-expense-status-filter class="appearance-none bg-surface-container border border-outline-variant rounded h-10 pl-10 pr-10 text-on-surface font-label-caps text-label-caps uppercase focus:ring-1 focus:ring-primary focus:border-primary outline-none cursor-pointer">
+        <option value="" {% if not filter_status %}selected{% endif %}>All Statuses</option>
+        {% for value, label in statuses %}
+        <option value="{{ value }}" {% if filter_status == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+      <span class="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none">arrow_drop_down</span>
+    </div>
+    <div class="relative">
+      <label class="block font-label-caps text-[9px] text-on-surface-variant uppercase tracking-wider mb-0.5">From</label>
+      <input name="date_from" data-expense-date-from value="{{ filter_date_from|date:'Y-m-d' }}" type="date" placeholder="From" class="bg-surface-container border border-outline-variant rounded h-10 pl-3 pr-3 text-on-surface font-body-sm text-body-sm focus:ring-1 focus:ring-primary focus:border-primary outline-none placeholder:text-on-surface-variant"/>
+    </div>
+    <div class="relative">
+      <label class="block font-label-caps text-[9px] text-on-surface-variant uppercase tracking-wider mb-0.5">To</label>
+      <input name="date_to" data-expense-date-to value="{{ filter_date_to|date:'Y-m-d' }}" type="date" placeholder="To" class="bg-surface-container border border-outline-variant rounded h-10 pl-3 pr-3 text-on-surface font-body-sm text-body-sm focus:ring-1 focus:ring-primary focus:border-primary outline-none placeholder:text-on-surface-variant"/>
+    </div>
+    {% if filters_active %}
+    <a href="{% url 'expenses' %}" class="font-label-caps text-label-caps text-primary hover:underline inline-flex items-center gap-1 h-10">
+      <span class="material-symbols-outlined text-[16px]">close</span> Clear filters
+    </a>
+    {% endif %}
+  </div>
+
+  <!-- Data Table -->
+  <div class="bg-surface border border-outline-variant rounded-lg flex flex-col overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-left border-collapse">
+        <thead>
+          <tr class="bg-surface-container-low border-b border-outline-variant">
+            <th class="py-4 px-6 font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider">Code</th>
+            <th class="py-4 px-6 font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider hidden sm:table-cell">Date</th>
+            <th class="py-4 px-6 font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider hidden md:table-cell">Description</th>
+            <th class="py-4 px-6 font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider hidden md:table-cell">Category</th>
+            <th class="py-4 px-6 font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider hidden md:table-cell">Method</th>
+            <th class="py-4 px-6 font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider text-right">Amount</th>
+            <th class="py-4 px-6 font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider text-center">Status</th>
+            <th class="py-4 px-6 font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider text-center">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-outline-variant">
+          {% for expense in expenses %}
+          <tr class="hover:bg-surface-container-high transition-colors group">
+            <td class="py-4 px-6">
+              <span class="font-data-lg text-data-lg text-on-surface">{{ expense.expense_code|default:"—" }}</span>
+              <p class="font-body-sm text-[12px] text-on-surface-variant">{{ expense.description|default:"—"|truncatechars:48 }}</p>
+            </td>
+            <td class="py-4 px-6 font-data-md text-data-md text-on-surface-variant hidden sm:table-cell">{{ expense.expense_date|date:"M j, Y"|default:"—" }}</td>
+            <td class="py-4 px-6 font-body-sm text-body-sm text-on-surface hidden md:table-cell">{{ expense.description|default:"—"|truncatechars:40 }}</td>
+            <td class="py-4 px-6 hidden md:table-cell">
+              <div class="inline-flex items-center gap-2 bg-surface-container-highest border border-outline-variant px-2 py-1 rounded font-label-caps text-label-caps text-on-surface">
+                {{ expense.category|default:"—"|upper }}
+              </div>
+            </td>
+            <td class="py-4 px-6 font-data-md text-data-md text-on-surface-variant hidden md:table-cell">{{ expense.payment_method|default:"—"|upper }}</td>
+            <td class="py-4 px-6 font-data-md text-data-md text-primary text-right">${{ expense.amount|floatformat:2 }}</td>
+            <td class="py-4 px-6 text-center">
+              {% if expense.status == 'cleared' %}
+              <div class="inline-flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/30 px-2 py-1 rounded">
+                <div class="w-1.5 h-1.5 bg-emerald-500 rounded-sm"></div>
+                <span class="font-label-caps text-[10px] text-emerald-400 uppercase">Cleared</span>
+              </div>
+              {% elif expense.status == 'pending' %}
+              <div class="inline-flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/30 px-2 py-1 rounded">
+                <div class="w-1.5 h-1.5 bg-amber-500 rounded-sm"></div>
+                <span class="font-label-caps text-[10px] text-amber-400 uppercase">Pending</span>
+              </div>
+              {% else %}
+              <span class="font-label-caps text-[10px] text-on-surface-variant uppercase">—</span>
+              {% endif %}
+            </td>
+            <td class="py-4 px-6 text-center relative">
+              <button data-action-toggle class="text-on-surface-variant hover:text-primary transition-colors p-1"><span class="material-symbols-outlined text-[20px]">more_vert</span></button>
+              <div data-action-menu class="hidden absolute right-6 top-10 z-20 w-48 bg-surface-container border border-outline-variant rounded shadow-xl flex flex-col py-1">
+                <a href="{% url 'expense-edit' expense.pk %}" class="px-4 py-2.5 font-label-caps text-[11px] text-on-surface hover:bg-surface-container-high flex items-center gap-2"><span class="material-symbols-outlined text-[16px]">edit</span> Edit</a>
+                <form id="expense-delete-{{ expense.pk }}" method="post" action="{% url 'expense-delete' expense.pk %}">{% csrf_token %}</form>
+                <button type="button" data-confirm="Delete expense {{ expense.expense_code|default:expense.pk }}? This cannot be undone." data-confirm-title="Delete Expense" data-confirm-text="Delete" data-confirm-form="#expense-delete-{{ expense.pk }}" class="w-full text-left px-4 py-2.5 font-label-caps text-[11px] text-error hover:bg-error/10 flex items-center gap-2"><span class="material-symbols-outlined text-[16px]">delete</span> Delete</button>
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="8" class="py-16 text-center">
+              <span class="material-symbols-outlined text-[48px] text-on-surface-variant mb-3 block">receipt_long</span>
+              <p class="font-body-lg text-body-lg text-on-surface-variant">No expenses found.</p>
+              <a href="{% url 'expense-add' %}" class="mt-4 inline-flex items-center gap-2 bg-primary-container text-on-primary-container font-label-caps text-label-caps uppercase px-6 h-10 rounded border border-primary hover:bg-primary-fixed-dim transition-colors">
+                <span class="material-symbols-outlined text-[18px]">add</span> Add your first expense
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if page_obj.paginator.num_pages > 1 %}
+    <div class="border-t border-outline-variant bg-surface-container-low p-4 flex justify-between items-center">
+      <span class="font-label-caps text-label-caps text-on-surface-variant uppercase">
+        Showing {{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ page_obj.paginator.count }}
+      </span>
+      <div class="flex gap-2">
+        {% if page_obj.has_previous %}
+        <a href="{% url 'expenses' %}?{% if filters_querystring %}{{ filters_querystring }}&{% endif %}page={{ page_obj.previous_page_number }}" class="w-8 h-8 flex items-center justify-center border border-outline-variant rounded hover:bg-surface-container transition-colors"><span class="material-symbols-outlined text-[18px]">chevron_left</span></a>
+        {% else %}
+        <span class="w-8 h-8 flex items-center justify-center border border-outline-variant rounded opacity-40"><span class="material-symbols-outlined text-[18px]">chevron_left</span></span>
+        {% endif %}
+        {% for num in page_obj.paginator.page_range %}
+          {% if num == page_obj.number %}
+          <span class="w-8 h-8 flex items-center justify-center border border-outline-variant rounded bg-surface-container-high text-primary"><span class="font-data-md text-data-md">{{ num }}</span></span>
+          {% else %}
+          <a href="{% url 'expenses' %}?{% if filters_querystring %}{{ filters_querystring }}&{% endif %}page={{ num }}" class="w-8 h-8 flex items-center justify-center border border-outline-variant rounded hover:bg-surface-container transition-colors"><span class="font-data-md text-data-md">{{ num }}</span></a>
+          {% endif %}
+        {% endfor %}
+        {% if page_obj.has_next %}
+        <a href="{% url 'expenses' %}?{% if filters_querystring %}{{ filters_querystring }}&{% endif %}page={{ page_obj.next_page_number }}" class="w-8 h-8 flex items-center justify-center border border-outline-variant rounded hover:bg-surface-container transition-colors"><span class="material-symbols-outlined text-[18px]">chevron_right</span></a>
+        {% else %}
+        <span class="w-8 h-8 flex items-center justify-center border border-outline-variant rounded opacity-40"><span class="material-symbols-outlined text-[18px]">chevron_right</span></span>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
 </div>
-<a href="/expenses/add.html" onclick="if(window.location.pathname!=='/expenses/add/'){ event.preventDefault(); if(typeof toast==='function') toast('Add Expense — opening frontend demo page','info'); setTimeout(()=>window.location.href='/expenses/add/', 300); }" class="bg-primary-container hover:bg-[#D97706] text-[#0F172A] font-headline-md text-sm uppercase px-6 py-3 rounded-DEFAULT transition-colors duration-200 font-bold flex items-center gap-2 border border-primary-container">
-<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">add</span>
-                Add Expense
-            </a>
-</div>
-<!-- Expense Category Grid (Bento) -->
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-bento-gap mb-8">
-<!-- Rent Card -->
-<div class="bg-[#1E293B] border border-[#334155] p-[24px] rounded-lg relative overflow-hidden group hover:border-primary-container transition-colors duration-300">
-<div class="flex justify-between items-start mb-4">
-<span class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider">Facility Rent</span>
-<span class="material-symbols-outlined text-outline">business</span>
-</div>
-<div class="font-data-lg text-[32px] text-white tracking-tight">$12,500<span class="text-sm text-on-surface-variant">/mo</span></div>
-<div class="mt-4 flex items-center gap-2">
-<div class="w-1.5 h-1.5 bg-emerald-500 rounded-sm"></div>
-<span class="font-label-caps text-[10px] text-on-surface-variant uppercase">Paid on time</span>
-</div>
-<!-- Abstract bg texture hint -->
-<div class="absolute -bottom-4 -right-4 text-9xl text-[#0F172A] opacity-10 font-bold pointer-events-none">R</div>
-</div>
-<!-- Equipment Card -->
-<div class="bg-[#1E293B] border border-[#334155] p-[24px] rounded-lg relative overflow-hidden group hover:border-primary-container transition-colors duration-300">
-<div class="flex justify-between items-start mb-4">
-<span class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider">Equipment</span>
-<span class="material-symbols-outlined text-outline">fitness_center</span>
-</div>
-<div class="font-data-lg text-[32px] text-white tracking-tight">$4,200<span class="text-sm text-on-surface-variant">/mo</span></div>
-<div class="mt-4 flex items-center gap-2">
-<div class="w-1.5 h-1.5 bg-primary-container rounded-sm"></div>
-<span class="font-label-caps text-[10px] text-on-surface-variant uppercase">Lease active</span>
-</div>
-<!-- Abstract bg texture hint -->
-<div class="absolute -bottom-4 -right-4 text-9xl text-[#0F172A] opacity-10 font-bold pointer-events-none">E</div>
-</div>
-<!-- Salaries Card -->
-<div class="bg-[#1E293B] border border-[#334155] p-[24px] rounded-lg relative overflow-hidden group hover:border-primary-container transition-colors duration-300">
-<div class="flex justify-between items-start mb-4">
-<span class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider">Salaries</span>
-<span class="material-symbols-outlined text-outline">groups</span>
-</div>
-<div class="font-data-lg text-[32px] text-white tracking-tight">$18,450<span class="text-sm text-on-surface-variant">/mo</span></div>
-<div class="mt-4 flex items-center gap-2">
-<div class="w-1.5 h-1.5 bg-emerald-500 rounded-sm"></div>
-<span class="font-label-caps text-[10px] text-on-surface-variant uppercase">Processed</span>
-</div>
-<!-- Abstract bg texture hint -->
-<div class="absolute -bottom-4 -right-4 text-9xl text-[#0F172A] opacity-10 font-bold pointer-events-none">S</div>
-</div>
-<!-- Utilities Card -->
-<div class="bg-[#1E293B] border border-[#334155] p-[24px] rounded-lg relative overflow-hidden group hover:border-primary-container transition-colors duration-300">
-<div class="flex justify-between items-start mb-4">
-<span class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider">Utilities</span>
-<span class="material-symbols-outlined text-outline">bolt</span>
-</div>
-<div class="font-data-lg text-[32px] text-white tracking-tight">$2,100<span class="text-sm text-on-surface-variant">/mo</span></div>
-<div class="mt-4 flex items-center gap-2">
-<div class="w-1.5 h-1.5 bg-rose-500 rounded-sm"></div>
-<span class="font-label-caps text-[10px] text-on-surface-variant uppercase">Over budget</span>
-</div>
-<!-- Abstract bg texture hint -->
-<div class="absolute -bottom-4 -right-4 text-9xl text-[#0F172A] opacity-10 font-bold pointer-events-none">U</div>
-</div>
-</div>
-<!-- Data Table Section -->
-<div class="bg-[#1E293B] border border-[#334155] rounded-lg overflow-hidden flex flex-col h-[500px]">
-<!-- Table Header/Controls -->
-<div class="p-6 border-b border-[#334155] flex justify-between items-center bg-[#1E293B]">
-<h3 class="font-label-caps text-label-caps text-white uppercase tracking-wider">Expense History</h3>
-<div class="flex gap-4">
-<!-- Category Filter -->
-<select class="bg-[#0F172A] border border-[#334155] text-on-surface-variant font-body-sm text-body-sm rounded-DEFAULT py-2 pl-4 pr-10 focus:border-primary-container focus:outline-none appearance-none cursor-pointer">
-<option>All Categories</option>
-<option>Rent</option>
-<option>Equipment</option>
-<option>Salaries</option>
-<option>Utilities</option>
-</select>
-<!-- Search within table -->
-<div class="relative w-48">
-<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm">search</span>
-<input class="w-full bg-[#0F172A] border border-[#334155] rounded-DEFAULT py-2 pl-9 pr-4 text-on-surface focus:border-primary-container focus:outline-none font-body-sm text-body-sm h-full" placeholder="Search ID..." type="text"/>
-</div>
-</div>
-</div>
-<!-- Table Content -->
-<div class="overflow-y-auto flex-1 p-0">
-<table class="w-full text-left border-collapse">
-<thead class="sticky top-0 bg-[#0F172A] border-b border-[#334155] z-10">
-<tr>
-<th class="py-3 px-6 font-label-caps text-[10px] text-on-surface-variant uppercase tracking-widest font-normal">ID</th>
-<th class="py-3 px-6 font-label-caps text-[10px] text-on-surface-variant uppercase tracking-widest font-normal">Date</th>
-<th class="py-3 px-6 font-label-caps text-[10px] text-on-surface-variant uppercase tracking-widest font-normal">Description</th>
-<th class="py-3 px-6 font-label-caps text-[10px] text-on-surface-variant uppercase tracking-widest font-normal">Category</th>
-<th class="py-3 px-6 font-label-caps text-[10px] text-on-surface-variant uppercase tracking-widest font-normal text-right">Amount</th>
-<th class="py-3 px-6 font-label-caps text-[10px] text-on-surface-variant uppercase tracking-widest font-normal text-center">Status</th>
-</tr>
-</thead>
-<tbody class="divide-y divide-[#334155]">
-<tr class="hover:bg-[#0F172A] transition-colors duration-150 group">
-<td class="py-4 px-6 font-data-md text-data-md text-on-surface-variant group-hover:text-white transition-colors">EXP-9012</td>
-<td class="py-4 px-6 font-data-md text-sm text-on-surface">2023-10-25</td>
-<td class="py-4 px-6 font-body-sm text-body-sm text-white">Eleiko Barbell Replacement</td>
-<td class="py-4 px-6 font-label-caps text-[10px] text-on-surface-variant uppercase">Equipment</td>
-<td class="py-4 px-6 font-data-md text-data-md text-white text-right">$850.00</td>
-<td class="py-4 px-6 text-center flex justify-center">
-<div class="bg-slate-800 px-2 py-1 rounded-[4px] flex items-center gap-1.5 w-max">
-<div class="w-1.5 h-1.5 bg-primary-container"></div>
-<span class="font-label-caps text-[10px] text-slate-50 uppercase">Pending</span>
-</div>
-</td>
-</tr>
-<tr class="hover:bg-[#0F172A] transition-colors duration-150 group">
-<td class="py-4 px-6 font-data-md text-data-md text-on-surface-variant group-hover:text-white transition-colors">EXP-9011</td>
-<td class="py-4 px-6 font-data-md text-sm text-on-surface">2023-10-24</td>
-<td class="py-4 px-6 font-body-sm text-body-sm text-white">Industrial Fans Maintenance</td>
-<td class="py-4 px-6 font-label-caps text-[10px] text-on-surface-variant uppercase">Utilities</td>
-<td class="py-4 px-6 font-data-md text-data-md text-white text-right">$320.00</td>
-<td class="py-4 px-6 text-center flex justify-center">
-<div class="bg-slate-800 px-2 py-1 rounded-[4px] flex items-center gap-1.5 w-max">
-<div class="w-1.5 h-1.5 bg-emerald-500"></div>
-<span class="font-label-caps text-[10px] text-slate-50 uppercase">Cleared</span>
-</div>
-</td>
-</tr>
-<tr class="hover:bg-[#0F172A] transition-colors duration-150 group">
-<td class="py-4 px-6 font-data-md text-data-md text-on-surface-variant group-hover:text-white transition-colors">EXP-9010</td>
-<td class="py-4 px-6 font-data-md text-sm text-on-surface">2023-10-20</td>
-<td class="py-4 px-6 font-body-sm text-body-sm text-white">Coaching Staff Payroll Q3</td>
-<td class="py-4 px-6 font-label-caps text-[10px] text-on-surface-variant uppercase">Salaries</td>
-<td class="py-4 px-6 font-data-md text-data-md text-white text-right">$18,450.00</td>
-<td class="py-4 px-6 text-center flex justify-center">
-<div class="bg-slate-800 px-2 py-1 rounded-[4px] flex items-center gap-1.5 w-max">
-<div class="w-1.5 h-1.5 bg-emerald-500"></div>
-<span class="font-label-caps text-[10px] text-slate-50 uppercase">Cleared</span>
-</div>
-</td>
-</tr>
-<tr class="hover:bg-[#0F172A] transition-colors duration-150 group">
-<td class="py-4 px-6 font-data-md text-data-md text-on-surface-variant group-hover:text-white transition-colors">EXP-9009</td>
-<td class="py-4 px-6 font-data-md text-sm text-on-surface">2023-10-15</td>
-<td class="py-4 px-6 font-body-sm text-body-sm text-white">Warehouse Facility Rent Nov</td>
-<td class="py-4 px-6 font-label-caps text-[10px] text-on-surface-variant uppercase">Rent</td>
-<td class="py-4 px-6 font-data-md text-data-md text-white text-right">$12,500.00</td>
-<td class="py-4 px-6 text-center flex justify-center">
-<div class="bg-slate-800 px-2 py-1 rounded-[4px] flex items-center gap-1.5 w-max">
-<div class="w-1.5 h-1.5 bg-emerald-500"></div>
-<span class="font-label-caps text-[10px] text-slate-50 uppercase">Cleared</span>
-</div>
-</td>
-</tr>
-<tr class="hover:bg-[#0F172A] transition-colors duration-150 group">
-<td class="py-4 px-6 font-data-md text-data-md text-on-surface-variant group-hover:text-white transition-colors">EXP-9008</td>
-<td class="py-4 px-6 font-data-md text-sm text-on-surface">2023-10-12</td>
-<td class="py-4 px-6 font-body-sm text-body-sm text-white">Chalk &amp; Cleaning Supplies</td>
-<td class="py-4 px-6 font-label-caps text-[10px] text-on-surface-variant uppercase">Operations</td>
-<td class="py-4 px-6 font-data-md text-data-md text-white text-right">$450.75</td>
-<td class="py-4 px-6 text-center flex justify-center">
-<div class="bg-slate-800 px-2 py-1 rounded-[4px] flex items-center gap-1.5 w-max">
-<div class="w-1.5 h-1.5 bg-emerald-500"></div>
-<span class="font-label-caps text-[10px] text-slate-50 uppercase">Cleared</span>
-</div>
-</td>
-</tr>
-</tbody>
-</table>
-</div>
-<!-- Table Footer Pagination -->
-<div class="p-4 border-t border-[#334155] bg-[#1E293B] flex justify-between items-center">
-<span class="font-body-sm text-xs text-on-surface-variant">Showing 1 to 5 of 42 entries</span>
-<div class="flex gap-2">
-<button class="bg-transparent border border-[#334155] hover:bg-slate-800 text-slate-50 font-label-caps text-[10px] uppercase px-3 py-1.5 rounded-DEFAULT transition-colors">Prev</button>
-<button class="bg-transparent border border-[#334155] hover:bg-slate-800 text-slate-50 font-label-caps text-[10px] uppercase px-3 py-1.5 rounded-DEFAULT transition-colors">Next</button>
-</div>
-</div>
-</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const catSel = document.querySelector('[data-expense-category-filter]');
+  const statusSel = document.querySelector('[data-expense-status-filter]');
+  const dateFrom = document.querySelector('[data-expense-date-from]');
+  const dateTo = document.querySelector('[data-expense-date-to]');
+  function applyFilter(key, value) {
+    const params = new URLSearchParams(window.location.search);
+    if (value) params.set(key, value); else params.delete(key);
+    params.delete('page');
+    window.location.search = params.toString();
+  }
+  if (catSel) catSel.addEventListener('change', () => applyFilter('category', catSel.value));
+  if (statusSel) statusSel.addEventListener('change', () => applyFilter('status', statusSel.value));
+  if (dateFrom) dateFrom.addEventListener('change', () => applyFilter('date_from', dateFrom.value));
+  if (dateTo) dateTo.addEventListener('change', () => applyFilter('date_to', dateTo.value));
+});
+</script>
 {% endblock %}

@@ -24,7 +24,7 @@ def _decimal(value, default=Decimal('0.00')):
         return default
 
 
-from .models import Attendance, Financial, Invoice, Member, Receipt, Subscription
+from .models import (Attendance, Expense, Financial, Invoice, Member, Payment, Receipt, Refund, Subscription)
 
 
 def _checkin_block_reason(member, today):
@@ -363,8 +363,63 @@ def invoice_status_view(request, pk):
 def renewals_view(request):
     return render(request, "renewals/list.html")
 
+def _next_refund_no():
+    prefix = "RFD-"
+    count = Refund.objects.filter(refund_code__startswith=prefix).count()
+    number = count + 1
+    while True:
+        candidate = f"{prefix}{number:04d}"
+        if not Refund.objects.filter(refund_code=candidate).exists():
+            return candidate
+        number += 1
+
+
+def _refund_status_badges():
+    return Refund.STATUS_CHOICES
+
+
 def refunds_view(request):
-    return render(request, "refunds/list.html")
+    refunds_qs = Refund.objects.select_related('payment', 'member').order_by('-created_at', '-id')
+
+    search = request.GET.get('q', '').strip()
+    status = request.GET.get('status', '').strip()
+
+    if search:
+        refunds_qs = refunds_qs.filter(
+            Q(refund_code__icontains=search)
+            | Q(payment__payment_code__icontains=search)
+            | Q(member__full_name__icontains=search)
+            | Q(reason__icontains=search)
+        )
+    if status:
+        refunds_qs = refunds_qs.filter(status=status)
+
+    pending_count = refunds_qs.filter(status='pending').count()
+    approved_total = refunds_qs.filter(status='approved').aggregate(t=Sum('amount'))['t'] or 0
+    rejected_total = refunds_qs.filter(status='rejected').aggregate(t=Sum('amount'))['t'] or 0
+
+    paginator = Paginator(refunds_qs, 15)
+    page_obj = paginator.get_page(request.GET.get('page'))
+
+    filters_querydict = request.GET.copy()
+    filters_querydict.pop('page', None)
+    filters_querystring = filters_querydict.urlencode()
+
+    context = {
+        'refunds': page_obj.object_list,
+        'page_obj': page_obj,
+        'filters_querystring': filters_querystring,
+        'filter_search': search,
+        'filter_status': status,
+        'filters_active': bool(search or status),
+        'stat_count': refunds_qs.count(),
+        'stat_pending': pending_count,
+        'stat_approved': approved_total,
+        'stat_rejected': rejected_total,
+        'statuses': Refund.STATUS_CHOICES,
+        'today': timezone.localdate(),
+    }
+    return render(request, "refunds/list.html", context)
 
 def attendance_view(request):
     attendance_qs = Attendance.objects.select_related('member').order_by('-date', '-check_in')
@@ -425,7 +480,66 @@ def member_attendance_view(request, pk):
     return render(request, "attendance/member_history.html", context)
 
 def expenses_view(request):
-    return render(request, "expenses/list.html")
+    expenses_qs = Expense.objects.all()
+
+    search = request.GET.get('q', '').strip()
+    category = request.GET.get('category', '').strip()
+    status = request.GET.get('status', '').strip()
+    date_from = _parse_date(request.GET.get('date_from', '').strip())
+    date_to = _parse_date(request.GET.get('date_to', '').strip())
+
+    if search:
+        expenses_qs = expenses_qs.filter(
+            Q(expense_code__icontains=search)
+            | Q(description__icontains=search)
+            | Q(notes__icontains=search)
+        )
+    if category:
+        expenses_qs = expenses_qs.filter(category=category)
+    if status:
+        expenses_qs = expenses_qs.filter(status=status)
+    if date_from:
+        expenses_qs = expenses_qs.filter(expense_date__gte=date_from)
+    if date_to:
+        expenses_qs = expenses_qs.filter(expense_date__lte=date_to)
+
+    totals = expenses_qs.aggregate(total_amount=Sum('amount'))
+    stat_total = totals['total_amount'] or 0
+    stat_count = expenses_qs.count()
+
+    pending_total = (
+        expenses_qs.filter(status='pending').aggregate(t=Sum('amount'))['t'] or 0
+    )
+    cleared_total = (
+        expenses_qs.filter(status='cleared').aggregate(t=Sum('amount'))['t'] or 0
+    )
+
+    paginator = Paginator(expenses_qs, 15)
+    page_obj = paginator.get_page(request.GET.get('page'))
+
+    filters_querydict = request.GET.copy()
+    filters_querydict.pop('page', None)
+    filters_querystring = filters_querydict.urlencode()
+
+    context = {
+        'expenses': page_obj.object_list,
+        'page_obj': page_obj,
+        'filters_querystring': filters_querystring,
+        'filter_search': search,
+        'filter_category': category,
+        'filter_status': status,
+        'filter_date_from': date_from,
+        'filter_date_to': date_to,
+        'filters_active': bool(search or category or status or date_from or date_to),
+        'stat_total': stat_total,
+        'stat_count': stat_count,
+        'stat_pending': pending_total,
+        'stat_cleared': cleared_total,
+        'categories': Expense.CATEGORY_CHOICES,
+        'statuses': Expense.STATUS_CHOICES,
+        'today': timezone.localdate(),
+    }
+    return render(request, "expenses/list.html", context)
 
 def notifications_view(request):
     return render(request, "notifications/index.html")
@@ -463,14 +577,196 @@ def subscription_create_view(request):
 def payment_detail_view(request):
     return render(request, "payments/detail.html")
 
-def refund_detail_view(request):
-    return render(request, "refunds/detail.html")
+def refund_detail_view(request, pk):
+    refund = get_object_or_404(Refund.objects.select_related('payment__member', 'member'), pk=pk)
+    return render(request, "refunds/detail.html", {
+        'refund': refund,
+        'statuses': Refund.STATUS_CHOICES,
+    })
+
 
 def refund_history_view(request):
-    return render(request, "refunds/history.html")
+    return refunds_view(request)
+
+
+def refund_status_view(request, pk):
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+    refund = get_object_or_404(Refund, pk=pk)
+    action = request.POST.get('action')
+    if refund.status != 'pending':
+        return render(request, "refunds/detail.html", {
+            'refund': refund,
+            'statuses': Refund.STATUS_CHOICES,
+            'error': "Only pending refunds can be approved or rejected.",
+        })
+    if action == 'approve':
+        refund.status = 'approved'
+    elif action == 'reject':
+        refund.status = 'rejected'
+    else:
+        return JsonResponse({'error': 'Unknown action.'}, status=400)
+    refund.save()
+    return redirect('refund-detail', pk=refund.pk)
+
+
+def refund_create_view(request):
+    payments_qs = Payment.objects.select_related('member').order_by('-paid_at', '-id')
+    payment_options = [(p, p.refundable_amount()) for p in payments_qs]
+
+    if request.method == "POST":
+        payment_id = request.POST.get('payment_id') or None
+        amount = _decimal(request.POST.get('amount'))
+        reason = request.POST.get('reason', '').strip()
+        confirmed = request.POST.get('confirm') == '1'
+        ctx = {
+            'payments': payment_options,
+            'statuses': Refund.STATUS_CHOICES,
+        }
+
+        payment = None
+        if payment_id:
+            try:
+                payment = Payment.objects.get(pk=payment_id)
+            except (Payment.DoesNotExist, ValueError):
+                return render(request, "refunds/create.html", {
+                    **ctx,
+                    'error': "Selected payment no longer exists.",
+                })
+        else:
+            return render(request, "refunds/create.html", {
+                **ctx,
+                'error': "Please select a payment to refund.",
+            })
+
+        if amount <= 0:
+            return render(request, "refunds/create.html", {
+                **ctx,
+                'selected_payment': payment,
+                'error': "Refund amount must be greater than zero.",
+            })
+        if amount > payment.refundable_amount():
+            return render(request, "refunds/create.html", {
+                **ctx,
+                'selected_payment': payment,
+                'error': f"Refund cannot exceed refundable amount (${payment.refundable_amount():.2f}).",
+            })
+        if len(reason) < 5:
+            return render(request, "refunds/create.html", {
+                **ctx,
+                'selected_payment': payment,
+                'error': "Please provide a reason (at least 5 characters).",
+            })
+        if not confirmed:
+            return render(request, "refunds/create.html", {
+                **ctx,
+                'selected_payment': payment,
+                'error': "You must confirm the refund authorization.",
+            })
+
+        refund = Refund(
+            refund_code=_next_refund_no(),
+            payment=payment,
+            amount=amount,
+            reason=reason,
+            status='pending',
+        )
+        try:
+            refund.save()
+        except IntegrityError:
+            refund.refund_code = _next_refund_no()
+            refund.save()
+
+        return redirect('refund-detail', pk=refund.pk)
+
+    return render(request, "refunds/create.html", {
+        'payments': payment_options,
+        'statuses': Refund.STATUS_CHOICES,
+    })
 
 def statement_view(request):
-    return render(request, "statement/list.html")
+    members = Member.objects.order_by('full_name')
+    member_id = request.GET.get('member')
+    member = None
+    if member_id:
+        try:
+            member = Member.objects.get(pk=member_id)
+        except (Member.DoesNotExist, ValueError):
+            member = None
+    if member is None and members:
+        member = members.first()
+
+    rows = []
+    balance = Decimal('0.00')
+    totals = {
+        'charge': Decimal('0.00'),
+        'payment': Decimal('0.00'),
+        'discount': Decimal('0.00'),
+        'refund': Decimal('0.00'),
+    }
+
+    if member is not None:
+        invoices_qs = Invoice.objects.filter(member=member).order_by('issued_date', 'id')
+        payments_qs = Payment.objects.filter(member=member).order_by('paid_at', 'id')
+        refunds_qs = Refund.objects.filter(member=member, status='approved').order_by('created_at', 'id')
+
+        # Opening balance
+        rows.append({
+            'date': None,
+            'description': 'Opening Balance',
+            'charge': None, 'payment': None, 'discount': None, 'refund': None,
+            'balance': Decimal('0.00'),
+        })
+
+        for inv in invoices_qs:
+            disc = inv.discount_amount
+            charge = inv.subtotal or Decimal('0.00')
+            balance = balance + (inv.total or Decimal('0.00'))
+            rows.append({
+                'date': inv.issued_date,
+                'description': f"Invoice {inv.invoice_no}" + (f" — {inv.description}" if inv.description else ""),
+                'charge': charge,
+                'payment': None,
+                'discount': disc if disc > 0 else None,
+                'refund': None,
+                'balance': balance,
+            })
+            totals['charge'] += charge
+            totals['discount'] += disc
+
+        for pmt in payments_qs:
+            balance = balance - (pmt.total or Decimal('0.00'))
+            rows.append({
+                'date': pmt.paid_at.date() if pmt.paid_at else None,
+                'description': f"Payment {pmt.payment_code} — {pmt.get_method_display()}",
+                'charge': None,
+                'payment': pmt.total,
+                'discount': None,
+                'refund': None,
+                'balance': balance,
+            })
+            totals['payment'] += pmt.total or Decimal('0.00')
+
+        for refund in refunds_qs:
+            balance = balance - (refund.amount or Decimal('0.00'))
+            rows.append({
+                'date': refund.created_at.date() if refund.created_at else None,
+                'description': f"Refund {refund.refund_code}" + (f" — {refund.reason}" if refund.reason else ""),
+                'charge': None,
+                'payment': None,
+                'discount': None,
+                'refund': refund.amount,
+                'balance': balance,
+            })
+            totals['refund'] += refund.amount or Decimal('0.00')
+
+    return render(request, "statement/list.html", {
+        'members': members,
+        'selected_member': member,
+        'rows': rows,
+        'totals': totals,
+        'balance': balance,
+    })
 
 def attendance_checkin_view(request):
     return render(request, "attendance/checkin.html")
@@ -616,8 +912,124 @@ def attendance_checkout_save_view(request):
         "message": message,
     })
 
+def _next_expense_no():
+    prefix = "EXP-"
+    count = Expense.objects.filter(expense_code__startswith=prefix).count()
+    number = count + 1
+    while True:
+        candidate = f"{prefix}{number:04d}"
+        if not Expense.objects.filter(expense_code=candidate).exists():
+            return candidate
+        number += 1
+
+
+def _expense_form_context(expense=None):
+    context = {
+        'categories': Expense.CATEGORY_CHOICES,
+        'methods': Expense.PAYMENT_METHOD_CHOICES,
+        'statuses': Expense.STATUS_CHOICES,
+        'today': timezone.localdate(),
+    }
+    if expense is not None:
+        context['expense'] = expense
+    return context
+
+
 def expense_add_view(request):
-    return render(request, "expenses/add.html")
+    if request.method == "POST":
+        category = request.POST.get('category', '').strip()
+        description = request.POST.get('description', '').strip()
+        amount = _decimal(request.POST.get('amount'))
+        payment_method = request.POST.get('payment_method', '').strip()
+        expense_date = _parse_date(request.POST.get('expense_date')) or timezone.localdate()
+        notes = request.POST.get('notes', '').strip()
+        status = request.POST.get('status', 'pending').strip()
+
+        if not category:
+            return render(request, "expenses/add.html", {
+                **_expense_form_context(),
+                'error': "Category is required.",
+            })
+        if amount <= 0:
+            return render(request, "expenses/add.html", {
+                **_expense_form_context(),
+                'error': "Amount must be greater than zero.",
+            })
+        if not description:
+            return render(request, "expenses/add.html", {
+                **_expense_form_context(),
+                'error': "Description is required.",
+            })
+
+        expense = Expense(
+            expense_code=_next_expense_no(),
+            category=category,
+            description=description,
+            amount=amount,
+            payment_method=payment_method,
+            expense_date=expense_date,
+            notes=notes or None,
+            status=status if status in dict(Expense.STATUS_CHOICES) else 'pending',
+        )
+        try:
+            expense.save()
+        except IntegrityError:
+            expense.expense_code = _next_expense_no()
+            expense.save()
+
+        return redirect('expenses')
+
+    return render(request, "expenses/add.html", _expense_form_context())
+
+
+def expense_edit_view(request, pk):
+    expense = get_object_or_404(Expense, pk=pk)
+
+    if request.method == "POST":
+        category = request.POST.get('category', '').strip()
+        description = request.POST.get('description', '').strip()
+        amount = _decimal(request.POST.get('amount'))
+        payment_method = request.POST.get('payment_method', '').strip()
+        expense_date = _parse_date(request.POST.get('expense_date')) or expense.expense_date or timezone.localdate()
+        notes = request.POST.get('notes', '').strip()
+        status = request.POST.get('status', 'pending').strip()
+
+        if not category:
+            return render(request, "expenses/add.html", {
+                **_expense_form_context(expense),
+                'error': "Category is required.",
+            })
+        if amount <= 0:
+            return render(request, "expenses/add.html", {
+                **_expense_form_context(expense),
+                'error': "Amount must be greater than zero.",
+            })
+        if not description:
+            return render(request, "expenses/add.html", {
+                **_expense_form_context(expense),
+                'error': "Description is required.",
+            })
+
+        expense.category = category
+        expense.description = description
+        expense.amount = amount
+        expense.payment_method = payment_method
+        expense.expense_date = expense_date
+        expense.notes = notes or None
+        expense.status = status if status in dict(Expense.STATUS_CHOICES) else 'pending'
+        expense.save()
+
+        return redirect('expenses')
+
+    return render(request, "expenses/add.html", _expense_form_context(expense))
+
+
+def expense_delete_view(request, pk):
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+    expense = get_object_or_404(Expense, pk=pk)
+    expense.delete()
+    return redirect('expenses')
 
 def user_add_view(request):
     return render(request, "users/add.html")
