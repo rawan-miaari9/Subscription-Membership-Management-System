@@ -2,22 +2,39 @@
 {% block title %}Members - Iron Core{% endblock %}
 
 {% block dashboard_content %}
+{% if messages %}
+<div class="space-y-2 mb-4">
+{% for message in messages %}
+<div class="p-4 rounded border flex items-center gap-2 font-body-sm text-sm {% if message.tags == 'success' %}bg-tertiary-container border-tertiary text-on-tertiary-container{% elif message.tags == 'error' %}bg-error-container border-error text-on-error-container{% else %}bg-surface-container-high border-outline-variant text-on-surface{% endif %}">
+<span class="material-symbols-outlined text-[18px]">{% if message.tags == 'success' %}check_circle{% elif message.tags == 'error' %}error{% else %}info{% endif %}</span>
+{{ message }}
+</div>
+{% endfor %}
+</div>
+{% endif %}
 <!-- Left Side: Data Table Canvas (Grid Col Span 8 roughly) -->
 <div class="w-full flex flex-col gap-6">
 <!-- Page Header & Action Bar -->
 <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
 <h2 class="font-headline-lg text-headline-lg text-on-surface uppercase tracking-tight">MEMBER MANAGEMENT</h2>
 <div class="flex items-center gap-3">
+<form method="get" class="flex items-center gap-3">
 <div class="relative">
-<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">filter_list</span>
-<select data-status-filter class="appearance-none bg-surface-container border border-outline-variant rounded h-10 pl-10 pr-10 py-0 text-on-surface font-label-caps text-label-caps uppercase focus:ring-1 focus:ring-primary focus:border-primary outline-none cursor-pointer">
-<option>All Statuses</option>
-<option>Active</option>
-<option>Suspended</option>
-<option>Expiring</option>
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px] pointer-events-none">search</span>
+<input type="text" name="q" value="{{ search_query }}" placeholder="Search name, code, phone, email…" class="bg-surface-container border border-outline-variant rounded h-10 pl-10 pr-4 py-0 text-on-surface font-body-sm w-56 sm:w-64 focus:ring-1 focus:ring-primary focus:border-primary outline-none placeholder:text-on-surface-variant/60" />
+</div>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px] pointer-events-none">filter_list</span>
+<select name="status" onchange="this.form.submit()" class="appearance-none bg-surface-container border border-outline-variant rounded h-10 pl-10 pr-10 py-0 text-on-surface font-label-caps text-label-caps uppercase focus:ring-1 focus:ring-primary focus:border-primary outline-none cursor-pointer">
+<option value="" {% if not status_filter %}selected{% endif %}>All Statuses</option>
+<option value="active" {% if status_filter == "active" %}selected{% endif %}>Active</option>
+<option value="expiring" {% if status_filter == "expiring" %}selected{% endif %}>Expiring</option>
+<option value="suspended" {% if status_filter == "suspended" %}selected{% endif %}>Suspended</option>
+<option value="expired" {% if status_filter == "expired" %}selected{% endif %}>Expired</option>
 </select>
 <span class="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none">arrow_drop_down</span>
 </div>
+</form>
 <a href="{% url 'member-add' %}" class="bg-primary-container text-on-primary-container font-label-caps text-label-caps uppercase px-6 h-10 rounded border border-primary hover:bg-primary-fixed-dim transition-colors flex items-center gap-2 inline-flex">
 <span class="material-symbols-outlined text-[18px]">add</span>
                             Add Member
@@ -32,147 +49,75 @@
 <tr class="bg-surface-container-low border-b border-outline-variant">
 <th class="py-4 px-6 font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider">Member</th>
 <th class="py-4 px-6 font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider hidden sm:table-cell">Phone</th>
-<th class="py-4 px-6 font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider">Plan</th>
+<th class="py-4 px-6 font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider">Join Date</th>
 <th class="py-4 px-6 font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider">Status</th>
 <th class="py-4 px-6 font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider text-right">Balance</th>
 <th class="py-4 px-6 font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider text-center">Actions</th>
 </tr>
 </thead>
 <tbody data-members-tbody class="divide-y divide-outline-variant">
-<!-- Row 1 (Selected/Active State visually mapping to drawer) -->
-<tr data-open-drawer="John Doe" class="bg-surface-container hover:bg-surface-container-high transition-colors cursor-pointer border-l-2 border-l-primary group">
+{% for member in members %}
+<tr data-open-drawer="{{ member.full_name }}" class="hover:bg-surface-container-high transition-colors cursor-pointer border-l-2 border-l-transparent group">
 <td class="py-4 px-6">
 <div class="flex items-center gap-3">
-<div class="w-8 h-8 rounded bg-surface-container-highest border border-outline-variant flex items-center justify-center font-data-md text-data-md text-on-surface">JD</div>
-<div class="font-data-md text-data-md text-on-surface group-hover:text-primary transition-colors">John Doe</div>
+<div class="w-8 h-8 rounded bg-surface-container-highest border border-outline-variant flex items-center justify-center font-data-md text-data-md text-on-surface">{% if member.initials %}{{ member.initials }}{% elif member.full_name %}{{ member.full_name|slice:":1"|upper }}{% else %}?{% endif %}</div>
+<div>
+<div class="font-data-md text-data-md text-on-surface group-hover:text-primary transition-colors">{{ member.full_name }}</div>
+<div class="font-body-sm text-[11px] text-on-surface-variant font-mono">{{ member.member_code }}</div>
+</div>
 </div>
 </td>
-<td class="py-4 px-6 font-body-sm text-on-surface-variant hidden sm:table-cell">555-0192</td>
-<td class="py-4 px-6 font-data-md text-data-md text-on-surface">Elite Power</td>
+<td class="py-4 px-6 font-body-sm text-on-surface-variant hidden sm:table-cell">{{ member.phone|default:"—" }}</td>
+<td class="py-4 px-6 font-data-md text-data-md text-on-surface">{{ member.join_date|date:"M d, Y"|default:"—" }}</td>
 <td class="py-4 px-6">
-<!-- Active Status Chip -->
 <div class="inline-flex items-center gap-2 bg-surface-container-highest border border-outline-variant px-2 py-1 rounded font-label-caps text-label-caps text-on-surface">
-<div class="w-[6px] h-[6px] bg-tertiary"></div>
-                                            ACTIVE
-                                        </div>
+<div class="w-[6px] h-[6px] {% if member.status == 'active' %}bg-tertiary{% elif member.status == 'expiring' %}bg-primary{% elif member.status == 'suspended' or member.status == 'expired' %}bg-error{% else %}bg-on-surface-variant{% endif %}"></div>
+{{ member.status|default:"—"|capfirst }}
+</div>
 </td>
-<td class="py-4 px-6 font-data-md text-data-md text-on-surface text-right">$0.00</td>
+<td class="py-4 px-6 font-data-md text-data-md {% if member.balance and member.balance > 0 %}text-error{% else %}text-on-surface{% endif %} text-right">${{ member.balance|default:0|floatformat:2 }}</td>
 <td class="py-4 px-6 text-center relative">
 <button data-action-toggle class="text-on-surface-variant hover:text-primary transition-colors p-1" onclick="event.stopPropagation()"><span class="material-symbols-outlined text-[20px]">more_vert</span></button>
 <div data-action-menu class="hidden absolute right-6 top-10 z-20 w-56 bg-surface-container border border-outline-variant rounded shadow-xl flex flex-col py-1">
-<a href="/members/detail/?member=John Doe" class="px-4 py-2.5 font-label-caps text-[11px] text-on-surface hover:bg-surface-container-high flex items-center gap-2"><span class="material-symbols-outlined text-[16px]">visibility</span> View</a>
-<a href="/members/add/?edit=1" class="px-4 py-2.5 font-label-caps text-[11px] text-on-surface hover:bg-surface-container-high flex items-center gap-2"><span class="material-symbols-outlined text-[16px]">edit</span> Edit</a>
-<button data-confirm="Delete member John Doe?" data-confirm-title="Delete Member" data-confirm-text="Are you sure you want to delete John Doe? This cannot be undone." class="px-4 py-2.5 font-label-caps text-[11px] text-error hover:bg-surface-container-high flex items-center gap-2 text-left w-full"><span class="material-symbols-outlined text-[16px]">delete</span> Delete</button>
+<a href="{% url 'member-detail' member.id %}" class="px-4 py-2.5 font-label-caps text-[11px] text-on-surface hover:bg-surface-container-high flex items-center gap-2"><span class="material-symbols-outlined text-[16px]">visibility</span> View</a>
+<a href="{% url 'member-edit' member.id %}" class="px-4 py-2.5 font-label-caps text-[11px] text-on-surface hover:bg-surface-container-high flex items-center gap-2"><span class="material-symbols-outlined text-[16px]">edit</span> Edit</a>
+<form method="post" action="{% url 'member-delete' member.id %}" onsubmit="return confirm('Are you sure you want to delete {{ member.full_name|escapejs }}? This cannot be undone.');">
+{% csrf_token %}
+<button type="submit" class="px-4 py-2.5 font-label-caps text-[11px] text-error hover:bg-surface-container-high flex items-center gap-2 text-left w-full"><span class="material-symbols-outlined text-[16px]">delete</span> Delete</button>
+</form>
 <div class="border-t border-outline-variant my-1"></div>
-<button data-action="suspend" data-member="John Doe" data-status="ACTIVE" class=" px-4 py-2.5 font-label-caps text-[11px] text-on-surface hover:bg-surface-container-high flex items-center gap-2 text-left w-full"><span class="material-symbols-outlined text-[16px]">block</span> Suspend</button>
-<button data-action="activate" data-member="John Doe" data-status="ACTIVE" class="hidden px-4 py-2.5 font-label-caps text-[11px] text-tertiary hover:bg-surface-container-high flex items-center gap-2 text-left w-full"><span class="material-symbols-outlined text-[16px]">check_circle</span> Activate</button>
+<button data-action="suspend" data-member="{{ member.full_name }}" data-status="{{ member.status|upper }}" class="{% if member.status == 'suspended' %}hidden {% endif %}px-4 py-2.5 font-label-caps text-[11px] text-on-surface hover:bg-surface-container-high flex items-center gap-2 text-left w-full"><span class="material-symbols-outlined text-[16px]">block</span> Suspend</button>
+<button data-action="activate" data-member="{{ member.full_name }}" data-status="{{ member.status|upper }}" class="{% if member.status != 'suspended' %}hidden {% endif %}px-4 py-2.5 font-label-caps text-[11px] text-tertiary hover:bg-surface-container-high flex items-center gap-2 text-left w-full"><span class="material-symbols-outlined text-[16px]">check_circle</span> Activate</button>
 <a href="/subscriptions/create/" class="px-4 py-2.5 font-label-caps text-[11px] text-primary hover:bg-surface-container-high flex items-center gap-2"><span class="material-symbols-outlined text-[16px]">add</span> Create Subscription</a>
 </div>
 </td>
 </tr>
-<!-- Row 2 -->
-<tr data-open-drawer class="hover:bg-surface-container-high transition-colors cursor-pointer border-l-2 border-l-transparent group">
-<td class="py-4 px-6">
-<div class="flex items-center gap-3">
-<div class="w-8 h-8 rounded bg-surface-container-highest border border-outline-variant flex items-center justify-center font-data-md text-data-md text-on-surface">MS</div>
-<div class="font-data-md text-data-md text-on-surface group-hover:text-primary transition-colors">Marcus Stone</div>
-</div>
-</td>
-<td class="py-4 px-6 font-body-sm text-on-surface-variant hidden sm:table-cell">555-0144</td>
-<td class="py-4 px-6 font-data-md text-data-md text-on-surface">Basic Lift</td>
-<td class="py-4 px-6">
-<!-- Expiring Status Chip -->
-<div class="inline-flex items-center gap-2 bg-surface-container-highest border border-outline-variant px-2 py-1 rounded font-label-caps text-label-caps text-on-surface">
-<div class="w-[6px] h-[6px] bg-primary"></div>
-                                            EXPIRING
-                                        </div>
-</td>
-<td class="py-4 px-6 font-data-md text-data-md text-on-surface text-right">$150.00</td>
-<td class="py-4 px-6 text-center relative">
-<button data-action-toggle class="text-on-surface-variant hover:text-primary transition-colors p-1" onclick="event.stopPropagation()"><span class="material-symbols-outlined text-[20px]">more_vert</span></button>
-<div data-action-menu class="hidden absolute right-6 top-10 z-20 w-56 bg-surface-container border border-outline-variant rounded shadow-xl flex flex-col py-1">
-<a href="/members/detail/?member=Marcus Stone" class="px-4 py-2.5 font-label-caps text-[11px] text-on-surface hover:bg-surface-container-high flex items-center gap-2"><span class="material-symbols-outlined text-[16px]">visibility</span> View</a>
-<a href="/members/add/?edit=1" class="px-4 py-2.5 font-label-caps text-[11px] text-on-surface hover:bg-surface-container-high flex items-center gap-2"><span class="material-symbols-outlined text-[16px]">edit</span> Edit</a>
-<button data-confirm="Delete member Marcus Stone?" data-confirm-title="Delete Member" data-confirm-text="Are you sure you want to delete Marcus Stone? This cannot be undone." class="px-4 py-2.5 font-label-caps text-[11px] text-error hover:bg-surface-container-high flex items-center gap-2 text-left w-full"><span class="material-symbols-outlined text-[16px]">delete</span> Delete</button>
-<div class="border-t border-outline-variant my-1"></div>
-<button data-action="suspend" data-member="Marcus Stone" data-status="EXPIRING" class=" px-4 py-2.5 font-label-caps text-[11px] text-on-surface hover:bg-surface-container-high flex items-center gap-2 text-left w-full"><span class="material-symbols-outlined text-[16px]">block</span> Suspend</button>
-<button data-action="activate" data-member="Marcus Stone" data-status="EXPIRING" class="hidden px-4 py-2.5 font-label-caps text-[11px] text-tertiary hover:bg-surface-container-high flex items-center gap-2 text-left w-full"><span class="material-symbols-outlined text-[16px]">check_circle</span> Activate</button>
-<a href="/subscriptions/create/" class="px-4 py-2.5 font-label-caps text-[11px] text-primary hover:bg-surface-container-high flex items-center gap-2"><span class="material-symbols-outlined text-[16px]">add</span> Create Subscription</a>
-</div>
-</td>
+{% empty %}
+<tr>
+<td colspan="6" class="py-8 px-6 text-center font-body-sm text-body-sm text-on-surface-variant">No members found.</td>
 </tr>
-<!-- Row 3 -->
-<tr data-open-drawer class="hover:bg-surface-container-high transition-colors cursor-pointer border-l-2 border-l-transparent group">
-<td class="py-4 px-6">
-<div class="flex items-center gap-3">
-<div class="w-8 h-8 rounded bg-surface-container-highest border border-outline-variant flex items-center justify-center font-data-md text-data-md text-on-surface">SV</div>
-<div class="font-data-md text-data-md text-on-surface group-hover:text-primary transition-colors">Sarah Vance</div>
-</div>
-</td>
-<td class="py-4 px-6 font-body-sm text-on-surface-variant hidden sm:table-cell">555-0188</td>
-<td class="py-4 px-6 font-data-md text-data-md text-on-surface">Elite Power</td>
-<td class="py-4 px-6">
-<!-- Suspended Status Chip -->
-<div class="inline-flex items-center gap-2 bg-surface-container-highest border border-outline-variant px-2 py-1 rounded font-label-caps text-label-caps text-on-surface">
-<div class="w-[6px] h-[6px] bg-error"></div>
-                                            SUSPENDED
-                                        </div>
-</td>
-<td class="py-4 px-6 font-data-md text-data-md text-error text-right">$450.00</td>
-<td class="py-4 px-6 text-center relative">
-<button data-action-toggle class="text-on-surface-variant hover:text-primary transition-colors p-1" onclick="event.stopPropagation()"><span class="material-symbols-outlined text-[20px]">more_vert</span></button>
-<div data-action-menu class="hidden absolute right-6 top-10 z-20 w-56 bg-surface-container border border-outline-variant rounded shadow-xl flex flex-col py-1">
-<a href="/members/detail/?member=Sarah Vance" class="px-4 py-2.5 font-label-caps text-[11px] text-on-surface hover:bg-surface-container-high flex items-center gap-2"><span class="material-symbols-outlined text-[16px]">visibility</span> View</a>
-<a href="/members/add/?edit=1" class="px-4 py-2.5 font-label-caps text-[11px] text-on-surface hover:bg-surface-container-high flex items-center gap-2"><span class="material-symbols-outlined text-[16px]">edit</span> Edit</a>
-<button data-confirm="Delete member Sarah Vance?" data-confirm-title="Delete Member" data-confirm-text="Are you sure you want to delete Sarah Vance? This cannot be undone." class="px-4 py-2.5 font-label-caps text-[11px] text-error hover:bg-surface-container-high flex items-center gap-2 text-left w-full"><span class="material-symbols-outlined text-[16px]">delete</span> Delete</button>
-<div class="border-t border-outline-variant my-1"></div>
-<button data-action="suspend" data-member="Sarah Vance" data-status="SUSPENDED" class="hidden px-4 py-2.5 font-label-caps text-[11px] text-on-surface hover:bg-surface-container-high flex items-center gap-2 text-left w-full"><span class="material-symbols-outlined text-[16px]">block</span> Suspend</button>
-<button data-action="activate" data-member="Sarah Vance" data-status="SUSPENDED" class=" px-4 py-2.5 font-label-caps text-[11px] text-tertiary hover:bg-surface-container-high flex items-center gap-2 text-left w-full"><span class="material-symbols-outlined text-[16px]">check_circle</span> Activate</button>
-<a href="/subscriptions/create/" class="px-4 py-2.5 font-label-caps text-[11px] text-primary hover:bg-surface-container-high flex items-center gap-2"><span class="material-symbols-outlined text-[16px]">add</span> Create Subscription</a>
-</div>
-</td>
-</tr>
-<!-- Row 4 -->
-<tr data-open-drawer class="hover:bg-surface-container-high transition-colors cursor-pointer border-l-2 border-l-transparent group">
-<td class="py-4 px-6">
-<div class="flex items-center gap-3">
-<div class="w-8 h-8 rounded bg-surface-container-highest border border-outline-variant flex items-center justify-center font-data-md text-data-md text-on-surface">EW</div>
-<div class="font-data-md text-data-md text-on-surface group-hover:text-primary transition-colors">Evan Wright</div>
-</div>
-</td>
-<td class="py-4 px-6 font-body-sm text-on-surface-variant hidden sm:table-cell">555-0112</td>
-<td class="py-4 px-6 font-data-md text-data-md text-on-surface">Drop-In</td>
-<td class="py-4 px-6">
-<div class="inline-flex items-center gap-2 bg-surface-container-highest border border-outline-variant px-2 py-1 rounded font-label-caps text-label-caps text-on-surface">
-<div class="w-[6px] h-[6px] bg-tertiary"></div>
-                                            ACTIVE
-                                        </div>
-</td>
-<td class="py-4 px-6 font-data-md text-data-md text-on-surface text-right">$0.00</td>
-<td class="py-4 px-6 text-center relative">
-<button data-action-toggle class="text-on-surface-variant hover:text-primary transition-colors p-1" onclick="event.stopPropagation()"><span class="material-symbols-outlined text-[20px]">more_vert</span></button>
-<div data-action-menu class="hidden absolute right-6 top-10 z-20 w-56 bg-surface-container border border-outline-variant rounded shadow-xl flex flex-col py-1">
-<a href="/members/detail/?member=Evan Wright" class="px-4 py-2.5 font-label-caps text-[11px] text-on-surface hover:bg-surface-container-high flex items-center gap-2"><span class="material-symbols-outlined text-[16px]">visibility</span> View</a>
-<a href="/members/add/?edit=1" class="px-4 py-2.5 font-label-caps text-[11px] text-on-surface hover:bg-surface-container-high flex items-center gap-2"><span class="material-symbols-outlined text-[16px]">edit</span> Edit</a>
-<button data-confirm="Delete member Evan Wright?" data-confirm-title="Delete Member" data-confirm-text="Are you sure you want to delete Evan Wright? This cannot be undone." class="px-4 py-2.5 font-label-caps text-[11px] text-error hover:bg-surface-container-high flex items-center gap-2 text-left w-full"><span class="material-symbols-outlined text-[16px]">delete</span> Delete</button>
-<div class="border-t border-outline-variant my-1"></div>
-<button data-action="suspend" data-member="Evan Wright" data-status="ACTIVE" class=" px-4 py-2.5 font-label-caps text-[11px] text-on-surface hover:bg-surface-container-high flex items-center gap-2 text-left w-full"><span class="material-symbols-outlined text-[16px]">block</span> Suspend</button>
-<button data-action="activate" data-member="Evan Wright" data-status="ACTIVE" class="hidden px-4 py-2.5 font-label-caps text-[11px] text-tertiary hover:bg-surface-container-high flex items-center gap-2 text-left w-full"><span class="material-symbols-outlined text-[16px]">check_circle</span> Activate</button>
-<a href="/subscriptions/create/" class="px-4 py-2.5 font-label-caps text-[11px] text-primary hover:bg-surface-container-high flex items-center gap-2"><span class="material-symbols-outlined text-[16px]">add</span> Create Subscription</a>
-</div>
-</td>
-</tr>
+{% endfor %}
 </tbody>
 </table>
 </div>
 <!-- Pagination Footer -->
-<div class="border-t border-outline-variant bg-surface-container-low p-4 flex justify-between items-center">
-<span class="font-label-caps text-label-caps text-on-surface-variant uppercase">Showing 1-4 of 142</span>
-<div class="flex gap-2">
-<button data-page class="w-8 h-8 flex items-center justify-center border border-outline-variant rounded hover:bg-surface-container transition-colors disabled:opacity-50"><span class="material-symbols-outlined text-[18px]">chevron_left</span></button>
-<button data-page class="w-8 h-8 flex items-center justify-center border border-outline-variant rounded bg-surface-container-high text-primary"><span class="font-data-md text-data-md">1</span></button>
-<button data-page class="w-8 h-8 flex items-center justify-center border border-outline-variant rounded hover:bg-surface-container transition-colors"><span class="font-data-md text-data-md">2</span></button>
-<button data-page class="w-8 h-8 flex items-center justify-center border border-outline-variant rounded hover:bg-surface-container transition-colors"><span class="material-symbols-outlined text-[18px]">chevron_right</span></button>
+<div class="border-t border-outline-variant bg-surface-container-low p-4 flex flex-wrap justify-between items-center gap-2">
+<span class="font-label-caps text-label-caps text-on-surface-variant uppercase">
+Showing {{ page_obj.start_index }}-{{ page_obj.end_index }} of {{ page_obj.paginator.count }}{% if search_query %} for "{{ search_query }}"{% endif %}{% if status_filter %} · status: {{ status_filter|capfirst }}{% endif %}
+{% if filters_active %} · <a href="{% url 'members' %}" class="text-primary hover:underline normal-case">Clear filters</a>{% endif %}
+</span>
+<div class="flex gap-4">
+{% if page_obj.has_previous %}
+<a href="?{% if filters_querystring %}{{ filters_querystring }}&{% endif %}page={{ page_obj.previous_page_number }}" class="font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-colors">Previous</a>
+{% else %}
+<span class="font-label-caps text-label-caps text-on-surface-variant/40">Previous</span>
+{% endif %}
+<span class="font-label-caps text-label-caps text-on-surface-variant">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+{% if page_obj.has_next %}
+<a href="?{% if filters_querystring %}{{ filters_querystring }}&{% endif %}page={{ page_obj.next_page_number }}" class="font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-colors">Next</a>
+{% else %}
+<span class="font-label-caps text-label-caps text-on-surface-variant/40">Next</span>
+{% endif %}
 </div>
 </div>
 </div>
@@ -263,7 +208,7 @@
 </div>
 <!-- Drawer Footer Actions -->
 <div class="mt-auto p-6 border-t border-outline-variant bg-surface sticky bottom-0 z-10">
-<a id="drawer-view-details" href="/members/detail/?member=John Doe" class="w-full bg-primary text-surface-dim border border-primary font-label-caps text-label-caps uppercase px-6 h-10 rounded hover:bg-primary-container transition-colors flex items-center justify-center gap-2">
+<a id="drawer-view-details" href="{% url 'members' %}" class="w-full bg-primary text-surface-dim border border-primary font-label-caps text-label-caps uppercase px-6 h-10 rounded hover:bg-primary-container transition-colors flex items-center justify-center gap-2">
 <span class="material-symbols-outlined text-[18px]">visibility</span>
                         View Full Details
                     </a>

@@ -55,13 +55,20 @@ class User(models.Model):
 
 
 class Member(models.Model):
+    STATUS_CHOICES = [
+        ('active', 'Active'),
+        ('expiring', 'Expiring'),
+        ('suspended', 'Suspended'),
+        ('expired', 'Expired'),
+    ]
+
     id = models.AutoField(primary_key=True)
     member_code = models.CharField(max_length=20, unique=True)
     full_name = models.CharField(max_length=120)
     email = models.EmailField(max_length=254, blank=True, null=True)
     phone = models.CharField(max_length=20, blank=True, null=True)
     join_date = models.DateField(blank=True, null=True)
-    status = models.CharField(max_length=10, default="active")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="active")
     balance = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     initials = models.CharField(max_length=5, blank=True, null=True)
 
@@ -101,7 +108,7 @@ class Subscription(models.Model):
     ]
     id = models.AutoField(primary_key=True)
     subscription_code = models.CharField(max_length=20, blank=True, null=True, unique=True)
-    member = models.ForeignKey(Member, on_delete=models.DO_NOTHING, db_column="member_id", blank=True, null=True)
+    member = models.ForeignKey(Member, on_delete=models.DO_NOTHING, db_column="member_id", blank=True, null=True, related_name="subscriptions")
     plan = models.ForeignKey(MembershipPlan, on_delete=models.DO_NOTHING, db_column="plan_id", blank=True, null=True)
     start_date = models.DateField()
     end_date = models.DateField()
@@ -115,6 +122,75 @@ class Subscription(models.Model):
 
     def __str__(self):
         return f"{self.subscription_code} - {self.member} - {self.status}"
+
+
+class Payment(models.Model):
+    METHOD_CHOICES = [
+        ('cash', 'Cash'),
+        ('card', 'Card'),
+        ('bank_transfer', 'Bank Transfer'),
+        ('online', 'Online'),
+    ]
+    STATUS_CHOICES = [
+        ('success', 'Success'),
+        ('pending', 'Pending'),
+        ('failed', 'Failed'),
+    ]
+
+    payment_code = models.CharField(max_length=50, null=True, blank=True)
+    receipt_no = models.CharField(max_length=50, null=True, blank=True)
+    member = models.ForeignKey(
+        Member,
+        on_delete=models.CASCADE,
+        db_column='member_id',
+        null=True,
+        blank=True,
+        related_name='payments',
+    )
+    subscription = models.ForeignKey(
+        Subscription,
+        on_delete=models.SET_NULL,
+        db_column='subscription_id',
+        null=True,
+        blank=True,
+        related_name='payments',
+    )
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    discount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    total = models.DecimalField(max_digits=10, decimal_places=2)
+    method = models.CharField(max_length=20, choices=METHOD_CHOICES, null=True, blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, null=True, blank=True)
+    paid_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        managed = False
+        db_table = 'payments'
+
+    def __str__(self):
+        return self.payment_code or f"Payment #{self.pk}"
+
+
+class Attendance(models.Model):
+    member = models.ForeignKey(
+        Member,
+        on_delete=models.CASCADE,
+        db_column='member_id',
+        null=True,
+        blank=True,
+        related_name='attendance_records',
+    )
+    date = models.DateField()
+    check_in = models.TimeField(null=True, blank=True)
+    check_out = models.TimeField(null=True, blank=True)
+    duration_min = models.IntegerField(null=True, blank=True, editable=False)
+
+    class Meta:
+        managed = False
+        db_table = 'attendance'
+        unique_together = ('member', 'date')
+
+    def __str__(self):
+        return f"{self.member} - {self.date}"
 
 
 class FinancialSetting(models.Model):
