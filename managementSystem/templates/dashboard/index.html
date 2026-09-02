@@ -13,28 +13,28 @@
             <span class="font-label-caps text-label-caps text-on-surface-variant uppercase">Active Members</span>
             <span class="material-symbols-outlined text-primary">group</span>
         </div>
-        <div class="mt-8 font-display text-display text-on-surface tracking-tighter">1,248</div>
+        <div class="mt-8 font-display text-display text-on-surface tracking-tighter">{{ active_members_display }}</div>
     </div>
     <div data-filter-card class="col-span-12 md:col-span-3 bg-surface-container border border-outline-variant rounded-lg p-6 flex flex-col justify-between hover:border-primary transition-colors duration-300">
         <div class="flex justify-between items-start">
             <span class="font-label-caps text-label-caps text-on-surface-variant uppercase">Monthly Revenue</span>
             <span class="material-symbols-outlined text-primary">payments</span>
         </div>
-        <div class="mt-8 font-display text-display text-on-surface tracking-tighter">$24,580</div>
+        <div class="mt-8 font-display text-display text-on-surface tracking-tighter">{{ monthly_revenue_display }}</div>
     </div>
     <div data-filter-card class="col-span-12 md:col-span-3 bg-surface-container border border-outline-variant rounded-lg p-6 flex flex-col justify-between hover:border-primary transition-colors duration-300">
         <div class="flex justify-between items-start">
             <span class="font-label-caps text-label-caps text-on-surface-variant uppercase">Expiring Soon</span>
             <span class="material-symbols-outlined text-error">warning</span>
         </div>
-        <div class="mt-8 font-display text-display text-on-surface tracking-tighter">42</div>
+        <div class="mt-8 font-display text-display text-on-surface tracking-tighter">{{ expiring_soon_display }}</div>
     </div>
     <div data-filter-card class="col-span-12 md:col-span-3 bg-surface-container border border-outline-variant rounded-lg p-6 flex flex-col justify-between hover:border-primary transition-colors duration-300">
         <div class="flex justify-between items-start">
             <span class="font-label-caps text-label-caps text-on-surface-variant uppercase">Today's Attendance</span>
             <span class="material-symbols-outlined text-primary">event_available</span>
         </div>
-        <div class="mt-8 font-display text-display text-on-surface tracking-tighter">86</div>
+        <div class="mt-8 font-display text-display text-on-surface tracking-tighter">{{ todays_attendance_display }}</div>
     </div>
 
     <!-- Revenue Overview -->
@@ -51,33 +51,17 @@
                 <div class="w-full h-px bg-outline-variant"></div>
             </div>
             <div class="w-full flex justify-between items-end h-full z-10 px-4">
-                <div class="w-[8%] bg-surface-container-high border border-outline-variant hover:bg-primary transition-all duration-300 h-[40%] group relative">
-                    <div class="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 font-data-md text-data-md text-primary bg-background px-2 py-1 border border-outline-variant pointer-events-none transition-opacity">$14k</div>
+                {% for item in revenue_overview %}
+                <div class="w-[8%] hover:bg-primary transition-all duration-300 group relative {% if item.is_last %}bg-primary border border-primary{% else %}bg-surface-container-high border border-outline-variant{% endif %}" style="height: {{ item.height }}%;">
+                    <div class="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 font-data-md text-data-md text-primary bg-background px-2 py-1 border border-outline-variant pointer-events-none transition-opacity whitespace-nowrap">{{ item.total_display }}</div>
                 </div>
-                <div class="w-[8%] bg-surface-container-high border border-outline-variant hover:bg-primary transition-all duration-300 h-[55%] group relative">
-                    <div class="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 font-data-md text-data-md text-primary bg-background px-2 py-1 border border-outline-variant pointer-events-none transition-opacity">$18k</div>
-                </div>
-                <div class="w-[8%] bg-surface-container-high border border-outline-variant hover:bg-primary transition-all duration-300 h-[45%] group relative">
-                    <div class="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 font-data-md text-data-md text-primary bg-background px-2 py-1 border border-outline-variant pointer-events-none transition-opacity">$16k</div>
-                </div>
-                <div class="w-[8%] bg-surface-container-high border border-outline-variant hover:bg-primary transition-all duration-300 h-[70%] group relative">
-                    <div class="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 font-data-md text-data-md text-primary bg-background px-2 py-1 border border-outline-variant pointer-events-none transition-opacity">$21k</div>
-                </div>
-                <div class="w-[8%] bg-surface-container-high border border-outline-variant hover:bg-primary transition-all duration-300 h-[65%] group relative">
-                    <div class="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 font-data-md text-data-md text-primary bg-background px-2 py-1 border border-outline-variant pointer-events-none transition-opacity">$20k</div>
-                </div>
-                <div class="w-[8%] bg-primary border border-primary hover:bg-primary-container transition-all duration-300 h-[85%] group relative">
-                    <div class="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 font-data-md text-data-md text-primary bg-background px-2 py-1 border border-outline-variant pointer-events-none transition-opacity">$24k</div>
-                </div>
+                {% endfor %}
             </div>
         </div>
         <div class="flex justify-between items-center px-8 mt-4">
-            <span class="font-label-caps text-label-caps text-on-surface-variant">JAN</span>
-            <span class="font-label-caps text-label-caps text-on-surface-variant">FEB</span>
-            <span class="font-label-caps text-label-caps text-on-surface-variant">MAR</span>
-            <span class="font-label-caps text-label-caps text-on-surface-variant">APR</span>
-            <span class="font-label-caps text-label-caps text-on-surface-variant">MAY</span>
-            <span class="font-label-caps text-label-caps text-primary">JUN</span>
+            {% for item in revenue_overview %}
+            <span class="font-label-caps text-label-caps {% if item.is_last %}text-primary{% else %}text-on-surface-variant{% endif %}">{{ item.label }}</span>
+            {% endfor %}
         </div>
     </div>
 
@@ -85,37 +69,27 @@
     <div class="col-span-12 md:col-span-4 bg-surface-container border border-outline-variant rounded-lg p-6 min-h-[360px] flex flex-col">
         <h2 class="font-label-caps text-label-caps text-on-surface-variant uppercase mb-6">Subscription Mix</h2>
         <div class="flex-1 flex flex-col justify-center items-center relative">
-            <div class="w-48 h-48 rounded-full border-[16px] border-surface-container-highest relative flex items-center justify-center">
-                <div class="absolute inset-[-16px] rounded-full border-[16px] border-primary" style="clip-path: polygon(50% 50%, 50% 0, 100% 0, 100% 100%, 0 100%, 0 70%);"></div>
-                <div class="absolute inset-[-16px] rounded-full border-[16px] border-outline" style="clip-path: polygon(50% 50%, 0 70%, 0 0, 50% 0);"></div>
-                <div class="flex flex-col items-center">
-                    <span class="font-display text-headline-lg text-on-surface">1.2k</span>
-                    <span class="font-label-caps text-label-caps text-on-surface-variant">TOTAL</span>
+            <div class="w-48 h-48 rounded-full relative flex items-center justify-center" style="background: {{ mix_gradient }};">
+                <div class="w-36 h-36 rounded-full bg-surface-container flex items-center justify-center">
+                    <div class="flex flex-col items-center">
+                        <span class="font-display text-headline-lg text-on-surface">{{ subscription_mix_compact }}</span>
+                        <span class="font-label-caps text-label-caps text-on-surface-variant">TOTAL</span>
+                    </div>
                 </div>
             </div>
         </div>
         <div class="mt-6 flex flex-col gap-3">
+            {% for item in subscription_mix %}
             <div class="flex justify-between items-center">
                 <div class="flex items-center gap-2">
-                    <div class="w-3 h-3 bg-primary rounded-sm"></div>
-                    <span class="font-label-caps text-label-caps text-on-surface">Premium</span>
+                    <div class="w-3 h-3 {{ item.swatch }} rounded-sm"></div>
+                    <span class="font-label-caps text-label-caps text-on-surface">{{ item.plan }}</span>
                 </div>
-                <span class="font-data-md text-data-md text-on-surface">65%</span>
+                <span class="font-data-md text-data-md text-on-surface">{{ item.count }} ({{ item.percent }}%)</span>
             </div>
-            <div class="flex justify-between items-center">
-                <div class="flex items-center gap-2">
-                    <div class="w-3 h-3 bg-outline rounded-sm"></div>
-                    <span class="font-label-caps text-label-caps text-on-surface">Gold</span>
-                </div>
-                <span class="font-data-md text-data-md text-on-surface">25%</span>
-            </div>
-            <div class="flex justify-between items-center">
-                <div class="flex items-center gap-2">
-                    <div class="w-3 h-3 bg-surface-container-highest rounded-sm"></div>
-                    <span class="font-label-caps text-label-caps text-on-surface">Silver</span>
-                </div>
-                <span class="font-data-md text-data-md text-on-surface">10%</span>
-            </div>
+            {% empty %}
+            <p class="font-body-sm text-on-surface-variant">No active subscriptions.</p>
+            {% endfor %}
         </div>
     </div>
 
@@ -123,7 +97,7 @@
     <div class="col-span-12 md:col-span-7 bg-surface-container border border-outline-variant rounded-lg p-6">
         <div class="flex justify-between items-center mb-6">
             <h2 class="font-label-caps text-label-caps text-on-surface-variant uppercase">Expiring Subscriptions</h2>
-            <button class="bg-transparent border border-outline-variant text-on-surface hover:bg-surface-container-highest px-4 py-2 font-label-caps text-label-caps uppercase transition-colors rounded-sm" data-toast="View all expiring (demo)" >View All</button>
+            <a href="{% url 'subscriptions' %}" class="inline-block bg-transparent border border-outline-variant text-on-surface hover:bg-surface-container-highest px-4 py-2 font-label-caps text-label-caps uppercase transition-colors rounded-sm">View All</a>
         </div>
         <div class="overflow-x-auto">
             <table class="w-full text-left border-collapse">
@@ -136,38 +110,20 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr class="border-b border-outline-variant hover:bg-surface-container-high transition-colors">
-                        <td class="py-3 px-4 font-data-md text-data-md text-on-surface">#MC-4092</td>
-                        <td class="py-3 px-4 font-body-sm text-on-surface font-semibold">David Goggins</td>
+                    {% for item in expiring_subscriptions %}
+                    <tr class="{% if not forloop.last %}border-b border-outline-variant {% endif %}hover:bg-surface-container-high transition-colors">
+                        <td class="py-3 px-4 font-data-md text-data-md text-on-surface">{{ item.member_id }}</td>
+                        <td class="py-3 px-4 font-body-sm text-on-surface font-semibold">{{ item.name }}</td>
                         <td class="py-3 px-4">
-                            <span class="bg-surface-container-highest text-on-surface font-label-caps text-label-caps px-2 py-1 rounded-sm border border-outline-variant">Premium</span>
+                            <span class="bg-surface-container-highest text-on-surface font-label-caps text-label-caps px-2 py-1 rounded-sm border border-outline-variant">{{ item.plan }}</span>
                         </td>
-                        <td class="py-3 px-4 font-data-md text-data-md text-error text-right">2 Days</td>
+                        <td class="py-3 px-4 font-data-md text-data-md text-right {% if item.days <= 7 %}text-error{% elif item.days <= 30 %}text-primary{% else %}text-on-surface-variant{% endif %}">{{ item.days }} Days</td>
                     </tr>
-                    <tr class="border-b border-outline-variant hover:bg-surface-container-high transition-colors">
-                        <td class="py-3 px-4 font-data-md text-data-md text-on-surface">#MC-4105</td>
-                        <td class="py-3 px-4 font-body-sm text-on-surface font-semibold">Jocko Willink</td>
-                        <td class="py-3 px-4">
-                            <span class="bg-surface-container-highest text-on-surface font-label-caps text-label-caps px-2 py-1 rounded-sm border border-outline-variant">Gold</span>
-                        </td>
-                        <td class="py-3 px-4 font-data-md text-data-md text-primary text-right">5 Days</td>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" class="py-6 px-4 text-center font-body-sm text-on-surface-variant">No expiring subscriptions.</td>
                     </tr>
-                    <tr class="border-b border-outline-variant hover:bg-surface-container-high transition-colors">
-                        <td class="py-3 px-4 font-data-md text-data-md text-on-surface">#MC-4118</td>
-                        <td class="py-3 px-4 font-body-sm text-on-surface font-semibold">Cameron Hanes</td>
-                        <td class="py-3 px-4">
-                            <span class="bg-surface-container-highest text-on-surface font-label-caps text-label-caps px-2 py-1 rounded-sm border border-outline-variant">Silver</span>
-                        </td>
-                        <td class="py-3 px-4 font-data-md text-data-md text-on-surface-variant text-right">7 Days</td>
-                    </tr>
-                    <tr class="hover:bg-surface-container-high transition-colors">
-                        <td class="py-3 px-4 font-data-md text-data-md text-on-surface">#MC-4122</td>
-                        <td class="py-3 px-4 font-body-sm text-on-surface font-semibold">Nick Bare</td>
-                        <td class="py-3 px-4">
-                            <span class="bg-surface-container-highest text-on-surface font-label-caps text-label-caps px-2 py-1 rounded-sm border border-outline-variant">Premium</span>
-                        </td>
-                        <td class="py-3 px-4 font-data-md text-data-md text-on-surface-variant text-right">8 Days</td>
-                    </tr>
+                    {% endfor %}
                 </tbody>
             </table>
         </div>
@@ -179,66 +135,25 @@
             <h2 class="font-label-caps text-label-caps text-on-surface-variant uppercase">Recent Payments</h2>
         </div>
         <div class="flex-1 flex flex-col gap-4">
+            {% for p in recent_payments %}
             <div class="flex items-center justify-between p-3 border border-outline-variant rounded-sm hover:border-primary transition-colors cursor-pointer bg-background">
                 <div class="flex items-center gap-4">
                     <div class="w-10 h-10 bg-surface-container-highest flex items-center justify-center border border-outline-variant">
-                        <span class="material-symbols-outlined text-primary">credit_card</span>
+                        <span class="material-symbols-outlined {% if p.success %}text-primary{% else %}text-error{% endif %}">{{ p.method_icon }}</span>
                     </div>
                     <div>
-                        <p class="font-body-sm font-semibold text-on-surface">Marcus Aurelius</p>
-                        <p class="font-data-md text-label-caps text-on-surface-variant">INV-2023-089</p>
+                        <p class="font-body-sm font-semibold text-on-surface">{{ p.member }}</p>
+                        <p class="font-data-md text-label-caps text-on-surface-variant">{{ p.receipt_no }}</p>
                     </div>
                 </div>
                 <div class="text-right">
-                    <p class="font-data-md text-data-md text-on-surface">$149.00</p>
-                    <p class="font-label-caps text-label-caps text-primary mt-1">SUCCESS</p>
+                    <p class="font-data-md text-data-md text-on-surface">{{ p.amount_display }}</p>
+                    <p class="font-label-caps text-label-caps {% if p.success %}text-primary{% else %}text-error{% endif %} mt-1">{{ p.status }}</p>
                 </div>
             </div>
-            <div class="flex items-center justify-between p-3 border border-outline-variant rounded-sm hover:border-primary transition-colors cursor-pointer bg-background">
-                <div class="flex items-center gap-4">
-                    <div class="w-10 h-10 bg-surface-container-highest flex items-center justify-center border border-outline-variant">
-                        <span class="material-symbols-outlined text-primary">account_balance</span>
-                    </div>
-                    <div>
-                        <p class="font-body-sm font-semibold text-on-surface">Seneca Younger</p>
-                        <p class="font-data-md text-label-caps text-on-surface-variant">INV-2023-090</p>
-                    </div>
-                </div>
-                <div class="text-right">
-                    <p class="font-data-md text-data-md text-on-surface">$299.00</p>
-                    <p class="font-label-caps text-label-caps text-primary mt-1">SUCCESS</p>
-                </div>
-            </div>
-            <div class="flex items-center justify-between p-3 border border-outline-variant rounded-sm hover:border-primary transition-colors cursor-pointer bg-background">
-                <div class="flex items-center gap-4">
-                    <div class="w-10 h-10 bg-surface-container-highest flex items-center justify-center border border-outline-variant">
-                        <span class="material-symbols-outlined text-error">credit_card_off</span>
-                    </div>
-                    <div>
-                        <p class="font-body-sm font-semibold text-on-surface">Epictetus</p>
-                        <p class="font-data-md text-label-caps text-on-surface-variant">INV-2023-091</p>
-                    </div>
-                </div>
-                <div class="text-right">
-                    <p class="font-data-md text-data-md text-on-surface">$99.00</p>
-                    <p class="font-label-caps text-label-caps text-error mt-1">FAILED</p>
-                </div>
-            </div>
-            <div class="flex items-center justify-between p-3 border border-outline-variant rounded-sm hover:border-primary transition-colors cursor-pointer bg-background">
-                <div class="flex items-center gap-4">
-                    <div class="w-10 h-10 bg-surface-container-highest flex items-center justify-center border border-outline-variant">
-                        <span class="material-symbols-outlined text-primary">credit_card</span>
-                    </div>
-                    <div>
-                        <p class="font-body-sm font-semibold text-on-surface">Zeno Citium</p>
-                        <p class="font-data-md text-label-caps text-on-surface-variant">INV-2023-092</p>
-                    </div>
-                </div>
-                <div class="text-right">
-                    <p class="font-data-md text-data-md text-on-surface">$149.00</p>
-                    <p class="font-label-caps text-label-caps text-primary mt-1">SUCCESS</p>
-                </div>
-            </div>
+            {% empty %}
+            <p class="font-body-sm text-on-surface-variant">No recent payments.</p>
+            {% endfor %}
         </div>
     </div>
 </div>
