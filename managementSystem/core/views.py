@@ -267,7 +267,7 @@ def reports_view(request):
     return render(request, "reports/index.html", {"current_user": get_current_user(request)})
 
 @login_required_custom
-def _safe_user_profiles():
+def _safe_user_profiles(*args, **kwargs):
     try:
         # Evaluate immediately to catch missing table
         return list(UserProfile.objects.select_related('user').order_by('user__full_name')[:100])
