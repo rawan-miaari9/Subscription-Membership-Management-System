@@ -120,6 +120,7 @@ Process Payment
 <th class="p-4 font-label-caps text-label-caps text-on-surface-variant">METHOD</th>
 <th class="p-4 font-label-caps text-label-caps text-on-surface-variant text-right">AMOUNT</th>
 <th class="p-4 font-label-caps text-label-caps text-on-surface-variant">STATUS</th>
+<th class="p-4 font-label-caps text-label-caps text-on-surface-variant text-right">ACTIONS</th>
 </tr>
 </thead>
 <tbody class="font-data-md text-data-md divide-y divide-outline-variant">
@@ -127,7 +128,10 @@ Process Payment
 <tr class="hover:bg-surface-container-high transition-colors">
 <td class="p-4 text-primary"><a href="{% url 'payment-detail' %}?id={{ p.id }}" class="hover:underline">{{ p.receipt_no|default:p.payment_code }}</a></td>
 <td class="p-4 text-on-surface-variant">{{ p.paid_at|date:"Y-m-d H:i"|default:p.id }}</td>
-<td class="p-4 text-on-surface">{{ p.member.full_name|default:"—" }}<span class="text-on-surface-variant text-xs ml-1">{{ p.member.member_code|default:"" }}</span></td>
+<td class="p-4 text-on-surface">
+<a href="{% url 'member-detail' p.member.id %}" class="hover:text-primary hover:underline">{{ p.member.full_name|default:"—" }}</a>
+<span class="text-on-surface-variant text-xs ml-1">{{ p.member.member_code|default:"" }}</span>
+</td>
 <td class="p-4 text-on-surface-variant uppercase text-xs">{{ p.method|default:"—" }}</td>
 <td class="p-4 text-right">${{ p.total|floatformat:2 }}</td>
 <td class="p-4">
@@ -139,9 +143,21 @@ Process Payment
 <div class="inline-flex items-center gap-2 bg-surface-container-highest px-2 py-1 rounded-sm border border-outline-variant"><div class="w-1.5 h-1.5 bg-red-500 rounded-full"></div><span class="font-label-caps text-label-caps text-error">{{ p.status|upper }}</span></div>
 {% endif %}
 </td>
+<td class="p-4 text-right">
+<div class="inline-flex items-center gap-1">
+<a href="{% url 'payment-detail' %}?id={{ p.id }}" class="inline-flex items-center gap-1 px-3 py-1 border border-outline-variant bg-transparent text-on-surface font-label-caps text-[11px] uppercase hover:border-primary hover:text-primary transition-colors" title="View payment details">
+<span class="material-symbols-outlined text-[14px]">visibility</span> View
+</a>
+{% if p.member %}
+<a href="{% url 'payments' %}?q={{ p.member.member_code }}" class="inline-flex items-center px-2 py-1 border border-outline-variant text-on-surface-variant hover:text-primary" title="View all payments for this member">
+<span class="material-symbols-outlined text-[14px]">person</span>
+</a>
+{% endif %}
+</div>
+</td>
 </tr>
 {% empty %}
-<tr><td colspan="6" class="p-8 text-center text-on-surface-variant">No payments found. Process a payment to see it here.</td></tr>
+<tr><td colspan="7" class="p-8 text-center text-on-surface-variant">No payments found. Process a payment to see it here.</td></tr>
 {% endfor %}
 </tbody>
 </table>
