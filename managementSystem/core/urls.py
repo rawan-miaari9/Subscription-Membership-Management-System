@@ -41,5 +41,6 @@ urlpatterns = [
     path("expenses/add/", views.expense_add_view, name="expense-add"),
     path("users/add/", views.user_add_view, name="user-add"),
     path("reports/generate/", views.reports_generate_view, name="reports-generate"),
+    path("reports/api/", views.reports_api, name="reports-api"),
     path("receipts/custom/", views.receipt_custom_view, name="receipt-custom"),
 ]
