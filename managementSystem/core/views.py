@@ -178,24 +178,10 @@ def login_view(request):
                         return redirect(next_url)
                     return redirect("dashboard")
 
-    # Real stats for login hero (instead of mock 1,248 / 99.9%)
-    try:
-        active_members_count = Member.objects.filter(status='active').count()
-    except Exception:
-        active_members_count = 0
-    try:
-        active_subs_count = Subscription.objects.filter(status='active').count()
-    except Exception:
-        active_subs_count = 0
-    # System Uptime is not a DB metric - show active subscriptions as real alternative, keep 99.9% as fallback display if needed
     context = {
         "error": error,
         "email": email_prefill,
         "next": request.GET.get("next", ""),
-        "active_members_count": active_members_count,
-        "active_members_display": f"{active_members_count:,}",
-        "active_subs_count": active_subs_count,
-        "active_subs_display": f"{active_subs_count:,}",
     }
     return render(request, "auth/login.html", context)
 

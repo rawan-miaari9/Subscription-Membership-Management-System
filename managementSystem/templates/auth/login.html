@@ -13,27 +13,6 @@
     <div class="absolute inset-0 bg-background mix-blend-multiply opacity-20"></div>
     <!-- Darkening Gradient for legibility -->
     <div class="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent"></div>
-    <!-- Overlay Content (Stats) -->
-    <div class="absolute bottom-0 left-0 p-margin-desktop w-full">
-        <div class="flex gap-bento-gap max-w-lg">
-            <!-- Stat Card 1 - Real Active Members -->
-            <div class="flex-1 bg-surface-container border border-outline-variant rounded p-[20px] backdrop-blur-sm bg-opacity-90">
-                <div class="flex items-center gap-2 mb-3">
-                    <span class="material-symbols-outlined text-primary text-[20px]">group</span>
-                    <h3 class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider">Active Members</h3>
-                </div>
-                <div class="font-data-lg text-data-lg text-on-surface">{{ active_members_display|default:"0" }}</div>
-            </div>
-            <!-- Stat Card 2 - Real Active Subscriptions (was mock System Uptime) -->
-            <div class="flex-1 bg-surface-container border border-outline-variant rounded p-[20px] backdrop-blur-sm bg-opacity-90">
-                <div class="flex items-center gap-2 mb-3">
-                    <span class="material-symbols-outlined text-primary text-[20px]">card_membership</span>
-                    <h3 class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider">Active Subscriptions</h3>
-                </div>
-                <div class="font-data-lg text-data-lg text-on-surface">{{ active_subs_display|default:"0" }}</div>
-            </div>
-        </div>
-    </div>
 </div>
 
 <!-- Right Split: Form Area -->
