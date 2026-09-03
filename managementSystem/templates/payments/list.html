@@ -181,6 +181,24 @@ Process Payment
 </div>
 <script>
 (function(){
+  // Payment Model toggle (Full/Partial) - visual feedback
+  const pmRadios = document.querySelectorAll('input[name="payment_model"]');
+  function updatePM(){
+    pmRadios.forEach(r=>{
+      const label = r.closest('label');
+      if(!label) return;
+      if(r.checked){
+        label.classList.add('border-primary','bg-primary-container/20');
+        label.classList.remove('border-outline-variant','bg-background');
+      } else {
+        label.classList.remove('border-primary','bg-primary-container/20');
+        label.classList.add('border-outline-variant','bg-background');
+      }
+    });
+  }
+  pmRadios.forEach(r=> r.addEventListener('change', updatePM));
+  updatePM();
+
   const input = document.getElementById('member-search');
   const hidden = document.getElementById('member-id');
   const results = document.getElementById('member-results');
