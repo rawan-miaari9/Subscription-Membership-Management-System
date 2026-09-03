@@ -559,7 +559,10 @@ def payments_view(request):
             amount = data['amount']
             method = data['method']
             status = data['status']
-            # Map payment_model to status if needed: full->success, partial->pending (but use form status directly)
+            payment_model = data.get('payment_model', 'full')
+            # Enforce: Full always Paid (success), Partial can be Pending
+            if payment_model == 'full':
+                status = 'success'
             # Generate codes with retry for sequence issues
             try:
                 from django.db import connection as conn

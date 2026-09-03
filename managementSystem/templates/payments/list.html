@@ -198,6 +198,29 @@ Process Payment
   }
   pmRadios.forEach(r=> r.addEventListener('change', updatePM));
   updatePM();
+  // Enforce: Full => always Paid, Partial => can be Pending
+  const statusSelect = document.querySelector('select[name="status"]');
+  function updateStatusForPM(){
+    const pm = document.querySelector('input[name="payment_model"]:checked')?.value;
+    if(!statusSelect) return;
+    if(pm === 'full'){
+      statusSelect.value = 'success';
+      // Disable pending/failed options visually but keep select enabled so value submits
+      Array.from(statusSelect.options).forEach(opt=>{
+        if(opt.value !== 'success'){
+          opt.disabled = true;
+        } else {
+          opt.disabled = false;
+        }
+      });
+      statusSelect.classList.add('opacity-60');
+    } else {
+      Array.from(statusSelect.options).forEach(opt=> opt.disabled = false);
+      statusSelect.classList.remove('opacity-60');
+    }
+  }
+  pmRadios.forEach(r=> r.addEventListener('change', updateStatusForPM));
+  updateStatusForPM();
 
   const input = document.getElementById('member-search');
   const hidden = document.getElementById('member-id');
