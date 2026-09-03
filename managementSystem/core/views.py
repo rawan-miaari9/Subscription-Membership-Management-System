@@ -2306,9 +2306,12 @@ def subscription_create_view(request):
 @login_required_custom
 def payment_detail_view(request):
     # Support /payments/detail/?id=1 or ?code=PAY-0001 or ?receipt=RCPT-0001
-    pk = request.GET.get('id') or request.GET.get('pk')
+    pk = request.GET.get('id') or request.GET.get('pk') or request.POST.get('id')
     code = request.GET.get('code') or request.GET.get('payment_code')
     receipt = request.GET.get('receipt') or request.GET.get('receipt_no')
+    # Allow POST with id in URL query or hidden field
+    if request.method == "POST" and not pk:
+        pk = request.POST.get('payment_id') or request.POST.get('id')
     payment = None
     try:
         if pk:
@@ -2318,10 +2321,25 @@ def payment_detail_view(request):
         elif receipt:
             payment = Payment.objects.select_related('member','subscription','subscription__plan').get(receipt_no=receipt)
         else:
-            # fallback to latest
             payment = Payment.objects.select_related('member','subscription','subscription__plan').order_by('-paid_at').first()
     except Payment.DoesNotExist:
         payment = None
+
+    # Handle status change POST
+    if request.method == "POST" and payment and 'status' in request.POST:
+        new_status = request.POST.get('status', '').strip()
+        if new_status in dict(Payment.STATUS_CHOICES):
+            payment.status = new_status
+            # Update paid_at accordingly
+            if new_status == 'success' and not payment.paid_at:
+                payment.paid_at = timezone.now()
+            elif new_status != 'success':
+                # Keep original paid_at or clear if failed? keep as is
+                pass
+            payment.save(update_fields=['status', 'paid_at'])
+            messages.success(request, f"Payment {payment.payment_code} status updated to {new_status}.")
+            return redirect(f"{request.path}?id={payment.id}")
+
     return render(request, "payments/detail.html", {"current_user": get_current_user(request), "payment": payment})
 
 @login_required_custom
