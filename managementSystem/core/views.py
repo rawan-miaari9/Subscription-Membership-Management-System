@@ -10,7 +10,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db import IntegrityError, connection, transaction
-from django.db.models import Case, F, Q, Sum, When
+from django.db.models import Case, DecimalField, F, Q, Sum, When
 from django.http import HttpResponseNotAllowed, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
