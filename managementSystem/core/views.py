@@ -1394,14 +1394,22 @@ def admin_profile_settings_api(request):
     admin.role = role
     admin.status = status
     if "avatar" in request.FILES:
-        # Current model avatar is CharField - store filename; if ImageField, it will handle file
+        # Save avatar directly to DB as base64 data URI (no localhost file)
         try:
-            if admin.avatar and hasattr(admin.avatar, 'delete'):
-                admin.avatar.delete(save=False)
-            admin.avatar = request.FILES["avatar"]
-        except Exception:
-            # Fallback for CharField: store name
-            admin.avatar = request.FILES["avatar"].name
+            import base64
+            f = request.FILES["avatar"]
+            # Validate
+            if f.content_type not in ("image/png", "image/jpeg", "image/jpg", "image/webp"):
+                # Still allow but store
+                pass
+            if f.size > 2 * 1024 * 1024:
+                return JsonResponse({"ok": False, "error": "Avatar must be under 2MB."}, status=400)
+            data = f.read()
+            b64 = base64.b64encode(data).decode('utf-8')
+            mime = f.content_type or "image/png"
+            admin.avatar = f"data:{mime};base64,{b64}"
+        except Exception as e:
+            return JsonResponse({"ok": False, "error": f"Failed to process avatar: {e}"}, status=400)
     admin.save()
     return JsonResponse({
         "ok": True,

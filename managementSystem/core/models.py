@@ -26,7 +26,7 @@ class User(models.Model):
     password = models.CharField(max_length=128)
     role = models.CharField(max_length=50, choices=ROLE_CHOICES, default="Admin")
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="Active")
-    avatar = models.CharField(max_length=100, blank=True, null=True)
+    avatar = models.TextField(blank=True, null=True)
     updated_at = models.DateTimeField(default=timezone.now)
 
     class Meta:
@@ -401,7 +401,7 @@ class UserProfile(models.Model):
         related_name='profile',
     )
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, null=True, blank=True)
-    avatar = models.CharField(max_length=255, null=True, blank=True)
+    avatar = models.TextField(null=True, blank=True)
 
     class Meta:
         managed = False
