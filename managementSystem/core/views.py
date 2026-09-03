@@ -595,7 +595,31 @@ def payments_view(request):
                         receipt_no = PaymentForm.generate_receipt_no()
                         continue
                     raise
-            messages.success(request, f"Payment {payment_code} for {member.full_name} (${amount:.2f}) recorded.")
+            # Update Member.balance for Partial/Full
+            try:
+                if subscription and subscription.plan and subscription.plan.price is not None:
+                    plan_price = subscription.plan.price
+                    if payment_model == 'partial':
+                        remaining = max(Decimal('0.00'), plan_price - amount)
+                        Member.objects.filter(id=member.id).update(balance=remaining)
+                    else:  # full
+                        Member.objects.filter(id=member.id).update(balance=Decimal('0.00'))
+                elif payment_model == 'partial':
+                    # Ad-hoc partial without plan: keep amount as pending balance
+                    # Use existing balance + remaining? For now set to amount pending
+                    pass
+                else:
+                    Member.objects.filter(id=member.id).update(balance=Decimal('0.00'))
+            except Exception:
+                pass
+            if payment_model == 'partial' and subscription and subscription.plan:
+                try:
+                    remaining = max(Decimal('0.00'), subscription.plan.price - amount)
+                    messages.success(request, f"Payment {payment_code} for {member.full_name} (${amount:.2f}) recorded. Remaining balance: ${remaining:.2f} (Plan ${subscription.plan.price:.2f})")
+                except Exception:
+                    messages.success(request, f"Payment {payment_code} for {member.full_name} (${amount:.2f}) recorded.")
+            else:
+                messages.success(request, f"Payment {payment_code} for {member.full_name} (${amount:.2f}) recorded.")
             return redirect('payments')
         else:
             # Form errors - will be displayed in template

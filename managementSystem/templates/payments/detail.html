@@ -36,6 +36,18 @@
     <h3 class="font-label-caps text-[11px] text-on-surface-variant mb-4">Member</h3>
     <p class="font-data-md">{{ payment.member.full_name }} ({{ payment.member.member_code }})</p>
     <p class="text-sm text-on-surface-variant">{{ payment.member.email|default:"" }} • {{ payment.member.phone|default:"" }}</p>
+    {% if payment.member.balance and payment.member.balance > 0 %}
+    <div class="mt-3 p-3 bg-amber-500/10 border border-amber-500/20 rounded flex items-center gap-2">
+      <span class="material-symbols-outlined text-amber-500 text-[18px]">account_balance_wallet</span>
+      <span class="font-label-caps text-[11px] text-amber-500">Remaining Balance: ${{ payment.member.balance|floatformat:2 }}</span>
+      <span class="text-xs text-on-surface-variant">- outstanding for this member</span>
+    </div>
+    {% elif payment.subscription and payment.subscription.plan %}
+    <div class="mt-3 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded flex items-center gap-2">
+      <span class="material-symbols-outlined text-emerald-500 text-[18px]">check_circle</span>
+      <span class="font-label-caps text-[11px] text-emerald-500">Plan {{ payment.subscription.plan.name }}: ${{ payment.subscription.plan.price|floatformat:2 }} - Paid ${{ payment.total|floatformat:2 }} {% if payment.member.balance == 0 %}✓ Fully Paid{% endif %}</span>
+    </div>
+    {% endif %}
   </div>
   {% endif %}
   <div class="flex gap-2"><a href="{% url 'payments' %}" class="px-4 py-2 border border-outline-variant font-label-caps text-[11px]">Back</a>
