@@ -99,9 +99,12 @@
         </div>
     </div>
     <div class="flex items-center gap-6">
-        <button data-toast="No new notifications" class="text-on-surface-variant hover:text-primary transition-colors duration-200 focus:ring-1 focus:ring-primary outline-none rounded-sm">
+        <a href="{% url 'notifications' %}" class="relative text-on-surface-variant hover:text-primary transition-colors duration-200 focus:ring-1 focus:ring-primary outline-none rounded-sm inline-flex items-center justify-center">
             <span class="material-symbols-outlined">notifications</span>
-        </button>
+            {% if unread_notifications %}
+            <span class="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full bg-error text-on-error flex items-center justify-center font-label-caps text-[9px] leading-none">{{ unread_notifications }}</span>
+            {% endif %}
+        </a>
         <div class="flex items-center gap-3 pl-6 border-l border-outline-variant">
             <div class="text-right">
                 <p id="admin-role-display" class="font-data-md text-data-md text-on-surface">Admin Role</p>

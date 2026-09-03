@@ -303,6 +303,46 @@ class Financial(models.Model):
         return f"Financial (id={self.pk})"
 
 
+class NotificationSetting(models.Model):
+    """A notification preference toggle — maps to core_notificationsetting."""
+
+    code = models.CharField(max_length=50, null=True, blank=True)
+    name = models.CharField(max_length=150, null=True, blank=True)
+    description = models.TextField(null=True, blank=True)
+    enabled = models.BooleanField(null=True, blank=True)
+    updated_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        managed = False
+        db_table = 'core_notificationsetting'
+        ordering = ['id']
+
+    def __str__(self):
+        return self.name or self.code or f"Setting #{self.pk}"
+
+    @classmethod
+    def is_enabled(cls, code):
+        try:
+            return bool(cls.objects.get(code=code).enabled)
+        except cls.DoesNotExist:
+            return True
+
+
+class NotificationRead(models.Model):
+    """Tracks which notification keys have been marked as read."""
+
+    nkey = models.CharField(max_length=120, unique=True)
+    read_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        managed = False
+        db_table = 'app_notificationread'
+        ordering = ['-read_at']
+
+    def __str__(self):
+        return self.nkey
+
+
 class Expense(models.Model):
     """A single facility expense — maps to the existing 'expenses' table."""
 

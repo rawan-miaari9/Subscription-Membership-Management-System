@@ -26,7 +26,8 @@ def _decimal(value, default=Decimal('0.00')):
         return default
 
 
-from .models import (Attendance, Expense, Financial, Invoice, Member, Payment, Receipt, Refund, Subscription)
+from .models import (Attendance, Expense, Financial, Invoice, Member, NotificationRead, NotificationSetting, Payment, Receipt, Refund, Subscription)
+from .notifications import get_notifications, unread_count
 
 
 def _checkin_block_reason(member, today):
@@ -544,8 +545,62 @@ def expenses_view(request):
     }
     return render(request, "expenses/list.html", context)
 
+@never_cache
 def notifications_view(request):
-    return render(request, "notifications/index.html")
+    all_notifs = get_notifications()
+
+    category = request.GET.get('category', '').strip()
+    q = request.GET.get('q', '').strip().lower()
+
+    if category and category != 'all':
+        all_notifs = [n for n in all_notifs if n.ntype == category]
+    if q:
+        all_notifs = [n for n in all_notifs
+                      if q in n.title.lower() or q in n.message.lower()]
+
+    def cat_count(ntype):
+        return sum(1 for n in all_notifs if n.ntype == ntype) if not category and not q else None
+
+    paginator = Paginator(all_notifs, 12)
+    page_obj = paginator.get_page(request.GET.get('page'))
+
+    unread = sum(1 for n in all_notifs if not n.read)
+
+    filters_querydict = request.GET.copy()
+    filters_querydict.pop('page', None)
+    filters_querydict.pop('category', None)
+    filters_querystring = filters_querydict.urlencode()
+
+    return render(request, "notifications/index.html", {
+        'notifications': page_obj.object_list,
+        'page_obj': page_obj,
+        'filters_querystring': filters_querystring,
+        'filter_category': category,
+        'filter_q': request.GET.get('q', ''),
+        'filters_active': bool(category and category != 'all' or q),
+        'total_count': len(all_notifs),
+        'unread_count': unread,
+        'cat_expiration': sum(1 for n in all_notifs if n.ntype == 'expiration'),
+        'cat_renewal': sum(1 for n in all_notifs if n.ntype == 'renewal'),
+        'cat_expired': sum(1 for n in all_notifs if n.ntype == 'expired'),
+        'cat_payment': sum(1 for n in all_notifs if n.ntype == 'payment'),
+        'cat_refund': sum(1 for n in all_notifs if n.ntype == 'refund'),
+        'settings': NotificationSetting.objects.all(),
+    })
+
+
+@never_cache
+def notification_mark_read_view(request, nkey):
+    NotificationRead.objects.get_or_create(nkey=nkey)
+    return redirect('notifications')
+
+
+@never_cache
+def notification_mark_all_read_view(request):
+    for n in get_notifications():
+        if not n.read:
+            NotificationRead.objects.get_or_create(nkey=n.key)
+    return redirect('notifications')
 
 def reports_view(request):
     return render(request, "reports/index.html")
@@ -554,7 +609,24 @@ def users_view(request):
     return render(request, "users/list.html")
 
 def settings_view(request):
-    return render(request, "settings/index.html")
+    settings = {s.code: s.enabled for s in NotificationSetting.objects.all()}
+
+    if request.method == "POST":
+        if 'notif_save' in request.POST:
+            for code, enabled in settings.items():
+                submitted = request.POST.get(f'notif_{code}') is not None
+                NotificationSetting.objects.filter(code=code).update(
+                    enabled=submitted,
+                    updated_at=timezone.now(),
+                )
+            return redirect('notifications')
+        return render(request, "settings/index.html", {
+            'notif_settings': settings,
+        })
+
+    return render(request, "settings/index.html", {
+        'notif_settings': settings,
+    })
 
 def member_detail_view(request):
     return render(request, "members/detail.html")
