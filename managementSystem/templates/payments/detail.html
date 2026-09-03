@@ -39,7 +39,15 @@
     <p class="text-sm text-on-surface-variant">{{ payment.member.email|default:"" }} • {{ payment.member.phone|default:"" }}</p>
   </div>
   {% endif %}
-  <div class="flex gap-2"><a href="{% url 'payments' %}" class="px-4 py-2 border border-outline-variant font-label-caps text-[11px]">Back</a><a href="/receipts/{{ payment.id }}/" class="px-4 py-2 bg-primary-container text-on-primary-container font-label-caps text-[11px]">View Receipt</a></div>
+  <div class="flex gap-2"><a href="{% url 'payments' %}" class="px-4 py-2 border border-outline-variant font-label-caps text-[11px]">Back</a>
+  {% if receipt %}
+    <a href="{% url 'receipt-detail' receipt.id %}" class="px-4 py-2 bg-primary-container text-on-primary-container font-label-caps text-[11px]">View Receipt {{ receipt.receipt_no }}</a>
+  {% elif payment.receipt_no %}
+    <a href="{% url 'receipts' %}?q={{ payment.receipt_no }}" class="px-4 py-2 bg-primary-container text-on-primary-container font-label-caps text-[11px]">View Receipt {{ payment.receipt_no }}</a>
+  {% else %}
+    <a href="{% url 'receipts' %}" class="px-4 py-2 bg-primary-container text-on-primary-container font-label-caps text-[11px]">View Receipts</a>
+  {% endif %}
+  </div>
 </div>
 {% else %}
 <div class="max-w-2xl mx-auto p-8 bg-surface-container border border-outline-variant rounded text-center">

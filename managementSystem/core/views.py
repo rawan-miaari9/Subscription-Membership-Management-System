@@ -2340,7 +2340,18 @@ def payment_detail_view(request):
             messages.success(request, f"Payment {payment.payment_code} status updated to {new_status}.")
             return redirect(f"{request.path}?id={payment.id}")
 
-    return render(request, "payments/detail.html", {"current_user": get_current_user(request), "payment": payment})
+    # Fetch linked receipt for "View Receipt" button (receipt.payment_id == payment.id)
+    receipt = None
+    if payment:
+        try:
+            # Try by payment_id FK, then by receipt_no
+            receipt = Receipt.objects.filter(payment_id=payment.id).first()
+            if not receipt and payment.receipt_no:
+                receipt = Receipt.objects.filter(receipt_no=payment.receipt_no).first()
+        except Exception:
+            receipt = None
+
+    return render(request, "payments/detail.html", {"current_user": get_current_user(request), "payment": payment, "receipt": receipt})
 
 @login_required_custom
 def refund_detail_view(request):
