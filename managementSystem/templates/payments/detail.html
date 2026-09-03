@@ -20,7 +20,6 @@
         <select name="status" class="flex-1 bg-background border border-outline-variant rounded px-2 py-1 text-xs">
           <option value="success" {% if payment.status == 'success' %}selected{% endif %}>Paid</option>
           <option value="pending" {% if payment.status == 'pending' %}selected{% endif %}>Pending</option>
-          <option value="failed" {% if payment.status == 'failed' %}selected{% endif %}>Failed</option>
         </select>
         <button type="submit" class="px-3 py-1 bg-primary-container text-on-primary-container font-label-caps text-[11px] uppercase rounded">Change</button>
       </form>

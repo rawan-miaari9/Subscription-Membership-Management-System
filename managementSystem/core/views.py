@@ -2328,10 +2328,10 @@ def payment_detail_view(request):
     except Payment.DoesNotExist:
         payment = None
 
-    # Handle status change POST
+    # Handle status change POST - only Paid/Pending allowed (no Failed)
     if request.method == "POST" and payment and 'status' in request.POST:
         new_status = request.POST.get('status', '').strip()
-        if new_status in dict(Payment.STATUS_CHOICES):
+        if new_status in ('success', 'pending'):
             payment.status = new_status
             # Update paid_at accordingly
             if new_status == 'success' and not payment.paid_at:

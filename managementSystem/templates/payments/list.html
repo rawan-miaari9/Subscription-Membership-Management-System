@@ -79,7 +79,6 @@
 <select name="status" class="w-full bg-background border {% if form.status.errors %}border-error{% else %}border-outline-variant{% endif %} text-on-surface font-body-sm rounded-DEFAULT px-3 py-2 focus:ring-1 focus:ring-primary outline-none appearance-none">
 <option value="success" {% if form.status.value == 'success' or not form.status.value %}selected{% endif %}>Paid</option>
 <option value="pending" {% if form.status.value == 'pending' %}selected{% endif %}>Pending</option>
-<option value="failed" {% if form.status.value == 'failed' %}selected{% endif %}>Failed</option>
 </select>
 </div>
 <button type="submit" class="w-full bg-primary-container text-on-primary-container font-headline-md font-bold uppercase rounded-DEFAULT py-3 hover:bg-primary transition-colors mt-auto">
@@ -97,7 +96,6 @@ Process Payment
 <option value="">All Status</option>
 <option value="success" {% if status_filter == 'success' %}selected{% endif %}>Paid</option>
 <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
-<option value="failed" {% if status_filter == 'failed' %}selected{% endif %}>Failed</option>
 </select>
 <select name="method" class="bg-background border border-outline-variant rounded px-2 py-1.5 font-body-sm text-sm">
 <option value="">All Methods</option>

@@ -198,7 +198,7 @@ class PaymentForm(forms.Form):
     amount = forms.DecimalField(max_digits=10, decimal_places=2, min_value=Decimal('0.01'), label='Amount')
     payment_model = forms.ChoiceField(choices=[('full','Full Payment'),('partial','Partial')], initial='full', label='Payment Model')
     method = forms.ChoiceField(choices=[('card','Card'),('cash','Cash'),('transfer','Bank Transfer'),('online','Online')], label='Method')
-    status = forms.ChoiceField(choices=[('success','Paid'),('pending','Pending'),('failed','Failed')], initial='success', label='Status')
+    status = forms.ChoiceField(choices=[('success','Paid'),('pending','Pending')], initial='success', label='Status')
 
     def clean_member_search(self):
         val = self.cleaned_data['member_search'].strip()
