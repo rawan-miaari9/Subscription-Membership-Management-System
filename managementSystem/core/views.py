@@ -2076,14 +2076,14 @@ def subscription_create_view(request):
             errors["start_date"] = "Start date required."
         else:
             try:
-                start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
+                start_date = datetime.datetime.strptime(start_date_str, "%Y-%m-%d").date()
             except ValueError:
                 errors["start_date"] = "Invalid start date."
         if not end_date_str:
             errors["end_date"] = "End date required."
         else:
             try:
-                end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date()
+                end_date = datetime.datetime.strptime(end_date_str, "%Y-%m-%d").date()
             except ValueError:
                 errors["end_date"] = "Invalid end date."
         if start_date and end_date and end_date <= start_date:
