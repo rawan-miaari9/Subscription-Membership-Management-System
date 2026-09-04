@@ -14,8 +14,16 @@
 <button class="btn-primary px-6 py-2" form="pricing-form" type="submit">Save Configuration</button>
 </div>
 </div>
+{% if messages %}
+<div class="space-y-2 mb-4">
+{% for message in messages %}
+<div class="p-3 rounded border {% if message.tags == 'success' %}bg-tertiary-container border-tertiary text-on-tertiary-container{% else %}bg-error-container border-error text-on-error-container{% endif %} font-body-sm text-sm">{{ message }}</div>
+{% endfor %}
+</div>
+{% endif %}
 <!-- Bento Grid Layout -->
-<form class="grid grid-cols-1 lg:grid-cols-12 gap-bento-gap" id="pricing-form">
+<form method="post" action="{% url 'pricing' %}" class="grid grid-cols-1 lg:grid-cols-12 gap-bento-gap" id="pricing-form">
+{% csrf_token %}
 <!-- Left Column: Settings -->
 <div class="lg:col-span-8 flex flex-col gap-bento-gap">
 <!-- Base Price Module -->
@@ -30,16 +38,16 @@
 <label class="block font-label-caps text-label-caps text-on-surface-variant mb-2" for="base-price">Monthly Base Price (USD)</label>
 <div class="relative">
 <span class="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant font-data-md">$</span>
-<input class="industrial-input w-full pl-8 pr-4 py-3 font-data-md text-data-md h-12" id="base-price" name="base-price" required="" step="0.01" type="number" value="120.00"/>
+<input class="industrial-input w-full pl-8 pr-4 py-3 font-data-md text-data-md h-12" id="base-price" name="base-price" required="" step="0.01" type="number" value="{{ pricing.base_price|default:"120.00" }}"/>
 </div>
 <p class="mt-2 text-xs text-slate-400 font-body-sm">Standard rate before any deductions.</p>
 </div>
 <div>
 <label class="block font-label-caps text-label-caps text-on-surface-variant mb-2" for="billing-cycle">Billing Cycle</label>
 <select class="industrial-input w-full px-4 py-3 font-data-md text-data-md h-12 appearance-none" id="billing-cycle" name="billing-cycle">
-<option selected="" value="monthly">Monthly</option>
-<option value="quarterly">Quarterly</option>
-<option value="annual">Annual</option>
+<option value="monthly" {% if pricing.billing_cycle == "monthly" %}selected{% endif %}>Monthly</option>
+<option value="quarterly" {% if pricing.billing_cycle == "quarterly" %}selected{% endif %}>Quarterly</option>
+<option value="annual" {% if pricing.billing_cycle == "annual" %}selected{% endif %}>Annual</option>
 </select>
 </div>
 </div>
@@ -57,11 +65,11 @@
 <label class="block font-label-caps text-label-caps text-on-surface-variant mb-4">Select Discount Model</label>
 <div class="flex space-x-6">
 <label class="flex items-center space-x-3 cursor-pointer">
-<input checked="" class="industrial-radio" name="discount-type" onchange="updateCalculator()" type="radio" value="percentage"/>
+<input {% if pricing.discount_type != "fixed" %}checked{% endif %} class="industrial-radio" name="discount-type" onchange="updateCalculator()" type="radio" value="percentage"/>
 <span class="font-data-md text-data-md">Percentage (%)</span>
 </label>
 <label class="flex items-center space-x-3 cursor-pointer">
-<input class="industrial-radio" name="discount-type" onchange="updateCalculator()" type="radio" value="fixed"/>
+<input {% if pricing.discount_type == "fixed" %}checked{% endif %} class="industrial-radio" name="discount-type" onchange="updateCalculator()" type="radio" value="fixed"/>
 <span class="font-data-md text-data-md">Fixed Amount ($)</span>
 </label>
 </div>
@@ -70,7 +78,7 @@
 <div class="w-full md:w-1/2">
 <label class="block font-label-caps text-label-caps text-on-surface-variant mb-2" for="discount-value">Discount Value</label>
 <div class="relative">
-<input class="industrial-input w-full px-4 py-3 font-data-md text-data-md h-12" id="discount-value" name="discount-value" oninput="updateCalculator()" required="" step="1" type="number" value="10"/>
+<input class="industrial-input w-full px-4 py-3 font-data-md text-data-md h-12" id="discount-value" name="discount-value" oninput="updateCalculator()" required="" step="0.01" type="number" value="{{ pricing.discount_value|default:"10" }}"/>
                     </div>
                 </div>
             </div>
@@ -89,27 +97,27 @@
 <!-- Subtotal -->
 <div class="flex justify-between items-center">
 <span class="font-body-sm text-body-sm text-on-surface-variant">Base Price</span>
-<span class="font-data-md text-data-md text-on-surface" id="calc-base">$120.00</span>
+<span class="font-data-md text-data-md text-on-surface" id="calc-base">${{ calc.base|floatformat:2 }}</span>
 </div>
 <!-- Discount -->
 <div class="flex justify-between items-center">
 <span class="font-body-sm text-body-sm text-on-surface-variant flex items-center">
                                         Discount 
-                                        <span class="ml-2 px-2 py-0.5 bg-surface-container text-[10px] font-label-caps rounded border border-outline-variant" id="calc-discount-label">-10%</span>
+                                        <span class="ml-2 px-2 py-0.5 bg-surface-container text-[10px] font-label-caps rounded border border-outline-variant" id="calc-discount-label">{% if pricing.discount_type == "fixed" %}-${{ pricing.discount_value|floatformat:2 }}{% else %}-{{ pricing.discount_value|floatformat:0 }}%{% endif %}</span>
 </span>
-<span class="font-data-md text-data-md text-error" id="calc-discount-amt">-$12.00</span>
+<span class="font-data-md text-data-md text-error" id="calc-discount-amt">-${{ calc.discount_amt|floatformat:2 }}</span>
 </div>
 <div class="h-px bg-outline-variant w-full my-2"></div>
 <!-- Post-Discount Subtotal -->
 <div class="flex justify-between items-center">
 <span class="font-body-sm text-body-sm text-on-surface-variant">Subtotal</span>
-<span class="font-data-md text-data-md text-on-surface" id="calc-subtotal">$108.00</span>
+<span class="font-data-md text-data-md text-on-surface" id="calc-subtotal">${{ calc.subtotal|floatformat:2 }}</span>
 </div>
 <!-- Final Total -->
 <div class="mt-8 p-4 bg-surface-container-high border border-outline-variant rounded-md">
 <div class="flex justify-between items-end">
 <span class="font-label-caps text-label-caps text-on-surface-variant">FINAL TOTAL</span>
-<span class="font-display text-[32px] font-extrabold text-primary" id="calc-total">$108.00</span>
+<span class="font-display text-[32px] font-extrabold text-primary" id="calc-total">${{ calc.total|floatformat:2 }}</span>
 </div>
 </div>
 </div>

@@ -22,7 +22,7 @@ from django.contrib.auth.hashers import make_password
 from .forms import MemberForm, PaymentForm, PlanForm, ServiceForm, UserAddForm
 from .permissions import role_required
 
-from .models import User, Member, MembershipPlan, Subscription, BusinessInformation, FinancialSetting, PaymentMethod, NotificationSetting, Payment, Attendance, Service, PlanService, UserProfile, Invoice, Receipt, Financial, Promotion
+from .models import User, Member, MembershipPlan, Subscription, BusinessInformation, FinancialSetting, PaymentMethod, NotificationSetting, Payment, Attendance, Service, PlanService, UserProfile, Invoice, Receipt, Financial, PricingConfig, Promotion
 
 def _decimal(value, default=Decimal('0.00')):
     try:
@@ -545,9 +545,38 @@ def pricing_view(request):
     user = get_current_user(request)
     if not user:
         return redirect("/login/?next=/pricing/")
-    return render(request, "pricing/list.html", {"current_user": user})
+    # Handle POST save
+    if request.method == "POST":
+        try:
+            base_price = Decimal(request.POST.get('base-price', '120.00').strip() or '120.00')
+            billing_cycle = request.POST.get('billing-cycle', 'monthly').strip()
+            discount_type = request.POST.get('discount-type', 'percentage').strip()
+            discount_value = Decimal(request.POST.get('discount-value', '10').strip() or '10')
+            if billing_cycle not in dict(PricingConfig.BILLING_CHOICES):
+                billing_cycle = 'monthly'
+            if discount_type not in dict(PricingConfig.DISCOUNT_TYPE_CHOICES):
+                discount_type = 'percentage'
+            if base_price < 0 or discount_value < 0:
+                raise ValueError("Negative not allowed")
+            cfg = PricingConfig.get_singleton()
+            cfg.base_price = base_price
+            cfg.billing_cycle = billing_cycle
+            cfg.discount_type = discount_type
+            cfg.discount_value = discount_value
+            cfg.save()
+            messages.success(request, f"Pricing saved: ${base_price:.2f} {billing_cycle} {discount_type} {discount_value}")
+            return redirect('pricing')
+        except Exception as e:
+            messages.error(request, f"Failed to save pricing: {e}")
 
-@login_required_custom
+    cfg = PricingConfig.get_singleton()
+    calc = cfg.calculate()
+    return render(request, "pricing/list.html", {
+        "current_user": user,
+        "pricing": cfg,
+        "calc": calc,
+    })
+
 @login_required_custom
 def payments_view(request):
     # Handle POST: process new payment via PaymentForm

@@ -689,6 +689,61 @@ class Financial(models.Model):
         return f"Financial (id={self.pk})"
 
 
+class PricingConfig(models.Model):
+    BILLING_CHOICES = [
+        ('monthly', 'Monthly'),
+        ('quarterly', 'Quarterly'),
+        ('annual', 'Annual'),
+    ]
+    DISCOUNT_TYPE_CHOICES = [
+        ('percentage', 'Percentage'),
+        ('fixed', 'Fixed Amount'),
+    ]
+    base_price = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('120.00'))
+    billing_cycle = models.CharField(max_length=20, choices=BILLING_CHOICES, default='monthly')
+    discount_type = models.CharField(max_length=20, choices=DISCOUNT_TYPE_CHOICES, default='percentage')
+    discount_value = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('10.00'))
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'pricing_config'
+        managed = False
+
+    def __str__(self):
+        return f"Pricing {self.base_price} {self.billing_cycle} {self.discount_type} {self.discount_value}"
+
+    @classmethod
+    def get_singleton(cls):
+        obj, _ = cls.objects.get_or_create(
+            pk=1,
+            defaults={
+                'base_price': Decimal('120.00'),
+                'billing_cycle': 'monthly',
+                'discount_type': 'percentage',
+                'discount_value': Decimal('10.00'),
+            }
+        )
+        return obj
+
+    def calculate(self):
+        """Return dict with base, discount, subtotal, total for live preview."""
+        base = self.base_price or Decimal('0.00')
+        disc_val = self.discount_value or Decimal('0.00')
+        if self.discount_type == 'percentage':
+            discount_amt = (base * disc_val / Decimal('100')).quantize(Decimal('0.01'))
+        else:
+            discount_amt = min(disc_val, base)
+        subtotal = base - discount_amt
+        return {
+            'base': base,
+            'discount_type': self.discount_type,
+            'discount_value': disc_val,
+            'discount_amt': discount_amt,
+            'subtotal': subtotal,
+            'total': subtotal,
+        }
+
+
 class Refund(models.Model):
     """A refund issued against a payment — maps to the existing 'refunds' table."""
 
