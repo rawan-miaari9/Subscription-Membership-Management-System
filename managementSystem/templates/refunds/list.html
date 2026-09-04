@@ -2,121 +2,193 @@
 {% block title %}Refunds - Iron Core{% endblock %}
 
 {% block dashboard_content %}
-<div class="flex justify-between items-end mb-6">
-<div>
-<h2 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-background uppercase tracking-tight">REFUND MANAGEMENT</h2>
+<div class="w-full flex flex-col gap-6">
+  <!-- Page Header & Action Bar -->
+  <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+    <div>
+      <h2 class="font-headline-lg text-headline-lg text-on-surface uppercase tracking-tight">REFUNDS</h2>
+      <p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Process, approve and track payment refunds.</p>
+    </div>
+    <div class="flex items-center gap-3">
+      <a href="{% url 'refund-create' %}" class="bg-primary-container text-on-primary-container font-label-caps text-label-caps uppercase px-6 h-10 rounded border border-primary hover:bg-primary-fixed-dim transition-colors flex items-center gap-2 inline-flex">
+        <span class="material-symbols-outlined text-[18px]">undo</span>
+        Process Refund
+      </a>
+    </div>
+  </div>
+
+  <!-- Stat Bento -->
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-bento-gap">
+    <div class="bg-surface-container border border-outline-variant rounded-lg p-6">
+      <span class="font-label-caps text-label-caps text-on-surface-variant uppercase block mb-1">Total Refunds</span>
+      <span class="font-display text-display text-on-surface tracking-tighter">{{ stat_count }}</span>
+    </div>
+    <div class="bg-surface-container border border-outline-variant rounded-lg p-6">
+      <span class="font-label-caps text-label-caps text-on-surface-variant uppercase block mb-1">Pending Requests</span>
+      <span class="font-display text-display text-amber-400 tracking-tighter">{{ stat_pending }}</span>
+    </div>
+    <div class="bg-surface-container border border-outline-variant rounded-lg p-6">
+      <span class="font-label-caps text-label-caps text-on-surface-variant uppercase block mb-1">Approved</span>
+      <span class="font-display text-display text-emerald-400 tracking-tighter">${{ stat_approved|floatformat:2 }}</span>
+    </div>
+    <div class="bg-surface-container border border-outline-variant rounded-lg p-6">
+      <span class="font-label-caps text-label-caps text-on-surface-variant uppercase block mb-1">Rejected</span>
+      <span class="font-display text-display text-error tracking-tighter">${{ stat_rejected|floatformat:2 }}</span>
+    </div>
+  </div>
+
+  <!-- Filter Bar -->
+  <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-wrap">
+    <div class="relative flex-1 max-w-xs">
+      <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">search</span>
+      <form method="get" action="{% url 'refunds' %}" class="contents">
+        {% if filter_status %}<input type="hidden" name="status" value="{{ filter_status }}">{% endif %}
+        <input name="q" value="{{ filter_search }}" placeholder="Search by refund code, payment, member, reason..." class="w-full bg-surface-container border border-outline-variant rounded h-10 pl-10 pr-4 text-on-surface font-body-sm focus:ring-1 focus:ring-primary focus:border-primary outline-none placeholder:text-on-surface-variant"/>
+      </form>
+    </div>
+    <div class="relative">
+      <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">flag</span>
+      <select data-refund-status-filter class="appearance-none bg-surface-container border border-outline-variant rounded h-10 pl-10 pr-10 text-on-surface font-label-caps text-label-caps uppercase focus:ring-1 focus:ring-primary focus:border-primary outline-none cursor-pointer">
+        <option value="" {% if not filter_status %}selected{% endif %}>All Statuses</option>
+        {% for value, label in statuses %}
+        <option value="{{ value }}" {% if filter_status == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+      <span class="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none">arrow_drop_down</span>
+    </div>
+    {% if filters_active %}
+    <a href="{% url 'refunds' %}" class="font-label-caps text-label-caps text-primary hover:underline inline-flex items-center gap-1 h-10">
+      <span class="material-symbols-outlined text-[16px]">close</span> Clear filters
+    </a>
+    {% endif %}
+  </div>
+
+  <!-- Data Table -->
+  <div class="bg-surface border border-outline-variant rounded-lg flex flex-col overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-left border-collapse">
+        <thead>
+          <tr class="bg-surface-container-low border-b border-outline-variant">
+            <th class="py-4 px-6 font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider">Refund</th>
+            <th class="py-4 px-6 font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider hidden sm:table-cell">Member</th>
+            <th class="py-4 px-6 font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider hidden md:table-cell">Payment</th>
+            <th class="py-4 px-6 font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider">Reason</th>
+            <th class="py-4 px-6 font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider text-right">Amount</th>
+            <th class="py-4 px-6 font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider text-center">Status</th>
+            <th class="py-4 px-6 font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider text-center">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-outline-variant">
+          {% for refund in refunds %}
+          <tr class="hover:bg-surface-container-high transition-colors group">
+            <td class="py-4 px-6">
+              <span class="font-data-lg text-data-lg text-on-surface">{{ refund.refund_code|default:"—" }}</span>
+              <p class="font-body-sm text-[12px] text-on-surface-variant">{{ refund.created_at|date:"M j, Y g:i A"|default:"—" }}</p>
+            </td>
+            <td class="py-4 px-6 font-data-md text-data-md text-on-surface hidden sm:table-cell">{{ refund.member.full_name|default:"—" }}</td>
+            <td class="py-4 px-6 font-data-md text-data-md text-on-surface-variant hidden md:table-cell">{{ refund.payment.payment_code|default:"—" }}</td>
+            <td class="py-4 px-6 font-body-sm text-body-sm text-on-surface max-w-[220px] truncate">{{ refund.reason|default:"—" }}</td>
+            <td class="py-4 px-6 font-data-md text-data-md text-primary text-right">${{ refund.amount|floatformat:2 }}</td>
+            <td class="py-4 px-6 text-center">
+              {% if refund.status == 'approved' %}
+              <div class="inline-flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/30 px-2 py-1 rounded">
+                <div class="w-1.5 h-1.5 bg-emerald-500 rounded-sm"></div>
+                <span class="font-label-caps text-[10px] text-emerald-400 uppercase">Approved</span>
+              </div>
+              {% elif refund.status == 'pending' %}
+              <div class="inline-flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/30 px-2 py-1 rounded">
+                <div class="w-1.5 h-1.5 bg-amber-500 rounded-sm"></div>
+                <span class="font-label-caps text-[10px] text-amber-400 uppercase">Pending</span>
+              </div>
+              {% elif refund.status == 'rejected' %}
+              <div class="inline-flex items-center gap-1.5 bg-error/10 border border-error/30 px-2 py-1 rounded">
+                <div class="w-1.5 h-1.5 bg-error rounded-sm"></div>
+                <span class="font-label-caps text-[10px] text-error uppercase">Rejected</span>
+              </div>
+              {% else %}
+              <span class="font-label-caps text-[10px] text-on-surface-variant uppercase">—</span>
+              {% endif %}
+            </td>
+            <td class="py-4 px-6 text-center">
+              {% if refund.status == 'pending' %}
+              <div class="inline-flex gap-2">
+                <form id="refund-approve-{{ refund.pk }}" method="post" action="{% url 'refund-status' refund.pk %}">{% csrf_token %}
+                  <input type="hidden" name="action" value="approve">
+                  <button type="submit" data-confirm="Approve refund {{ refund.refund_code|default:refund.pk }} for ${{ refund.amount|floatformat:2 }}?" data-confirm-title="Approve Refund" data-confirm-text="Approve" data-confirm-form="#refund-approve-{{ refund.pk }}" class="inline-flex items-center gap-1 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 px-2.5 py-1 rounded font-label-caps text-[10px] uppercase hover:bg-emerald-500/20 transition-colors">
+                    <span class="material-symbols-outlined text-[14px]">check</span> Approve
+                  </button>
+                </form>
+                <form id="refund-reject-{{ refund.pk }}" method="post" action="{% url 'refund-status' refund.pk %}">{% csrf_token %}
+                  <input type="hidden" name="action" value="reject">
+                  <button type="submit" data-confirm="Reject refund {{ refund.refund_code|default:refund.pk }}?" data-confirm-title="Reject Refund" data-confirm-text="Reject" data-confirm-form="#refund-reject-{{ refund.pk }}" class="inline-flex items-center gap-1 bg-error/10 border border-error/30 text-error px-2.5 py-1 rounded font-label-caps text-[10px] uppercase hover:bg-error/20 transition-colors">
+                    <span class="material-symbols-outlined text-[14px]">close</span> Reject
+                  </button>
+                </form>
+              </div>
+              {% else %}
+              <a href="{% url 'refund-detail' refund.pk %}" class="inline-flex items-center gap-1 text-on-surface-variant hover:text-primary font-label-caps text-[10px] uppercase transition-colors">
+                <span class="material-symbols-outlined text-[16px]">open_in_new</span> View
+              </a>
+              {% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="7" class="py-16 text-center">
+              <span class="material-symbols-outlined text-[48px] text-on-surface-variant mb-3 block">undo</span>
+              <p class="font-body-lg text-body-lg text-on-surface-variant">No refunds found.</p>
+              <a href="{% url 'refund-create' %}" class="mt-4 inline-flex items-center gap-2 bg-primary-container text-on-primary-container font-label-caps text-label-caps uppercase px-6 h-10 rounded border border-primary hover:bg-primary-fixed-dim transition-colors">
+                <span class="material-symbols-outlined text-[18px]">undo</span> Process your first refund
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if page_obj.paginator.num_pages > 1 %}
+    <div class="border-t border-outline-variant bg-surface-container-low p-4 flex justify-between items-center">
+      <span class="font-label-caps text-label-caps text-on-surface-variant uppercase">
+        Showing {{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ page_obj.paginator.count }}
+      </span>
+      <div class="flex gap-2">
+        {% if page_obj.has_previous %}
+        <a href="{% url 'refunds' %}?{% if filters_querystring %}{{ filters_querystring }}&{% endif %}page={{ page_obj.previous_page_number }}" class="w-8 h-8 flex items-center justify-center border border-outline-variant rounded hover:bg-surface-container transition-colors"><span class="material-symbols-outlined text-[18px]">chevron_left</span></a>
+        {% else %}
+        <span class="w-8 h-8 flex items-center justify-center border border-outline-variant rounded opacity-40"><span class="material-symbols-outlined text-[18px]">chevron_left</span></span>
+        {% endif %}
+        {% for num in page_obj.paginator.page_range %}
+          {% if num == page_obj.number %}
+          <span class="w-8 h-8 flex items-center justify-center border border-outline-variant rounded bg-surface-container-high text-primary"><span class="font-data-md text-data-md">{{ num }}</span></span>
+          {% else %}
+          <a href="{% url 'refunds' %}?{% if filters_querystring %}{{ filters_querystring }}&{% endif %}page={{ num }}" class="w-8 h-8 flex items-center justify-center border border-outline-variant rounded hover:bg-surface-container transition-colors"><span class="font-data-md text-data-md">{{ num }}</span></a>
+          {% endif %}
+        {% endfor %}
+        {% if page_obj.has_next %}
+        <a href="{% url 'refunds' %}?{% if filters_querystring %}{{ filters_querystring }}&{% endif %}page={{ page_obj.next_page_number }}" class="w-8 h-8 flex items-center justify-center border border-outline-variant rounded hover:bg-surface-container transition-colors"><span class="material-symbols-outlined text-[18px]">chevron_right</span></a>
+        {% else %}
+        <span class="w-8 h-8 flex items-center justify-center border border-outline-variant rounded opacity-40"><span class="material-symbols-outlined text-[18px]">chevron_right</span></span>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
 </div>
-<button class="bg-[#F59E0B] text-[#0F172A] font-bold uppercase font-label-caps text-label-caps px-6 py-3 hover:bg-[#D97706] transition-colors">
-                PROCESS REFUND
-            </button>
-</div>
-<!-- Bento Grid Layout -->
-<div class="grid grid-cols-1 lg:grid-cols-12 gap-bento-gap">
-<!-- Quick Stats -->
-<div class="col-span-1 lg:col-span-4 bg-[#1E293B] border border-[#334155] p-6 rounded-lg relative overflow-hidden">
-<div class="absolute top-4 right-4 text-[#334155]">
-<span class="material-symbols-outlined">pending_actions</span>
-</div>
-<h3 class="font-label-caps text-label-caps text-on-surface-variant uppercase mb-2">Pending Requests</h3>
-<div class="font-display text-display text-[#F59E0B] leading-none">12</div>
-<p class="font-body-sm text-body-sm text-on-surface-variant mt-2">Requires review</p>
-</div>
-<div class="col-span-1 lg:col-span-4 bg-[#1E293B] border border-[#334155] p-6 rounded-lg relative overflow-hidden">
-<div class="absolute top-4 right-4 text-[#334155]">
-<span class="material-symbols-outlined">check_circle</span>
-</div>
-<h3 class="font-label-caps text-label-caps text-on-surface-variant uppercase mb-2">Processed (30d)</h3>
-<div class="font-display text-display text-on-background leading-none">45</div>
-<p class="font-body-sm text-body-sm text-on-surface-variant mt-2">$4,250.00 Total</p>
-</div>
-<div class="col-span-1 lg:col-span-4 bg-[#1E293B] border border-[#334155] p-6 rounded-lg relative overflow-hidden">
-<div class="absolute top-4 right-4 text-[#334155]">
-<span class="material-symbols-outlined">error</span>
-</div>
-<h3 class="font-label-caps text-label-caps text-on-surface-variant uppercase mb-2">Failed (30d)</h3>
-<div class="font-display text-display text-[#690005] leading-none">3</div>
-<p class="font-body-sm text-body-sm text-on-surface-variant mt-2">Check gateway logs</p>
-</div>
-<!-- Refund History Table -->
-<div class="col-span-1 lg:col-span-12 bg-[#1E293B] border border-[#334155] rounded-lg flex flex-col">
-<div class="p-5 border-b border-[#334155] flex justify-between items-center">
-<h3 class="font-label-caps text-label-caps text-on-background uppercase">Refund History Ledger</h3>
-<div class="flex space-x-2">
-<button class="border border-[#334155] bg-transparent text-on-surface-variant font-label-caps text-label-caps px-4 py-2 hover:bg-[#334155] transition-colors uppercase">Filter</button>
-<button class="border border-[#334155] bg-transparent text-on-surface-variant font-label-caps text-label-caps px-4 py-2 hover:bg-[#334155] transition-colors uppercase">Export</button>
-</div>
-</div>
-<div class="overflow-x-auto">
-<table class="w-full text-left border-collapse">
-<thead>
-<tr class="border-b border-[#334155] bg-[#0F172A]">
-<th class="p-4 font-label-caps text-label-caps text-on-surface-variant uppercase">Date</th>
-<th class="p-4 font-label-caps text-label-caps text-on-surface-variant uppercase">Transaction ID</th>
-<th class="p-4 font-label-caps text-label-caps text-on-surface-variant uppercase">Member</th>
-<th class="p-4 font-label-caps text-label-caps text-on-surface-variant uppercase">Amount</th>
-<th class="p-4 font-label-caps text-label-caps text-on-surface-variant uppercase">Type</th>
-<th class="p-4 font-label-caps text-label-caps text-on-surface-variant uppercase">Status</th>
-<th class="p-4 font-label-caps text-label-caps text-on-surface-variant uppercase text-right">Actions</th>
-</tr>
-</thead>
-<tbody class="font-data-md text-data-md divide-y divide-[#334155]">
-<tr class="hover:bg-[#334155]/30 transition-colors group">
-<td class="p-4 text-on-surface-variant">2023-10-24</td>
-<td class="p-4 font-mono text-[#F59E0B]">TX-9982A</td>
-<td class="p-4 text-on-background">Marcus Vance</td>
-<td class="p-4 text-on-background">$150.00</td>
-<td class="p-4 text-on-surface-variant">Full</td>
-<td class="p-4">
-<div class="inline-flex items-center space-x-2 bg-[#1E293B] border border-[#334155] px-2 py-1 rounded">
-<div class="w-1.5 h-1.5 bg-[#F59E0B]"></div>
-<span class="font-label-caps text-[10px] text-on-surface-variant uppercase">Requested</span>
-</div>
-</td>
-<td class="p-4 text-right">
-<button class="text-on-surface-variant hover:text-[#F59E0B] transition-colors">
-<span class="material-symbols-outlined text-sm">visibility</span>
-</button>
-</td>
-</tr>
-<tr class="hover:bg-[#334155]/30 transition-colors group">
-<td class="p-4 text-on-surface-variant">2023-10-22</td>
-<td class="p-4 font-mono text-[#F59E0B]">TX-9951C</td>
-<td class="p-4 text-on-background">Sarah Connor</td>
-<td class="p-4 text-on-background">$45.00</td>
-<td class="p-4 text-on-surface-variant">Partial</td>
-<td class="p-4">
-<div class="inline-flex items-center space-x-2 bg-[#1E293B] border border-[#334155] px-2 py-1 rounded">
-<div class="w-1.5 h-1.5 bg-green-500"></div>
-<span class="font-label-caps text-[10px] text-on-surface-variant uppercase">Processed</span>
-</div>
-</td>
-<td class="p-4 text-right">
-<button class="text-on-surface-variant hover:text-[#F59E0B] transition-colors">
-<span class="material-symbols-outlined text-sm">visibility</span>
-</button>
-</td>
-</tr>
-<tr class="hover:bg-[#334155]/30 transition-colors group">
-<td class="p-4 text-on-surface-variant">2023-10-21</td>
-<td class="p-4 font-mono text-[#F59E0B]">TX-9940B</td>
-<td class="p-4 text-on-background">John Rambo</td>
-<td class="p-4 text-on-background">$200.00</td>
-<td class="p-4 text-on-surface-variant">Full</td>
-<td class="p-4">
-<div class="inline-flex items-center space-x-2 bg-[#1E293B] border border-[#334155] px-2 py-1 rounded">
-<div class="w-1.5 h-1.5 bg-green-500"></div>
-<span class="font-label-caps text-[10px] text-on-surface-variant uppercase">Processed</span>
-</div>
-</td>
-<td class="p-4 text-right">
-<button class="text-on-surface-variant hover:text-[#F59E0B] transition-colors">
-<span class="material-symbols-outlined text-sm">visibility</span>
-</button>
-</td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
-</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const statusSel = document.querySelector('[data-refund-status-filter]');
+  function applyFilter(key, value) {
+    const params = new URLSearchParams(window.location.search);
+    if (value) params.set(key, value); else params.delete(key);
+    params.delete('page');
+    window.location.search = params.toString();
+  }
+  if (statusSel) statusSel.addEventListener('change', () => applyFilter('status', statusSel.value));
+});
+</script>
 {% endblock %}

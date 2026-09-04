@@ -15,6 +15,7 @@ from django.http import HttpResponseNotAllowed, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
 from django.utils.timezone import localdate
+from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_http_methods
 from django.contrib.auth.hashers import make_password
 
@@ -1051,9 +1052,65 @@ def receipt_pdf_view(request, pk):
 def renewals_view(request):
     return render(request, "renewals/list.html", {"current_user": get_current_user(request)})
 
+def _next_refund_no():
+    prefix = "RFD-"
+    count = Refund.objects.filter(refund_code__startswith=prefix).count()
+    number = count + 1
+    while True:
+        candidate = f"{prefix}{number:04d}"
+        if not Refund.objects.filter(refund_code=candidate).exists():
+            return candidate
+        number += 1
+
+def _refund_status_badges():
+    return Refund.STATUS_CHOICES
+
+
+@never_cache
+
 @login_required_custom
 def refunds_view(request):
-    return render(request, "refunds/list.html", {"current_user": get_current_user(request)})
+    refunds_qs = Refund.objects.select_related('payment', 'member').order_by('-created_at', '-id')
+
+    search = request.GET.get('q', '').strip()
+    status = request.GET.get('status', '').strip()
+
+    if search:
+        refunds_qs = refunds_qs.filter(
+            Q(refund_code__icontains=search)
+            | Q(payment__payment_code__icontains=search)
+            | Q(member__full_name__icontains=search)
+            | Q(reason__icontains=search)
+        )
+    if status:
+        refunds_qs = refunds_qs.filter(status=status)
+
+    pending_count = refunds_qs.filter(status='pending').count()
+    approved_total = refunds_qs.filter(status='approved').aggregate(t=Sum('amount'))['t'] or 0
+    rejected_total = refunds_qs.filter(status='rejected').aggregate(t=Sum('amount'))['t'] or 0
+
+    paginator = Paginator(refunds_qs, 15)
+    page_obj = paginator.get_page(request.GET.get('page'))
+
+    filters_querydict = request.GET.copy()
+    filters_querydict.pop('page', None)
+    filters_querystring = filters_querydict.urlencode()
+
+    context = {
+        'refunds': page_obj.object_list,
+        'page_obj': page_obj,
+        'filters_querystring': filters_querystring,
+        'filter_search': search,
+        'filter_status': status,
+        'filters_active': bool(search or status),
+        'stat_count': refunds_qs.count(),
+        'stat_pending': pending_count,
+        'stat_approved': approved_total,
+        'stat_rejected': rejected_total,
+        'statuses': Refund.STATUS_CHOICES,
+        'today': timezone.localdate(),
+    }
+    return render(request, "refunds/list.html", context)
 
 @login_required_custom
 def attendance_view(request):
@@ -1117,11 +1174,127 @@ def member_attendance_view(request, pk):
 
 @login_required_custom
 def expenses_view(request):
-    return render(request, "expenses/list.html", {"current_user": get_current_user(request)})
+    expenses_qs = Expense.objects.all()
+
+    search = request.GET.get('q', '').strip()
+    category = request.GET.get('category', '').strip()
+    status = request.GET.get('status', '').strip()
+    date_from = _parse_date(request.GET.get('date_from', '').strip())
+    date_to = _parse_date(request.GET.get('date_to', '').strip())
+
+    if search:
+        expenses_qs = expenses_qs.filter(
+            Q(expense_code__icontains=search)
+            | Q(description__icontains=search)
+            | Q(notes__icontains=search)
+        )
+    if category:
+        expenses_qs = expenses_qs.filter(category=category)
+    if status:
+        expenses_qs = expenses_qs.filter(status=status)
+    if date_from:
+        expenses_qs = expenses_qs.filter(expense_date__gte=date_from)
+    if date_to:
+        expenses_qs = expenses_qs.filter(expense_date__lte=date_to)
+
+    totals = expenses_qs.aggregate(total_amount=Sum('amount'))
+    stat_total = totals['total_amount'] or 0
+    stat_count = expenses_qs.count()
+
+    pending_total = (
+        expenses_qs.filter(status='pending').aggregate(t=Sum('amount'))['t'] or 0
+    )
+    cleared_total = (
+        expenses_qs.filter(status='cleared').aggregate(t=Sum('amount'))['t'] or 0
+    )
+
+    paginator = Paginator(expenses_qs, 15)
+    page_obj = paginator.get_page(request.GET.get('page'))
+
+    filters_querydict = request.GET.copy()
+    filters_querydict.pop('page', None)
+    filters_querystring = filters_querydict.urlencode()
+
+    context = {
+        'expenses': page_obj.object_list,
+        'page_obj': page_obj,
+        'filters_querystring': filters_querystring,
+        'filter_search': search,
+        'filter_category': category,
+        'filter_status': status,
+        'filter_date_from': date_from,
+        'filter_date_to': date_to,
+        'filters_active': bool(search or category or status or date_from or date_to),
+        'stat_total': stat_total,
+        'stat_count': stat_count,
+        'stat_pending': pending_total,
+        'stat_cleared': cleared_total,
+        'categories': Expense.CATEGORY_CHOICES,
+        'statuses': Expense.STATUS_CHOICES,
+        'today': timezone.localdate(),
+    }
+    return render(request, "expenses/list.html", context)
+
+@never_cache
 
 @login_required_custom
 def notifications_view(request):
-    return render(request, "notifications/index.html", {"current_user": get_current_user(request)})
+    all_notifs = get_notifications()
+
+    category = request.GET.get('category', '').strip()
+    q = request.GET.get('q', '').strip().lower()
+
+    if category and category != 'all':
+        all_notifs = [n for n in all_notifs if n.ntype == category]
+    if q:
+        all_notifs = [n for n in all_notifs
+                      if q in n.title.lower() or q in n.message.lower()]
+
+    def cat_count(ntype):
+        return sum(1 for n in all_notifs if n.ntype == ntype) if not category and not q else None
+
+    paginator = Paginator(all_notifs, 12)
+    page_obj = paginator.get_page(request.GET.get('page'))
+
+    unread = sum(1 for n in all_notifs if not n.read)
+
+    filters_querydict = request.GET.copy()
+    filters_querydict.pop('page', None)
+    filters_querydict.pop('category', None)
+    filters_querystring = filters_querydict.urlencode()
+
+    return render(request, "notifications/index.html", {
+        'notifications': page_obj.object_list,
+        'page_obj': page_obj,
+        'filters_querystring': filters_querystring,
+        'filter_category': category,
+        'filter_q': request.GET.get('q', ''),
+        'filters_active': bool(category and category != 'all' or q),
+        'total_count': len(all_notifs),
+        'unread_count': unread,
+        'cat_expiration': sum(1 for n in all_notifs if n.ntype == 'expiration'),
+        'cat_renewal': sum(1 for n in all_notifs if n.ntype == 'renewal'),
+        'cat_expired': sum(1 for n in all_notifs if n.ntype == 'expired'),
+        'cat_payment': sum(1 for n in all_notifs if n.ntype == 'payment'),
+        'cat_refund': sum(1 for n in all_notifs if n.ntype == 'refund'),
+        'settings': NotificationSetting.objects.all(),
+    })
+
+
+@never_cache
+
+def notification_mark_read_view(request, nkey):
+    NotificationRead.objects.get_or_create(nkey=nkey)
+    return redirect('notifications')
+
+
+@never_cache
+
+def notification_mark_all_read_view(request):
+    for n in get_notifications():
+        if not n.read:
+            NotificationRead.objects.get_or_create(nkey=n.key)
+    return redirect('notifications')
 
 @login_required_custom
 def reports_view(request):
@@ -2556,5 +2729,207 @@ def reports_generate_view(request):
     return render(request, "reports/generate.html", {"current_user": get_current_user(request)})
 
 @login_required_custom
+
+
+def _expense_form_context(expense=None):
+    context = {
+        'categories': Expense.CATEGORY_CHOICES,
+        'methods': Expense.PAYMENT_METHOD_CHOICES,
+        'statuses': Expense.STATUS_CHOICES,
+        'today': timezone.localdate(),
+    }
+    if expense is not None:
+        context['expense'] = expense
+    return context
+
+def _next_expense_no():
+    prefix = "EXP-"
+    count = Expense.objects.filter(expense_code__startswith=prefix).count()
+    number = count + 1
+    while True:
+        candidate = f"{prefix}{number:04d}"
+        if not Expense.objects.filter(expense_code=candidate).exists():
+            return candidate
+        number += 1
+
+def _next_refund_no():
+    prefix = "RFD-"
+    count = Refund.objects.filter(refund_code__startswith=prefix).count()
+    number = count + 1
+    while True:
+        candidate = f"{prefix}{number:04d}"
+        if not Refund.objects.filter(refund_code=candidate).exists():
+            return candidate
+        number += 1
+
+def _refund_status_badges():
+    return Refund.STATUS_CHOICES
+
+
+@never_cache
+
+def expense_delete_view(request, pk):
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+    expense = get_object_or_404(Expense, pk=pk)
+    expense.delete()
+    return redirect('expenses')
+
+def expense_edit_view(request, pk):
+    expense = get_object_or_404(Expense, pk=pk)
+
+    if request.method == "POST":
+        category = request.POST.get('category', '').strip()
+        description = request.POST.get('description', '').strip()
+        amount = _decimal(request.POST.get('amount'))
+        payment_method = request.POST.get('payment_method', '').strip()
+        expense_date = _parse_date(request.POST.get('expense_date')) or expense.expense_date or timezone.localdate()
+        notes = request.POST.get('notes', '').strip()
+        status = request.POST.get('status', 'pending').strip()
+
+        if not category:
+            return render(request, "expenses/add.html", {
+                **_expense_form_context(expense),
+                'error': "Category is required.",
+            })
+        if amount <= 0:
+            return render(request, "expenses/add.html", {
+                **_expense_form_context(expense),
+                'error': "Amount must be greater than zero.",
+            })
+        if not description:
+            return render(request, "expenses/add.html", {
+                **_expense_form_context(expense),
+                'error': "Description is required.",
+            })
+
+        expense.category = category
+        expense.description = description
+        expense.amount = amount
+        expense.payment_method = payment_method
+        expense.expense_date = expense_date
+        expense.notes = notes or None
+        expense.status = status if status in dict(Expense.STATUS_CHOICES) else 'pending'
+        expense.save()
+
+        return redirect('expenses')
+
+    return render(request, "expenses/add.html", _expense_form_context(expense))
+
+@never_cache
+def notification_mark_all_read_view(request):
+    for n in get_notifications():
+        if not n.read:
+            NotificationRead.objects.get_or_create(nkey=n.key)
+    return redirect('notifications')
+
+@never_cache
+def notification_mark_read_view(request, nkey):
+    NotificationRead.objects.get_or_create(nkey=nkey)
+    return redirect('notifications')
+
+
+@never_cache
+
+@never_cache
+def refund_create_view(request):
+    payments_qs = Payment.objects.select_related('member').order_by('-paid_at', '-id')
+    payment_options = [(p, p.refundable_amount()) for p in payments_qs]
+
+    if request.method == "POST":
+        payment_id = request.POST.get('payment_id') or None
+        amount = _decimal(request.POST.get('amount'))
+        reason = request.POST.get('reason', '').strip()
+        confirmed = request.POST.get('confirm') == '1'
+        ctx = {
+            'payments': payment_options,
+            'statuses': Refund.STATUS_CHOICES,
+        }
+
+        payment = None
+        if payment_id:
+            try:
+                payment = Payment.objects.get(pk=payment_id)
+            except (Payment.DoesNotExist, ValueError):
+                return render(request, "refunds/create.html", {
+                    **ctx,
+                    'error': "Selected payment no longer exists.",
+                })
+        else:
+            return render(request, "refunds/create.html", {
+                **ctx,
+                'error': "Please select a payment to refund.",
+            })
+
+        if amount <= 0:
+            return render(request, "refunds/create.html", {
+                **ctx,
+                'selected_payment': payment,
+                'error': "Refund amount must be greater than zero.",
+            })
+        if amount > payment.refundable_amount():
+            return render(request, "refunds/create.html", {
+                **ctx,
+                'selected_payment': payment,
+                'error': f"Refund cannot exceed refundable amount (${payment.refundable_amount():.2f}).",
+            })
+        if len(reason) < 5:
+            return render(request, "refunds/create.html", {
+                **ctx,
+                'selected_payment': payment,
+                'error': "Please provide a reason (at least 5 characters).",
+            })
+        if not confirmed:
+            return render(request, "refunds/create.html", {
+                **ctx,
+                'selected_payment': payment,
+                'error': "You must confirm the refund authorization.",
+            })
+
+        refund = Refund(
+            refund_code=_next_refund_no(),
+            payment=payment,
+            amount=amount,
+            reason=reason,
+            status='pending',
+        )
+        try:
+            refund.save()
+        except IntegrityError:
+            refund.refund_code = _next_refund_no()
+            refund.save()
+
+        return redirect(f"{reverse('refund-detail', kwargs={'pk': refund.pk})}?created=1")
+
+    return render(request, "refunds/create.html", {
+        'payments': payment_options,
+        'statuses': Refund.STATUS_CHOICES,
+    })
+
+@never_cache
+
+def refund_status_view(request, pk):
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+    refund = get_object_or_404(Refund, pk=pk)
+    action = request.POST.get('action')
+    if refund.status != 'pending':
+        return render(request, "refunds/detail.html", {
+            'refund': refund,
+            'statuses': Refund.STATUS_CHOICES,
+            'error': "Only pending refunds can be approved or rejected.",
+        })
+    if action == 'approve':
+        refund.status = 'approved'
+    elif action == 'reject':
+        refund.status = 'rejected'
+    else:
+        return JsonResponse({'error': 'Unknown action.'}, status=400)
+    refund.save()
+    return redirect(f"{reverse('refund-detail', kwargs={'pk': refund.pk})}?updated=1")
+
+
+@never_cache
+
 def receipt_custom_view(request):
     return render(request, "receipts/custom.html", {"current_user": get_current_user(request)})

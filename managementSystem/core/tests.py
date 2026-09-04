@@ -30,8 +30,10 @@ class UrlsExistenceTests(SimpleTestCase):
             with self.subTest(name=name):
                 # Use dummy args where required
                 kwargs = {}
-                if name in ("member-edit", "member-delete", "member-detail", "user-edit", "user-toggle-status", "user-change-role"):
+                if name in ("member-edit", "member-delete", "member-detail", "user-edit", "user-toggle-status", "user-change-role", "refund-detail", "plan-edit", "plan-activate", "plan-deactivate", "invoice-detail", "invoice-edit", "invoice-pdf", "invoice-status", "receipt-detail", "receipt-edit", "receipt-pdf", "receipt-delete", "expense-edit", "expense-delete", "member-attendance"):
                     kwargs = {"pk": 1}
+                if name in ("plan-assign-service",):
+                    kwargs = {"pk": 1, "service_pk": 1}
                 if name == "subscription-renew":
                     kwargs = {"code": "SUB-TEST-0001"}
                 try:

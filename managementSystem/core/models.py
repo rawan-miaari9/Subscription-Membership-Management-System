@@ -411,6 +411,69 @@ class UserProfile(models.Model):
         return f"{self.user} ({self.role})" if self.user_id else f"UserProfile #{self.pk}"
 
 
+class NotificationRead(models.Model):
+    """Tracks which notification keys have been marked as read."""
+
+    nkey = models.CharField(max_length=120, unique=True)
+    read_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        managed = False
+        db_table = 'app_notificationread'
+        ordering = ['-read_at']
+
+    def __str__(self):
+        return self.nkey
+
+
+
+
+class Expense(models.Model):
+    """A single facility expense — maps to the existing 'expenses' table."""
+
+    CATEGORY_CHOICES = [
+        ('rent', 'Rent'),
+        ('equipment', 'Equipment'),
+        ('salaries', 'Salaries'),
+        ('utilities', 'Utilities'),
+        ('maintenance', 'Maintenance'),
+        ('operations', 'Operations'),
+        ('other', 'Other'),
+    ]
+
+    PAYMENT_METHOD_CHOICES = [
+        ('cash', 'Cash'),
+        ('card', 'Card'),
+        ('bank_transfer', 'Bank Transfer'),
+        ('online', 'Online'),
+        ('other', 'Other'),
+    ]
+
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('cleared', 'Cleared'),
+    ]
+
+    expense_code = models.CharField(max_length=50, null=True, blank=True)
+    category = models.CharField(max_length=50, null=True, blank=True)
+    description = models.TextField(null=True, blank=True)
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    payment_method = models.CharField(max_length=50, null=True, blank=True)
+    expense_date = models.DateField(null=True, blank=True)
+    notes = models.TextField(null=True, blank=True)
+    status = models.CharField(max_length=20, null=True, blank=True)
+
+    class Meta:
+        managed = False
+        db_table = 'expenses'
+        ordering = ['-expense_date', '-id']
+
+    def __str__(self):
+        return self.expense_code or f"Expense #{self.pk}"
+
+
+
+
 class Invoice(models.Model):
     STATUS_CHOICES = [
         ('draft', 'Draft'),
@@ -624,3 +687,41 @@ class Financial(models.Model):
 
     def __str__(self):
         return f"Financial (id={self.pk})"
+
+
+class Refund(models.Model):
+    """A refund issued against a payment — maps to the existing 'refunds' table."""
+
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+    ]
+
+    refund_code = models.CharField(max_length=50, null=True, blank=True)
+    payment = models.ForeignKey(
+        Payment,
+        on_delete=models.CASCADE,
+        db_column='payment_id',
+        related_name='refunds',
+    )
+    member = models.ForeignKey(
+        Member,
+        on_delete=models.CASCADE,
+        db_column='member_id',
+        null=True,
+        blank=True,
+        related_name='refunds',
+    )
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    reason = models.TextField(null=True, blank=True)
+    status = models.CharField(max_length=20, null=True, blank=True)
+    created_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        managed = False
+        db_table = 'refunds'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return self.refund_code or f"Refund #{self.pk}"

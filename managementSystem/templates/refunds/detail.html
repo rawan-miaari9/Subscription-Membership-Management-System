@@ -1,288 +1,104 @@
 {% extends "layouts/dashboard.html" %}
-{% block title %}Process Refund - Iron Core{% endblock %}
+{% block title %}Refund {{ refund.refund_code|default:refund.pk }} - Iron Core{% endblock %}
 {% block dashboard_content %}
 <div class="flex flex-col gap-6 max-w-5xl mx-auto">
   <!-- Header -->
   <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-outline-variant pb-4">
     <div>
-      <h2 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface uppercase tracking-tight">Process Refund</h2>
-      <p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Review payment details and issue a refund. Frontend demo only.</p>
+      <h2 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface uppercase tracking-tight">{{ refund.refund_code|default:"REFUND" }}</h2>
+      <p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Refund against {{ refund.payment.payment_code|default:"payment" }} • {{ refund.created_at|date:"M j, Y g:i A"|default:"—" }}</p>
     </div>
-    <a href="{% url 'refunds' %}" class="inline-flex items-center gap-2 px-4 py-2 border border-outline-variant text-on-surface-variant font-label-caps text-[11px] uppercase hover:bg-surface-container-high hover:text-on-surface transition-colors">
-      <span class="material-symbols-outlined text-[16px]">arrow_back</span> Back to Refunds
-    </a>
+    <div class="flex items-center gap-2">
+      <a href="{% url 'statement' %}?member={{ refund.member_id }}" class="inline-flex items-center gap-2 px-4 py-2 border border-outline-variant text-on-surface-variant font-label-caps text-[11px] uppercase hover:bg-surface-container-high hover:text-on-surface transition-colors">
+        <span class="material-symbols-outlined text-[16px]">receipt_long</span> Customer Statement
+      </a>
+      <a href="{% url 'refunds' %}" class="inline-flex items-center gap-2 px-4 py-2 border border-outline-variant text-on-surface-variant font-label-caps text-[11px] uppercase hover:bg-surface-container-high hover:text-on-surface transition-colors">
+        <span class="material-symbols-outlined text-[16px]">arrow_back</span> Back to Refunds
+      </a>
+    </div>
   </div>
 
-  <!-- Payment Information -->
-  <section class="bg-surface-container border border-outline-variant rounded-lg overflow-hidden" data-payment-info>
+  {% if success %}
+  <div class="bg-tertiary-container/20 border border-tertiary rounded-lg p-4 flex items-start gap-3">
+    <span class="material-symbols-outlined text-tertiary text-[22px] shrink-0">check_circle</span>
+    <div>
+      <p class="font-label-caps text-[11px] text-tertiary uppercase">Refund Submitted</p>
+      <p class="font-body-sm text-[12px] text-on-surface mt-0.5">{{ success }}</p>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if error %}
+  <div class="bg-error-container border border-error rounded-lg p-4 flex items-start gap-3">
+    <span class="material-symbols-outlined text-error text-[20px] shrink-0">warning</span>
+    <div>
+      <p class="font-label-caps text-[11px] text-error uppercase">Action Failed</p>
+      <p class="font-body-sm text-[12px] text-on-error-container mt-1">{{ error }}</p>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Refund Summary -->
+  <section class="bg-surface-container border border-outline-variant rounded-lg overflow-hidden">
     <div class="px-6 py-4 border-b border-outline-variant bg-surface-container-high flex items-center gap-3">
-      <span class="material-symbols-outlined text-primary text-[20px]">receipt_long</span>
-      <h3 class="font-label-caps text-[11px] text-on-surface uppercase tracking-wider">Payment Information</h3>
-      <span class="ml-auto inline-flex items-center gap-1.5 bg-surface-container-highest border border-outline-variant px-2 py-1 rounded-sm">
-        <span class="w-1.5 h-1.5 bg-tertiary rounded-full"></span>
-        <span class="font-label-caps text-[10px] text-tertiary uppercase">Paid</span>
+      <span class="material-symbols-outlined text-primary text-[20px]">undo</span>
+      <h3 class="font-label-caps text-[11px] text-on-surface uppercase tracking-wider">Refund Summary</h3>
+      <span class="ml-auto inline-flex items-center gap-1.5 px-2 py-1 rounded
+        {% if refund.status == 'approved' %}bg-emerald-500/10 border border-emerald-500/30{% elif refund.status == 'pending' %}bg-amber-500/10 border border-amber-500/30{% else %}bg-error/10 border border-error/30{% endif %}">
+        <span class="w-1.5 h-1.5 rounded-sm
+          {% if refund.status == 'approved' %}bg-emerald-500{% elif refund.status == 'pending' %}bg-amber-500{% else %}bg-error{% endif %}"></span>
+        <span class="font-label-caps text-[10px] uppercase
+          {% if refund.status == 'approved' %}text-emerald-400{% elif refund.status == 'pending' %}text-amber-400{% else %}text-error{% endif %}">{{ refund.status|default:"—" }}</span>
       </span>
     </div>
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-6">
       <div class="bg-background border border-outline-variant rounded p-4 flex flex-col gap-1">
-        <span class="font-label-caps text-[11px] text-on-surface-variant uppercase tracking-wider">Payment ID</span>
-        <span class="font-data-md text-data-md text-primary font-mono" data-payment-id>PAY-2023-089</span>
-        <span class="font-body-sm text-[11px] text-on-surface-variant">Receipt #RC-1001</span>
+        <span class="font-label-caps text-[11px] text-on-surface-variant uppercase tracking-wider">Refund Amount</span>
+        <span class="font-data-lg text-data-lg text-primary">${{ refund.amount|floatformat:2 }}</span>
+        <span class="font-body-sm text-[11px] text-on-surface-variant">Refund ID {{ refund.refund_code|default:refund.pk }}</span>
       </div>
       <div class="bg-background border border-outline-variant rounded p-4 flex flex-col gap-1">
         <span class="font-label-caps text-[11px] text-on-surface-variant uppercase tracking-wider">Member</span>
-        <span class="font-data-md text-data-md text-on-surface">Marcus Vance</span>
-        <span class="font-body-sm text-[11px] text-on-surface-variant">MBR-8421 • marcus.v@example.com</span>
+        <span class="font-data-md text-data-md text-on-surface">{{ refund.member.full_name|default:"—" }}</span>
+        <span class="font-body-sm text-[11px] text-on-surface-variant">{{ refund.member.member_code|default:"—" }}</span>
       </div>
       <div class="bg-background border border-outline-variant rounded p-4 flex flex-col gap-1">
-        <span class="font-label-caps text-[11px] text-on-surface-variant uppercase tracking-wider">Amount Paid</span>
-        <span class="font-data-lg text-data-lg text-on-surface" data-amount-paid data-value="350.00">$350.00</span>
-        <span class="font-body-sm text-[11px] text-on-surface-variant">via VISA ****4242</span>
+        <span class="font-label-caps text-[11px] text-on-surface-variant uppercase tracking-wider">Original Payment</span>
+        <span class="font-data-md text-data-md text-on-surface">{{ refund.payment.payment_code|default:"—" }}</span>
+        <span class="font-body-sm text-[11px] text-on-surface-variant">${{ refund.payment.total|floatformat:2 }} • {{ refund.payment.method|default:"—"|upper }}</span>
       </div>
       <div class="bg-background border border-outline-variant rounded p-4 flex flex-col gap-1">
-        <span class="font-label-caps text-[11px] text-on-surface-variant uppercase tracking-wider">Payment Date</span>
-        <span class="font-data-md text-data-md text-on-surface">2023-10-24 14:32</span>
-        <span class="font-body-sm text-[11px] text-on-surface-variant">Elite Powerlifting Annual</span>
+        <span class="font-label-caps text-[11px] text-on-surface-variant uppercase tracking-wider">Already Refunded</span>
+        <span class="font-data-md text-data-md text-on-surface">${{ refund.payment.refunded_amount|floatformat:2 }}</span>
+        <span class="font-body-sm text-[11px] text-on-surface-variant">of ${{ refund.payment.total|floatformat:2 }} total paid</span>
+      </div>
+    </div>
+    <div class="px-6 pb-6">
+      <div class="bg-background border border-outline-variant rounded p-4 flex flex-col gap-1">
+        <span class="font-label-caps text-[11px] text-on-surface-variant uppercase tracking-wider">Reason</span>
+        <p class="font-body-sm text-body-sm text-on-surface">{{ refund.reason|default:"—" }}</p>
       </div>
     </div>
   </section>
 
-  <!-- Refund Form -->
-  <form data-refund-form novalidate class="bg-surface-container border border-outline-variant rounded-lg overflow-hidden flex flex-col">
-    <div class="px-6 py-4 border-b border-outline-variant bg-surface-container-high">
-      <h3 class="font-label-caps text-[11px] text-on-surface uppercase tracking-wider flex items-center gap-2">
-        <span class="material-symbols-outlined text-primary text-[18px]">undo</span> Refund Details
-      </h3>
-    </div>
-
-    <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-      <!-- Refund Amount -->
-      <div class="flex flex-col gap-2">
-        <label for="refund-amount" class="font-label-caps text-[11px] text-on-surface-variant uppercase">Refund Amount <span class="text-error">*</span></label>
-        <div class="relative">
-          <span class="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant font-data-md">$</span>
-          <input id="refund-amount" data-refund-amount type="number" step="0.01" min="0.01" max="350.00" placeholder="0.00"
-            class="w-full bg-background border border-outline-variant text-on-surface font-data-md rounded-DEFAULT pl-8 pr-3 py-2.5 focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all placeholder:text-on-surface-variant/50" />
-        </div>
-        <p class="font-body-sm text-[11px] text-on-surface-variant">Max refundable: <span class="text-on-surface font-mono">$350.00</span></p>
-        <p data-validation-msg data-field="amount" class="hidden font-body-sm text-[11px] text-error flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">error</span> <span></span></p>
-      </div>
-
-      <!-- Refund Method -->
-      <div class="flex flex-col gap-2">
-        <label for="refund-method" class="font-label-caps text-[11px] text-on-surface-variant uppercase">Refund Method <span class="text-error">*</span></label>
-        <div class="relative">
-          <select id="refund-method" data-refund-method
-            class="w-full bg-background border border-outline-variant text-on-surface font-body-sm rounded-DEFAULT px-3 py-2.5 focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all appearance-none">
-            <option value="">Select method</option>
-            <option value="original">Original Payment Method (VISA ****4242)</option>
-            <option value="bank">Bank Transfer</option>
-            <option value="cash">Cash</option>
-            <option value="store_credit">Store Credit</option>
-          </select>
-          <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none text-[18px]">expand_more</span>
-        </div>
-        <p data-validation-msg data-field="method" class="hidden font-body-sm text-[11px] text-error flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">error</span> <span></span></p>
-      </div>
-
-      <!-- Reason -->
-      <div class="flex flex-col gap-2 md:col-span-2">
-        <label for="refund-reason" class="font-label-caps text-[11px] text-on-surface-variant uppercase">Reason <span class="text-error">*</span></label>
-        <textarea id="refund-reason" data-refund-reason rows="4" placeholder="Describe the reason for refund (e.g., duplicate charge, service not rendered, member request)..."
-          class="w-full bg-background border border-outline-variant text-on-surface font-body-sm rounded-DEFAULT px-3 py-2.5 focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all placeholder:text-on-surface-variant/50 resize-none"></textarea>
-        <div class="flex justify-between items-center">
-          <p data-validation-msg data-field="reason" class="hidden font-body-sm text-[11px] text-error flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">error</span> <span></span></p>
-          <span data-char-count class="ml-auto font-data-md text-[11px] text-on-surface-variant">0 / 500</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Confirmation -->
-    <div class="px-6 py-4 border-y border-outline-variant bg-background flex flex-col gap-3">
-      <label class="flex items-start gap-3 cursor-pointer group">
-        <input type="checkbox" data-confirm id="confirm-refund"
-          class="mt-0.5 w-4 h-4 rounded-sm border-outline-variant bg-surface-container-high text-primary focus:ring-primary focus:ring-1" />
-        <span class="font-body-sm text-[13px] text-on-surface-variant group-hover:text-on-surface transition-colors">
-          I confirm that I have verified the payment details and authorize this refund. I understand this action cannot be undone.
-        </span>
-      </label>
-      <p data-validation-msg data-field="confirm" class="hidden font-body-sm text-[11px] text-error flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">error</span> <span></span></p>
-    </div>
-
-    <!-- Validation Summary (data-validation-state) -->
-    <div data-validation-state class="hidden mx-6 mt-4 bg-error-container border border-error rounded p-3 flex items-start gap-3">
-      <span class="material-symbols-outlined text-error text-[18px] shrink-0">warning</span>
-      <div>
-        <p class="font-label-caps text-[11px] text-on-error-container uppercase">Validation Error</p>
-        <p data-validation-summary class="font-body-sm text-[12px] text-on-error-container mt-1"></p>
-      </div>
-    </div>
-
-    <!-- Loading State -->
-    <div data-loading-state class="hidden mx-6 mt-4 bg-surface-container-high border border-outline-variant rounded p-3 flex items-center gap-3">
-      <span class="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></span>
-      <span class="font-label-caps text-[11px] text-on-surface-variant uppercase">Processing refund, please wait…</span>
-    </div>
-
-    <!-- Success State -->
-    <div data-success-state class="hidden mx-6 mt-4 bg-tertiary-container/20 border border-tertiary rounded p-4 flex items-start gap-3">
-      <span class="material-symbols-outlined text-tertiary text-[22px] shrink-0">check_circle</span>
-      <div class="flex-1">
-        <p class="font-label-caps text-[11px] text-tertiary uppercase">Refund Successful</p>
-        <p class="font-body-sm text-[12px] text-on-surface mt-1">Refund of <span data-success-amount class="font-mono font-bold">$0.00</span> to <span data-success-method class="font-bold"></span> has been processed for PAY-2023-089.</p>
-        <p class="font-data-md text-[11px] text-on-surface-variant mt-1">Refund ID: <span class="text-primary font-mono">RFD-2023-1042</span> • Status: Processed</p>
-      </div>
-      <button type="button" data-dismiss-success class="text-on-surface-variant hover:text-on-surface"><span class="material-symbols-outlined text-[18px]">close</span></button>
-    </div>
-
-    <!-- Error State -->
-    <div data-error-state class="hidden mx-6 mt-4 bg-error-container border border-error rounded p-4 flex items-start gap-3">
-      <span class="material-symbols-outlined text-error text-[22px] shrink-0">error</span>
-      <div class="flex-1">
-        <p class="font-label-caps text-[11px] text-error uppercase">Refund Failed</p>
-        <p data-error-msg class="font-body-sm text-[12px] text-on-error-container mt-1">Unable to process refund. Please try again or contact support.</p>
-      </div>
-      <button type="button" data-dismiss-error class="text-on-error-container hover:text-error"><span class="material-symbols-outlined text-[18px]">close</span></button>
-    </div>
-
-    <!-- Actions -->
-    <div class="p-6 flex flex-col sm:flex-row gap-3 justify-end">
-      <a href="{% url 'refunds' %}" class="inline-flex items-center justify-center gap-2 px-6 py-2.5 border border-outline-variant text-on-surface-variant font-label-caps text-[11px] uppercase hover:bg-surface-container-highest hover:text-on-surface transition-colors">
-        Cancel
-      </a>
-      <button type="submit" data-process-btn class="inline-flex items-center justify-center gap-2 px-8 py-2.5 bg-primary-container text-on-primary-container font-label-caps text-[11px] font-bold uppercase hover:bg-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-        <span data-btn-text>Process Refund</span>
-        <span data-btn-spinner class="hidden w-4 h-4 border-2 border-on-primary-container border-t-transparent rounded-full animate-spin"></span>
-        <span class="material-symbols-outlined text-[16px]" data-btn-icon>payments</span>
+  <!-- Actions -->
+  {% if refund.status == 'pending' %}
+  <section class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <form id="refund-approve" method="post" action="{% url 'refund-status' refund.pk %}">{% csrf_token %}
+      <input type="hidden" name="action" value="approve">
+      <button type="submit" data-confirm="Approve refund {{ refund.refund_code|default:refund.pk }} for ${{ refund.amount|floatformat:2 }}? It will appear on the member's statement." data-confirm-title="Approve Refund" data-confirm-text="Approve" data-confirm-form="#refund-approve"
+        class="w-full inline-flex items-center justify-center gap-2 px-6 py-4 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-label-caps text-[11px] font-bold uppercase rounded hover:bg-emerald-500/20 transition-colors">
+        <span class="material-symbols-outlined text-[18px]">check_circle</span> Approve Refund
       </button>
-    </div>
-  </form>
+    </form>
+    <form id="refund-reject" method="post" action="{% url 'refund-status' refund.pk %}">{% csrf_token %}
+      <input type="hidden" name="action" value="reject">
+      <button type="submit" data-confirm="Reject refund {{ refund.refund_code|default:refund.pk }}?" data-confirm-title="Reject Refund" data-confirm-text="Reject" data-confirm-form="#refund-reject"
+        class="w-full inline-flex items-center justify-center gap-2 px-6 py-4 bg-error/10 border border-error/30 text-error font-label-caps text-[11px] font-bold uppercase rounded hover:bg-error/20 transition-colors">
+        <span class="material-symbols-outlined text-[18px]">block</span> Reject Refund
+      </button>
+    </form>
+  </section>
+  {% endif %}
 </div>
-
-<script>
-(function(){
-  const form = document.querySelector('[data-refund-form]');
-  if(!form) return;
-  const amountInput = form.querySelector('[data-refund-amount]');
-  const reasonInput = form.querySelector('[data-refund-reason]');
-  const methodSelect = form.querySelector('[data-refund-method]');
-  const confirmChk = form.querySelector('[data-confirm]');
-  const btn = form.querySelector('[data-process-btn]');
-  const btnText = form.querySelector('[data-btn-text]');
-  const btnSpinner = form.querySelector('[data-btn-spinner]');
-  const btnIcon = form.querySelector('[data-btn-icon]');
-  const validationState = form.querySelector('[data-validation-state]');
-  const validationSummary = form.querySelector('[data-validation-summary]');
-  const loadingState = form.querySelector('[data-loading-state]');
-  const successState = form.querySelector('[data-success-state]');
-  const errorState = form.querySelector('[data-error-state]');
-  const errorMsg = form.querySelector('[data-error-msg]');
-  const successAmount = form.querySelector('[data-success-amount]');
-  const successMethod = form.querySelector('[data-success-method]');
-  const charCount = form.querySelector('[data-char-count]');
-  const MAX_PAID = 350.00;
-
-  function toast(msg, type='info'){
-    if(window.toast) return window.toast(msg, type);
-    let c = document.getElementById('toast-container');
-    if(!c){ c=document.createElement('div'); c.id='toast-container'; c.className='fixed bottom-4 right-4 z-50 flex flex-col gap-2'; document.body.appendChild(c); }
-    const el=document.createElement('div');
-    const bg=type==='error'?'bg-error text-on-error-container border-error':type==='success'?'bg-tertiary-container text-on-tertiary-container border-tertiary':'bg-surface-container-high border-outline-variant text-on-surface';
-    el.className=`px-4 py-3 rounded border text-sm font-label-caps shadow-lg ${bg}`; el.textContent=msg; c.appendChild(el);
-    setTimeout(()=>{ el.style.opacity='0'; setTimeout(()=>el.remove(),300); },2500);
-  }
-
-  function showFieldError(field, msg){
-    const el = form.querySelector(`[data-validation-msg][data-field="${field}"]`);
-    if(!el) return;
-    el.classList.remove('hidden');
-    el.querySelector('span:last-child').textContent = msg;
-    if(field==='amount') amountInput.classList.add('!border-error');
-    if(field==='method') methodSelect.classList.add('!border-error');
-    if(field==='reason') reasonInput.classList.add('!border-error');
-  }
-  function clearErrors(){
-    form.querySelectorAll('[data-validation-msg]').forEach(e=>{ e.classList.add('hidden'); e.querySelector('span:last-child').textContent=''; });
-    validationState.classList.add('hidden');
-    amountInput.classList.remove('!border-error');
-    methodSelect.classList.remove('!border-error');
-    reasonInput.classList.remove('!border-error');
-  }
-
-  reasonInput.addEventListener('input',()=>{
-    const len = reasonInput.value.length;
-    charCount.textContent = len + ' / 500';
-    charCount.classList.toggle('text-error', len>500);
-  });
-
-  // Dismiss handlers
-  form.querySelector('[data-dismiss-success]')?.addEventListener('click',()=> successState.classList.add('hidden'));
-  form.querySelector('[data-dismiss-error]')?.addEventListener('click',()=> errorState.classList.add('hidden'));
-
-  form.addEventListener('submit', (e)=>{
-    e.preventDefault();
-    clearErrors();
-    successState.classList.add('hidden');
-    errorState.classList.add('hidden');
-
-    const errors = [];
-    const amt = parseFloat(amountInput.value);
-    const reason = reasonInput.value.trim();
-    const method = methodSelect.value;
-
-    if(!amountInput.value || isNaN(amt)) { errors.push('Refund amount is required.'); showFieldError('amount','Refund amount is required.'); }
-    else if(amt <= 0) { errors.push('Amount must be greater than $0.'); showFieldError('amount','Amount must be greater than $0.'); }
-    else if(amt > MAX_PAID) { errors.push('Refund cannot exceed amount paid ($350.00).'); showFieldError('amount','Cannot exceed $350.00 paid.'); }
-
-    if(!method) { errors.push('Refund method is required.'); showFieldError('method','Please select a refund method.'); }
-    if(!reason) { errors.push('Reason is required.'); showFieldError('reason','Please provide a reason.'); }
-    else if(reason.length < 10) { errors.push('Reason must be at least 10 characters.'); showFieldError('reason','Reason must be at least 10 characters.'); }
-    else if(reason.length > 500) { errors.push('Reason cannot exceed 500 characters.'); showFieldError('reason','Reason exceeds 500 characters.'); }
-
-    if(!confirmChk.checked) { errors.push('You must confirm the refund authorization.'); showFieldError('confirm','Please confirm to authorize the refund.'); }
-
-    if(errors.length){
-      validationSummary.textContent = errors.join(' ');
-      validationState.classList.remove('hidden');
-      form.setAttribute('data-state','validation');
-      toast('Please fix validation errors','error');
-      return;
-    }
-
-    // Loading state
-    form.setAttribute('data-state','loading');
-    loadingState.classList.remove('hidden');
-    btn.disabled = true;
-    btnText.textContent = 'Processing…';
-    btnSpinner.classList.remove('hidden');
-    btnIcon.classList.add('hidden');
-
-    // Simulate async
-    setTimeout(()=>{
-      loadingState.classList.add('hidden');
-      btn.disabled = false;
-      btnText.textContent = 'Process Refund';
-      btnSpinner.classList.add('hidden');
-      btnIcon.classList.remove('hidden');
-
-      // Demo: 80% success, 20% error (if amount = 13.37 trigger error for testing)
-      const forceError = Math.abs(amt - 13.37) < 0.01;
-      if(forceError){
-        form.setAttribute('data-state','error');
-        errorMsg.textContent = 'Gateway declined refund for $13.37 (demo error trigger). Please try a different amount.';
-        errorState.classList.remove('hidden');
-        toast('Refund failed — gateway error','error');
-      } else {
-        form.setAttribute('data-state','success');
-        successAmount.textContent = '$' + amt.toFixed(2);
-        successMethod.textContent = methodSelect.options[methodSelect.selectedIndex].text;
-        successState.classList.remove('hidden');
-        toast('Refund processed successfully','success');
-        form.reset();
-        charCount.textContent = '0 / 500';
-      }
-    }, 1500);
-  });
-})();
-</script>
 {% endblock %}
