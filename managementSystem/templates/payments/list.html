@@ -9,6 +9,16 @@
 <p class="font-body-sm text-body-sm text-on-surface-variant mt-1 max-w-xl">Manage member dues, process ad-hoc payments, and track transaction history.</p>
 </div>
 </div>
+{% if messages %}
+<div class="space-y-2 mb-4">
+{% for message in messages %}
+<div class="p-3 rounded border flex items-center gap-2 font-body-sm text-sm {% if message.tags == 'success' %}bg-tertiary-container border-tertiary text-on-tertiary-container{% elif message.tags == 'error' %}bg-error-container border-error text-on-error-container{% else %}bg-surface-container-high border-outline-variant text-on-surface{% endif %}">
+<span class="material-symbols-outlined text-[18px]">{% if message.tags == 'success' %}check_circle{% elif message.tags == 'error' %}error{% else %}info{% endif %}</span>
+{{ message }}
+</div>
+{% endfor %}
+</div>
+{% endif %}
 <!-- Bento Grid Layout -->
 <div class="grid grid-cols-1 lg:grid-cols-12 gap-bento-gap">
 <!-- Process Payment Form Module -->
@@ -16,65 +26,87 @@
 <div class="p-6 border-b border-outline-variant bg-surface-container-high rounded-t-lg">
 <h3 class="font-label-caps text-label-caps text-on-surface uppercase tracking-wider">PROCESS PAYMENT</h3>
 </div>
-<div class="p-6 flex-1 flex flex-col gap-6">
-<!-- Search Member (Contextual extra) -->
-<div class="flex flex-col gap-2">
-<label class="font-label-caps text-label-caps text-on-surface-variant">MEMBER ID / NAME</label>
-<input class="w-full bg-background border border-outline-variant text-on-surface font-body-sm rounded-DEFAULT px-3 py-2 focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all" placeholder="Enter details..." type="text"/>
+<form method="post" action="{% url 'payments' %}" class="p-6 flex-1 flex flex-col gap-6" novalidate>
+{% csrf_token %}
+{% if form.errors %}
+<div class="p-3 rounded border border-error bg-error-container text-on-error-container text-xs">
+{% for field, errors in form.errors.items %}{{ field }}: {{ errors.0 }}<br>{% endfor %}
+</div>
+{% endif %}
+<!-- Member Search -->
+<div class="flex flex-col gap-2 relative">
+<label class="font-label-caps text-label-caps text-on-surface-variant">MEMBER ID / NAME *</label>
+<input id="member-search" name="member_search" value="{{ form.member_search.value|default:'' }}" class="w-full bg-background border {% if form.member_search.errors %}border-error{% else %}border-outline-variant{% endif %} text-on-surface font-body-sm rounded-DEFAULT px-3 py-2 focus:ring-1 focus:ring-primary focus:border-primary outline-none" placeholder="Type name or code..." type="text" autocomplete="off" required/>
+<input type="hidden" id="member-id" name="member_id" value="{{ form.member_id.value|default:'' }}"/>
+<div id="member-results" class="hidden absolute z-10 top-full left-0 right-0 mt-1 bg-surface-container border border-outline-variant rounded shadow-lg max-h-48 overflow-y-auto"></div>
+<p class="hidden text-error text-xs" data-error="member_search">{{ form.member_search.errors.0 }}</p>
 </div>
 <!-- Amount -->
 <div class="flex flex-col gap-2">
-<label class="font-label-caps text-label-caps text-on-surface-variant">AMOUNT (USD)</label>
+<label class="font-label-caps text-label-caps text-on-surface-variant">AMOUNT (USD) *</label>
 <div class="relative">
 <span class="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface font-data-md">$</span>
-<input class="w-full bg-background border border-outline-variant text-on-surface font-data-md rounded-DEFAULT pl-8 pr-3 py-2 focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all" placeholder="0.00" type="number"/>
+<input name="amount" value="{{ form.amount.value|default:'' }}" class="w-full bg-background border {% if form.amount.errors %}border-error{% else %}border-outline-variant{% endif %} text-on-surface font-data-md rounded-DEFAULT pl-8 pr-3 py-2 focus:ring-1 focus:ring-primary outline-none" placeholder="0.00" type="number" step="0.01" min="0.01" required/>
 </div>
 </div>
 <!-- Payment Model: Full/Partial -->
 <div class="flex flex-col gap-2">
 <label class="font-label-caps text-label-caps text-on-surface-variant">PAYMENT MODEL</label>
 <div class="grid grid-cols-2 gap-2">
-<label class="flex items-center justify-center gap-2 border border-outline-variant bg-background py-2 cursor-pointer hover:border-primary transition-colors">
-<input checked="" class="text-primary focus:ring-primary bg-background border-outline-variant rounded-none" name="payment_model" type="radio"/>
+<label class="flex items-center justify-center gap-2 border {% if form.payment_model.value == 'full' %}border-primary bg-primary-container/20{% else %}border-outline-variant bg-background{% endif %} py-2 cursor-pointer">
+<input type="radio" name="payment_model" value="full" {% if form.payment_model.value != 'partial' %}checked{% endif %} class="hidden"/>
 <span class="font-label-caps text-label-caps">FULL PAYMENT</span>
 </label>
-<label class="flex items-center justify-center gap-2 border border-outline-variant bg-background py-2 cursor-pointer hover:border-primary transition-colors">
-<input class="text-primary focus:ring-primary bg-background border-outline-variant rounded-none" name="payment_model" type="radio"/>
+<label class="flex items-center justify-center gap-2 border {% if form.payment_model.value == 'partial' %}border-primary bg-primary-container/20{% else %}border-outline-variant bg-background{% endif %} py-2 cursor-pointer">
+<input type="radio" name="payment_model" value="partial" {% if form.payment_model.value == 'partial' %}checked{% endif %} class="hidden"/>
 <span class="font-label-caps text-label-caps">PARTIAL</span>
 </label>
 </div>
 </div>
 <!-- Methods -->
 <div class="flex flex-col gap-2">
-<label class="font-label-caps text-label-caps text-on-surface-variant">METHOD</label>
-<select class="w-full bg-background border border-outline-variant text-on-surface font-body-sm rounded-DEFAULT px-3 py-2 focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all appearance-none">
-<option value="card">Credit/Debit Card</option>
-<option value="cash">Cash</option>
-<option value="transfer">Bank Transfer</option>
+<label class="font-label-caps text-label-caps text-on-surface-variant">METHOD *</label>
+<select name="method" class="w-full bg-background border {% if form.method.errors %}border-error{% else %}border-outline-variant{% endif %} text-on-surface font-body-sm rounded-DEFAULT px-3 py-2 focus:ring-1 focus:ring-primary outline-none appearance-none">
+<option value="card" {% if form.method.value == 'card' %}selected{% endif %}>Credit/Debit Card</option>
+<option value="cash" {% if form.method.value == 'cash' %}selected{% endif %}>Cash</option>
+<option value="transfer" {% if form.method.value == 'transfer' %}selected{% endif %}>Bank Transfer</option>
+<option value="online" {% if form.method.value == 'online' %}selected{% endif %}>Online</option>
 </select>
 </div>
 <!-- Status -->
 <div class="flex flex-col gap-2">
-<label class="font-label-caps text-label-caps text-on-surface-variant">STATUS</label>
-<select class="w-full bg-background border border-outline-variant text-on-surface font-body-sm rounded-DEFAULT px-3 py-2 focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all appearance-none">
-<option value="paid">Paid</option>
-<option value="pending">Pending</option>
+<label class="font-label-caps text-label-caps text-on-surface-variant">STATUS *</label>
+<select name="status" class="w-full bg-background border {% if form.status.errors %}border-error{% else %}border-outline-variant{% endif %} text-on-surface font-body-sm rounded-DEFAULT px-3 py-2 focus:ring-1 focus:ring-primary outline-none appearance-none">
+<option value="success" {% if form.status.value == 'success' or not form.status.value %}selected{% endif %}>Paid</option>
+<option value="pending" {% if form.status.value == 'pending' %}selected{% endif %}>Pending</option>
 </select>
 </div>
-</div>
-<div class="p-6 pt-0 mt-auto">
-<button class="w-full bg-primary-container text-on-primary-container font-headline-md font-bold uppercase rounded-DEFAULT py-3 hover:bg-primary transition-colors duration-200">
-                        Process Payment
-                    </button>
-</div>
+<button type="submit" class="w-full bg-primary-container text-on-primary-container font-headline-md font-bold uppercase rounded-DEFAULT py-3 hover:bg-primary transition-colors mt-auto">
+Process Payment
+</button>
+</form>
 </div>
 <!-- Transaction History Module -->
 <div class="col-span-1 lg:col-span-8 bg-surface-container rounded-lg border border-outline-variant flex flex-col overflow-hidden">
-<div class="p-6 border-b border-outline-variant bg-surface-container-high flex justify-between items-center">
+<div class="p-6 border-b border-outline-variant bg-surface-container-high flex flex-col md:flex-row justify-between gap-4">
 <h3 class="font-label-caps text-label-caps text-on-surface uppercase tracking-wider">TRANSACTION HISTORY</h3>
-<button class="text-on-surface-variant hover:text-primary transition-colors">
-<span class="material-symbols-outlined" style="font-size: 20px;">filter_list</span>
-</button>
+<form method="get" action="{% url 'payments' %}" class="flex flex-wrap gap-2 items-center">
+<input name="q" value="{{ search_query }}" placeholder="Search receipt/member..." class="bg-background border border-outline-variant rounded px-3 py-1.5 font-body-sm text-sm w-40"/>
+<select name="status" class="bg-background border border-outline-variant rounded px-2 py-1.5 font-body-sm text-sm">
+<option value="">All Status</option>
+<option value="success" {% if status_filter == 'success' %}selected{% endif %}>Paid</option>
+<option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
+</select>
+<select name="method" class="bg-background border border-outline-variant rounded px-2 py-1.5 font-body-sm text-sm">
+<option value="">All Methods</option>
+<option value="cash" {% if method_filter == 'cash' %}selected{% endif %}>Cash</option>
+<option value="card" {% if method_filter == 'card' %}selected{% endif %}>Card</option>
+<option value="transfer" {% if method_filter == 'transfer' %}selected{% endif %}>Transfer</option>
+<option value="online" {% if method_filter == 'online' %}selected{% endif %}>Online</option>
+</select>
+<button type="submit" class="px-4 py-1.5 bg-primary text-surface-dim font-label-caps text-xs uppercase rounded">Filter</button>
+{% if filters_active %}<a href="{% url 'payments' %}" class="px-3 py-1.5 border border-outline-variant font-label-caps text-xs uppercase">Clear</a>{% endif %}
+</form>
 </div>
 <div class="overflow-x-auto">
 <table class="w-full text-left border-collapse min-w-[600px]">
@@ -86,90 +118,142 @@
 <th class="p-4 font-label-caps text-label-caps text-on-surface-variant">METHOD</th>
 <th class="p-4 font-label-caps text-label-caps text-on-surface-variant text-right">AMOUNT</th>
 <th class="p-4 font-label-caps text-label-caps text-on-surface-variant">STATUS</th>
+<th class="p-4 font-label-caps text-label-caps text-on-surface-variant text-right">ACTIONS</th>
 </tr>
 </thead>
 <tbody class="font-data-md text-data-md divide-y divide-outline-variant">
-<!-- Row 1 -->
+{% for p in payments %}
 <tr class="hover:bg-surface-container-high transition-colors">
-<td class="p-4 text-primary">#PY-5001</td>
-<td class="p-4 text-on-surface-variant">2023-10-27 14:32</td>
-<td class="p-4 text-on-surface">Marcus Vance</td>
-<td class="p-4 text-on-surface-variant uppercase text-xs">Card</td>
-<td class="p-4 text-right">$150.00</td>
+<td class="p-4 text-primary"><a href="{% url 'payment-detail' %}?id={{ p.id }}" class="hover:underline">{{ p.receipt_no|default:p.payment_code }}</a></td>
+<td class="p-4 text-on-surface-variant">{{ p.paid_at|date:"Y-m-d H:i"|default:p.id }}</td>
+<td class="p-4 text-on-surface">
+<a href="{% url 'member-detail' p.member.id %}" class="hover:text-primary hover:underline">{{ p.member.full_name|default:"—" }}</a>
+<span class="text-on-surface-variant text-xs ml-1">{{ p.member.member_code|default:"" }}</span>
+</td>
+<td class="p-4 text-on-surface-variant uppercase text-xs">{{ p.method|default:"—" }}</td>
+<td class="p-4 text-right">${{ p.total|floatformat:2 }}</td>
 <td class="p-4">
-<div class="inline-flex items-center gap-2 bg-surface-container-highest px-2 py-1 rounded-sm border border-outline-variant">
-<div class="w-1.5 h-1.5 bg-on-surface"></div>
-<span class="font-label-caps text-label-caps text-on-surface">PAID</span>
+{% if p.status == 'success' %}
+<div class="inline-flex items-center gap-2 bg-surface-container-highest px-2 py-1 rounded-sm border border-outline-variant"><div class="w-1.5 h-1.5 bg-emerald-500 rounded-full"></div><span class="font-label-caps text-label-caps text-on-surface">PAID</span></div>
+{% elif p.status == 'pending' %}
+<div class="inline-flex items-center gap-2 bg-surface-container-highest px-2 py-1 rounded-sm border border-outline-variant"><div class="w-1.5 h-1.5 bg-amber-500 rounded-full"></div><span class="font-label-caps text-label-caps text-primary">PENDING</span></div>
+{% else %}
+<div class="inline-flex items-center gap-2 bg-surface-container-highest px-2 py-1 rounded-sm border border-outline-variant"><div class="w-1.5 h-1.5 bg-red-500 rounded-full"></div><span class="font-label-caps text-label-caps text-error">{{ p.status|upper }}</span></div>
+{% endif %}
+</td>
+<td class="p-4 text-right">
+<div class="inline-flex items-center gap-1">
+<a href="{% url 'payment-detail' %}?id={{ p.id }}" class="inline-flex items-center gap-1 px-3 py-1 border border-outline-variant bg-transparent text-on-surface font-label-caps text-[11px] uppercase hover:border-primary hover:text-primary transition-colors" title="View payment details">
+<span class="material-symbols-outlined text-[14px]">visibility</span> View
+</a>
+{% if p.member %}
+<a href="{% url 'payments' %}?q={{ p.member.member_code }}" class="inline-flex items-center px-2 py-1 border border-outline-variant text-on-surface-variant hover:text-primary" title="View all payments for this member">
+<span class="material-symbols-outlined text-[14px]">person</span>
+</a>
+{% endif %}
 </div>
 </td>
 </tr>
-<!-- Row 2 -->
-<tr class="hover:bg-surface-container-high transition-colors">
-<td class="p-4 text-primary">#PY-5002</td>
-<td class="p-4 text-on-surface-variant">2023-10-27 15:05</td>
-<td class="p-4 text-on-surface">Elena Rostova</td>
-<td class="p-4 text-on-surface-variant uppercase text-xs">Cash</td>
-<td class="p-4 text-right">$45.00</td>
-<td class="p-4">
-<div class="inline-flex items-center gap-2 bg-surface-container-highest px-2 py-1 rounded-sm border border-outline-variant">
-<div class="w-1.5 h-1.5 bg-primary"></div>
-<span class="font-label-caps text-label-caps text-primary">PENDING</span>
-</div>
-</td>
-</tr>
-<!-- Row 3 -->
-<tr class="hover:bg-surface-container-high transition-colors">
-<td class="p-4 text-primary">#PY-5003</td>
-<td class="p-4 text-on-surface-variant">2023-10-27 16:12</td>
-<td class="p-4 text-on-surface">David Chen</td>
-<td class="p-4 text-on-surface-variant uppercase text-xs">Transfer</td>
-<td class="p-4 text-right">$300.00</td>
-<td class="p-4">
-<div class="inline-flex items-center gap-2 bg-surface-container-highest px-2 py-1 rounded-sm border border-outline-variant">
-<div class="w-1.5 h-1.5 bg-on-surface"></div>
-<span class="font-label-caps text-label-caps text-on-surface">PAID</span>
-</div>
-</td>
-</tr>
-<!-- Row 4 -->
-<tr class="hover:bg-surface-container-high transition-colors">
-<td class="p-4 text-primary">#PY-5004</td>
-<td class="p-4 text-on-surface-variant">2023-10-28 09:15</td>
-<td class="p-4 text-on-surface">Sarah Connor</td>
-<td class="p-4 text-on-surface-variant uppercase text-xs">Card</td>
-<td class="p-4 text-right">$150.00</td>
-<td class="p-4">
-<div class="inline-flex items-center gap-2 bg-surface-container-highest px-2 py-1 rounded-sm border border-outline-variant">
-<div class="w-1.5 h-1.5 bg-on-surface"></div>
-<span class="font-label-caps text-label-caps text-on-surface">PAID</span>
-</div>
-</td>
-</tr>
-<!-- Row 5 -->
-<tr class="hover:bg-surface-container-high transition-colors">
-<td class="p-4 text-primary">#PY-5005</td>
-<td class="p-4 text-on-surface-variant">2023-10-28 10:45</td>
-<td class="p-4 text-on-surface">John Matrix</td>
-<td class="p-4 text-on-surface-variant uppercase text-xs">Cash</td>
-<td class="p-4 text-right">$75.00</td>
-<td class="p-4">
-<div class="inline-flex items-center gap-2 bg-surface-container-highest px-2 py-1 rounded-sm border border-outline-variant">
-<div class="w-1.5 h-1.5 bg-primary"></div>
-<span class="font-label-caps text-label-caps text-primary">PENDING</span>
-</div>
-</td>
-</tr>
+{% empty %}
+<tr><td colspan="7" class="p-8 text-center text-on-surface-variant">No payments found. Process a payment to see it here.</td></tr>
+{% endfor %}
 </tbody>
 </table>
 </div>
-<!-- Pagination / Footer area of table -->
 <div class="p-4 border-t border-outline-variant bg-background flex justify-between items-center mt-auto">
-<span class="font-label-caps text-label-caps text-on-surface-variant">SHOWING 5 OF 124</span>
+<span class="font-label-caps text-label-caps text-on-surface-variant">SHOWING {{ payments|length }} {% if page_obj %}OF {{ page_obj.paginator.count }}{% endif %}</span>
 <div class="flex gap-2">
-<button class="px-3 py-1 border border-outline-variant text-on-surface hover:bg-surface-container transition-colors"><span class="material-symbols-outlined" style="font-size: 16px;">chevron_left</span></button>
-<button class="px-3 py-1 border border-outline-variant text-on-surface hover:bg-surface-container transition-colors"><span class="material-symbols-outlined" style="font-size: 16px;">chevron_right</span></button>
+{% if page_obj.has_previous %}
+<a href="?page={{ page_obj.previous_page_number }}{% if filters_querystring %}&{{ filters_querystring }}{% endif %}" class="px-3 py-1 border border-outline-variant text-on-surface hover:bg-surface-container">‹ Prev</a>
+{% else %}
+<button disabled class="px-3 py-1 border border-outline-variant text-on-surface-variant opacity-50">‹ Prev</button>
+{% endif %}
+{% if page_obj.has_next %}
+<a href="?page={{ page_obj.next_page_number }}{% if filters_querystring %}&{{ filters_querystring }}{% endif %}" class="px-3 py-1 border border-outline-variant text-on-surface hover:bg-surface-container">Next ›</a>
+{% else %}
+<button disabled class="px-3 py-1 border border-outline-variant text-on-surface-variant opacity-50">Next ›</button>
+{% endif %}
 </div>
 </div>
 </div>
 </div>
+<script>
+(function(){
+  // Payment Model toggle (Full/Partial) - visual feedback
+  const pmRadios = document.querySelectorAll('input[name="payment_model"]');
+  function updatePM(){
+    pmRadios.forEach(r=>{
+      const label = r.closest('label');
+      if(!label) return;
+      if(r.checked){
+        label.classList.add('border-primary','bg-primary-container/20');
+        label.classList.remove('border-outline-variant','bg-background');
+      } else {
+        label.classList.remove('border-primary','bg-primary-container/20');
+        label.classList.add('border-outline-variant','bg-background');
+      }
+    });
+  }
+  pmRadios.forEach(r=> r.addEventListener('change', updatePM));
+  updatePM();
+  // Enforce: Full => always Paid, Partial => can be Pending
+  const statusSelect = document.querySelector('select[name="status"]');
+  function updateStatusForPM(){
+    const pm = document.querySelector('input[name="payment_model"]:checked')?.value;
+    if(!statusSelect) return;
+    if(pm === 'full'){
+      statusSelect.value = 'success';
+      // Disable pending/failed options visually but keep select enabled so value submits
+      Array.from(statusSelect.options).forEach(opt=>{
+        if(opt.value !== 'success'){
+          opt.disabled = true;
+        } else {
+          opt.disabled = false;
+        }
+      });
+      statusSelect.classList.add('opacity-60');
+    } else {
+      Array.from(statusSelect.options).forEach(opt=> opt.disabled = false);
+      statusSelect.classList.remove('opacity-60');
+    }
+  }
+  pmRadios.forEach(r=> r.addEventListener('change', updateStatusForPM));
+  updateStatusForPM();
+
+  const input = document.getElementById('member-search');
+  const hidden = document.getElementById('member-id');
+  const results = document.getElementById('member-results');
+  if(!input) return;
+  let timer=null;
+  input.addEventListener('input', ()=>{
+    const q=input.value.trim();
+    hidden.value='';
+    if(q.length<2){ results.classList.add('hidden'); return; }
+    clearTimeout(timer);
+    timer=setTimeout(()=>{
+      fetch(`/api/members/search/?q=${encodeURIComponent(q)}`)
+        .then(r=>r.json())
+        .then(data=>{
+          results.innerHTML='';
+          if(!data.length){ results.classList.add('hidden'); return; }
+          data.forEach(m=>{
+            const div=document.createElement('div');
+            div.className='px-3 py-2 hover:bg-surface-container-high cursor-pointer border-b border-outline-variant last:border-0';
+            div.innerHTML=`<div class="font-data-md text-on-surface">${m.full_name}</div><div class="text-xs text-on-surface-variant">${m.member_code} • ${m.phone||''}</div>`;
+            div.addEventListener('click', ()=>{
+              input.value=`${m.member_code} | ${m.full_name}`;
+              hidden.value=m.id;
+              results.classList.add('hidden');
+            });
+            results.appendChild(div);
+          });
+          results.classList.remove('hidden');
+        });
+    }, 300);
+  });
+  document.addEventListener('click', (e)=>{
+    if(!input.contains(e.target) && !results.contains(e.target)) results.classList.add('hidden');
+  });
+})();
+</script>
 {% endblock %}

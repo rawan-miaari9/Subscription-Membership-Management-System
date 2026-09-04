@@ -19,7 +19,7 @@ from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_http_methods
 from django.contrib.auth.hashers import make_password
 
-from .forms import MemberForm, PlanForm, ServiceForm, UserAddForm
+from .forms import MemberForm, PaymentForm, PlanForm, ServiceForm, UserAddForm
 from .permissions import role_required
 
 from .models import User, Member, MembershipPlan, Subscription, BusinessInformation, FinancialSetting, PaymentMethod, NotificationSetting, Payment, Attendance, Service, PlanService, UserProfile, Invoice, Receipt, Financial
@@ -548,8 +548,147 @@ def pricing_view(request):
     return render(request, "pricing/list.html", {"current_user": user})
 
 @login_required_custom
+@login_required_custom
 def payments_view(request):
-    return render(request, "payments/list.html", {"current_user": get_current_user(request)})
+    # Handle POST: process new payment via PaymentForm
+    if request.method == "POST":
+        form = PaymentForm(request.POST)
+        if form.is_valid():
+            data = form.cleaned_data
+            member = data.get('member_obj')
+            subscription = data.get('subscription_obj')
+            amount = data['amount']
+            method = data['method']
+            status = data['status']
+            payment_model = data.get('payment_model', 'full')
+            # Enforce: Full always Paid (success), Partial can be Pending
+            if payment_model == 'full':
+                status = 'success'
+            # Generate codes with retry for sequence issues
+            try:
+                from django.db import connection as conn
+                with conn.cursor() as cur:
+                    cur.execute("SELECT setval(pg_get_serial_sequence('payments','id'), COALESCE((SELECT MAX(id) FROM payments),0)+1, false)")
+            except Exception:
+                pass
+            payment_code = PaymentForm.generate_payment_code()
+            receipt_no = PaymentForm.generate_receipt_no()
+            # Ensure uniqueness retry
+            for attempt in range(3):
+                try:
+                    payment = Payment.objects.create(
+                        payment_code=payment_code,
+                        receipt_no=receipt_no,
+                        member=member,
+                        subscription=subscription,
+                        amount=amount,
+                        discount=Decimal('0.00'),
+                        total=amount,
+                        method=method,
+                        status=status,
+                        paid_at=timezone.now() if status == 'success' else None,
+                    )
+                    break
+                except IntegrityError as e:
+                    if 'duplicate key' in str(e).lower() and attempt < 2:
+                        # Regenerate codes
+                        payment_code = PaymentForm.generate_payment_code()
+                        receipt_no = PaymentForm.generate_receipt_no()
+                        continue
+                    raise
+            # Update Member.balance for Partial/Full
+            try:
+                if subscription and subscription.plan and subscription.plan.price is not None:
+                    plan_price = subscription.plan.price
+                    if payment_model == 'partial':
+                        remaining = max(Decimal('0.00'), plan_price - amount)
+                        Member.objects.filter(id=member.id).update(balance=remaining)
+                    else:  # full
+                        Member.objects.filter(id=member.id).update(balance=Decimal('0.00'))
+                elif payment_model == 'partial':
+                    # Ad-hoc partial without plan: keep amount as pending balance
+                    # Use existing balance + remaining? For now set to amount pending
+                    pass
+                else:
+                    Member.objects.filter(id=member.id).update(balance=Decimal('0.00'))
+            except Exception:
+                pass
+            if payment_model == 'partial' and subscription and subscription.plan:
+                try:
+                    remaining = max(Decimal('0.00'), subscription.plan.price - amount)
+                    messages.success(request, f"Payment {payment_code} for {member.full_name} (${amount:.2f}) recorded. Remaining balance: ${remaining:.2f} (Plan ${subscription.plan.price:.2f})")
+                except Exception:
+                    messages.success(request, f"Payment {payment_code} for {member.full_name} (${amount:.2f}) recorded.")
+            else:
+                messages.success(request, f"Payment {payment_code} for {member.full_name} (${amount:.2f}) recorded.")
+            return redirect('payments')
+        else:
+            # Form errors - will be displayed in template
+            pass
+    else:
+        form = PaymentForm()
+
+    # GET: list with filters
+    payments_qs = Payment.objects.select_related('member', 'subscription').order_by('-paid_at', '-id')
+    search = request.GET.get('q', '').strip()
+    status_filter = request.GET.get('status', '').strip()
+    method_filter = request.GET.get('method', '').strip()
+    date_from = request.GET.get('date_from', '').strip()
+    date_to = request.GET.get('date_to', '').strip()
+
+    if search:
+        payments_qs = payments_qs.filter(
+            Q(payment_code__icontains=search) |
+            Q(receipt_no__icontains=search) |
+            Q(member__full_name__icontains=search) |
+            Q(member__member_code__icontains=search)
+        )
+    if status_filter in dict(Payment.STATUS_CHOICES):
+        payments_qs = payments_qs.filter(status=status_filter)
+    if method_filter in dict(Payment.METHOD_CHOICES):
+        payments_qs = payments_qs.filter(method=method_filter)
+    if date_from:
+        try:
+            d = datetime.date.fromisoformat(date_from)
+            payments_qs = payments_qs.filter(paid_at__date__gte=d)
+        except ValueError:
+            pass
+    if date_to:
+        try:
+            d = datetime.date.fromisoformat(date_to)
+            payments_qs = payments_qs.filter(paid_at__date__lte=d)
+        except ValueError:
+            pass
+
+    paginator = Paginator(payments_qs, 15)
+    page_obj = paginator.get_page(request.GET.get('page'))
+    filters_qd = request.GET.copy()
+    filters_qd.pop('page', None)
+    filters_qs = filters_qd.urlencode()
+
+    # Stats for bento cards
+    try:
+        total_paid = Payment.objects.filter(status='success').aggregate(s=Sum('total'))['s'] or 0
+        pending_count = Payment.objects.filter(status='pending').count()
+    except Exception:
+        total_paid = 0
+        pending_count = 0
+
+    return render(request, "payments/list.html", {
+        "current_user": get_current_user(request),
+        "form": form,
+        "payments": page_obj.object_list,
+        "page_obj": page_obj,
+        "search_query": search,
+        "status_filter": status_filter,
+        "method_filter": method_filter,
+        "date_from": date_from,
+        "date_to": date_to,
+        "filters_querystring": filters_qs,
+        "filters_active": bool(search or status_filter or method_filter or date_from or date_to),
+        "total_paid": total_paid,
+        "pending_count": pending_count,
+    })
 
 @login_required_custom
 def invoices_view(request):
@@ -2372,8 +2511,55 @@ def subscription_create_view(request):
     })
 
 @login_required_custom
+@login_required_custom
 def payment_detail_view(request):
-    return render(request, "payments/detail.html", {"current_user": get_current_user(request)})
+    # Support /payments/detail/?id=1 or ?code=PAY-0001 or ?receipt=RCPT-0001
+    pk = request.GET.get('id') or request.GET.get('pk') or request.POST.get('id')
+    code = request.GET.get('code') or request.GET.get('payment_code')
+    receipt = request.GET.get('receipt') or request.GET.get('receipt_no')
+    # Allow POST with id in URL query or hidden field
+    if request.method == "POST" and not pk:
+        pk = request.POST.get('payment_id') or request.POST.get('id')
+    payment = None
+    try:
+        if pk:
+            payment = Payment.objects.select_related('member','subscription','subscription__plan').get(pk=pk)
+        elif code:
+            payment = Payment.objects.select_related('member','subscription','subscription__plan').get(payment_code=code)
+        elif receipt:
+            payment = Payment.objects.select_related('member','subscription','subscription__plan').get(receipt_no=receipt)
+        else:
+            payment = Payment.objects.select_related('member','subscription','subscription__plan').order_by('-paid_at').first()
+    except Payment.DoesNotExist:
+        payment = None
+
+    # Handle status change POST - only Paid/Pending allowed (no Failed)
+    if request.method == "POST" and payment and 'status' in request.POST:
+        new_status = request.POST.get('status', '').strip()
+        if new_status in ('success', 'pending'):
+            payment.status = new_status
+            # Update paid_at accordingly
+            if new_status == 'success' and not payment.paid_at:
+                payment.paid_at = timezone.now()
+            elif new_status != 'success':
+                # Keep original paid_at or clear if failed? keep as is
+                pass
+            payment.save(update_fields=['status', 'paid_at'])
+            messages.success(request, f"Payment {payment.payment_code} status updated to {new_status}.")
+            return redirect(f"{request.path}?id={payment.id}")
+
+    # Fetch linked receipt for "View Receipt" button (receipt.payment_id == payment.id)
+    receipt = None
+    if payment:
+        try:
+            # Try by payment_id FK, then by receipt_no
+            receipt = Receipt.objects.filter(payment_id=payment.id).first()
+            if not receipt and payment.receipt_no:
+                receipt = Receipt.objects.filter(receipt_no=payment.receipt_no).first()
+        except Exception:
+            receipt = None
+
+    return render(request, "payments/detail.html", {"current_user": get_current_user(request), "payment": payment, "receipt": receipt})
 
 @login_required_custom
 def refund_detail_view(request):

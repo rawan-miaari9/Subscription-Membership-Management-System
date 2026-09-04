@@ -1,9 +1,10 @@
 import re
+from decimal import Decimal
 
 from django import forms
 from django.utils.text import slugify
 
-from .models import Member, MembershipPlan, Service, User, UserProfile
+from .models import Member, MembershipPlan, Payment, Service, Subscription, User, UserProfile
 
 
 class MemberForm(forms.Form):
@@ -189,3 +190,84 @@ class ServiceForm(forms.Form):
             if match:
                 max_num = max(max_num, int(match.group(1)))
         return f"SRV-{max_num + 1:03d}"
+
+
+class PaymentForm(forms.Form):
+    member_search = forms.CharField(max_length=150, label='Member', required=True)
+    member_id = forms.IntegerField(widget=forms.HiddenInput, required=False)
+    amount = forms.DecimalField(max_digits=10, decimal_places=2, min_value=Decimal('0.01'), label='Amount')
+    payment_model = forms.ChoiceField(choices=[('full','Full Payment'),('partial','Partial')], initial='full', label='Payment Model')
+    method = forms.ChoiceField(choices=[('card','Card'),('cash','Cash'),('transfer','Bank Transfer'),('online','Online')], label='Method')
+    status = forms.ChoiceField(choices=[('success','Paid'),('pending','Pending')], initial='success', label='Status')
+
+    def clean_member_search(self):
+        val = self.cleaned_data['member_search'].strip()
+        if not val:
+            raise forms.ValidationError('Member is required.')
+        return val
+
+    def clean(self):
+        cleaned = super().clean()
+        member_id = cleaned.get('member_id')
+        member_search = cleaned.get('member_search', '').strip()
+        member = None
+        if member_id:
+            try:
+                member = Member.objects.get(pk=member_id)
+            except Member.DoesNotExist:
+                self.add_error('member_search', 'Selected member not found.')
+                return cleaned
+        elif member_search:
+            # Try to find by code, name, phone, email
+            from django.db.models import Q
+            qs = Member.objects.filter(
+                Q(member_code__iexact=member_search) |
+                Q(full_name__icontains=member_search) |
+                Q(phone__icontains=member_search) |
+                Q(email__icontains=member_search)
+            )
+            member = qs.first()
+            if not member:
+                # Try split like "MBR-123 | Name"
+                code = member_search.split('|')[0].strip().split()[0]
+                try:
+                    member = Member.objects.get(member_code__iexact=code)
+                except Member.DoesNotExist:
+                    self.add_error('member_search', 'Member not found. Use search and select.')
+                    return cleaned
+            cleaned['member_id'] = member.id
+            cleaned['member_obj'] = member
+        else:
+            self.add_error('member_search', 'Member is required.')
+        if member:
+            cleaned['member_obj'] = member
+            # Auto-attach latest subscription if exists for receipt linking
+            try:
+                sub = Subscription.objects.filter(member=member).order_by('-end_date').first()
+                cleaned['subscription_obj'] = sub
+            except Exception:
+                cleaned['subscription_obj'] = None
+        return cleaned
+
+    @staticmethod
+    def generate_payment_code():
+        pattern = re.compile(r'^PAY-(\d+)$')
+        max_num = 0
+        codes = Payment.objects.filter(payment_code__startswith='PAY-').values_list('payment_code', flat=True)
+        for code in codes:
+            m = pattern.match(code)
+            if m:
+                max_num = max(max_num, int(m.group(1)))
+        return f"PAY-{max_num + 1:04d}"
+
+    @staticmethod
+    def generate_receipt_no():
+        pattern = re.compile(r'^RCPT-(\d+)$')
+        max_num = 0
+        codes = Payment.objects.filter(receipt_no__startswith='RCPT-').values_list('receipt_no', flat=True)
+        for code in codes:
+            m = pattern.match(code)
+            if m:
+                max_num = max(max_num, int(m.group(1)))
+        # Keep PAY and RCPT in sync for simplicity
+        return f"RCPT-{max_num + 1:04d}"

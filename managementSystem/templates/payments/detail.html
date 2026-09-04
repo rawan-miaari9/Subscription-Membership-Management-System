@@ -1,18 +1,69 @@
 {% extends "layouts/dashboard.html" %}
 {% block title %}Payment Details - Iron Core{% endblock %}
 {% block dashboard_content %}
-<div class="flex flex-col gap-6">
-  <div><h1 class="font-headline-lg text-headline-lg text-on-surface uppercase">PAY-2023-089</h1><p class="font-data-md text-on-surface-variant">Receipt #RC-1001 • Marcus Thorne</p></div>
-  <div class="grid grid-cols-12 gap-bento-gap">
-    <div class="col-span-6 md:col-span-3 bg-surface-container border border-outline-variant p-4 rounded"><p class="font-label-caps text-[11px] text-on-surface-variant">Amount</p><p class="font-data-lg text-primary mt-1">$350.00</p></div>
-    <div class="col-span-6 md:col-span-3 bg-surface-container border border-outline-variant p-4 rounded"><p class="font-label-caps text-[11px] text-on-surface-variant">Method</p><p class="font-data-md mt-1">VISA ****4242</p></div>
-    <div class="col-span-6 md:col-span-3 bg-surface-container border border-outline-variant p-4 rounded"><p class="font-label-caps text-[11px] text-on-surface-variant">Date</p><p class="font-data-md mt-1">2023-10-24</p></div>
-    <div class="col-span-6 md:col-span-3 bg-surface-container border border-outline-variant p-4 rounded"><p class="font-label-caps text-[11px] text-on-surface-variant">Status</p><p class="font-data-md mt-1 text-tertiary">PAID</p></div>
+{% if payment %}
+<div class="flex flex-col gap-6 max-w-4xl mx-auto">
+  <div class="flex items-center gap-2 mb-2">
+    <a href="{% url 'payments' %}" class="inline-flex items-center gap-1.5 font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant hover:text-primary">
+      <span class="material-symbols-outlined text-[16px]">arrow_back</span> Back to Payments
+    </a>
   </div>
+  <div><h1 class="font-headline-lg text-headline-lg text-on-surface uppercase">{{ payment.payment_code|default:"PAY-"|add:payment.id }}</h1><p class="font-data-md text-on-surface-variant">Receipt {{ payment.receipt_no|default:"—" }} • {{ payment.member.full_name|default:"Walk-in" }} {% if payment.member %}<span class="text-xs">({{ payment.member.member_code }})</span>{% endif %}</p></div>
+  <div class="grid grid-cols-12 gap-bento-gap">
+    <div class="col-span-6 md:col-span-3 bg-surface-container border border-outline-variant p-4 rounded"><p class="font-label-caps text-[11px] text-on-surface-variant">Amount</p><p class="font-data-lg text-primary mt-1">${{ payment.amount|floatformat:2 }}</p><p class="text-xs text-on-surface-variant">Discount: ${{ payment.discount|default:"0.00"|floatformat:2 }}</p></div>
+    <div class="col-span-6 md:col-span-3 bg-surface-container border border-outline-variant p-4 rounded"><p class="font-label-caps text-[11px] text-on-surface-variant">Total</p><p class="font-data-lg text-on-surface mt-1">${{ payment.total|floatformat:2 }}</p><p class="text-xs text-on-surface-variant">Method: {{ payment.method|default:"—"|title }}</p></div>
+    <div class="col-span-6 md:col-span-3 bg-surface-container border border-outline-variant p-4 rounded"><p class="font-label-caps text-[11px] text-on-surface-variant">Date</p><p class="font-data-md mt-1">{{ payment.paid_at|date:"Y-m-d H:i"|default:"—" }}</p><p class="text-xs text-on-surface-variant">Paid at</p></div>
+    <div class="col-span-6 md:col-span-3 bg-surface-container border border-outline-variant p-4 rounded"><p class="font-label-caps text-[11px] text-on-surface-variant">Status</p><p class="font-data-md mt-1 {% if payment.status == 'success' %}text-emerald-500{% elif payment.status == 'pending' %}text-amber-500{% else %}text-error{% endif %}">{{ payment.status|upper }}</p>
+      <form method="post" action="?id={{ payment.id }}" class="mt-3 flex gap-2 items-center">
+        {% csrf_token %}
+        <input type="hidden" name="payment_id" value="{{ payment.id }}"/>
+        <select name="status" class="flex-1 bg-background border border-outline-variant rounded px-2 py-1 text-xs">
+          <option value="success" {% if payment.status == 'success' %}selected{% endif %}>Paid</option>
+          <option value="pending" {% if payment.status == 'pending' %}selected{% endif %}>Pending</option>
+        </select>
+        <button type="submit" class="px-3 py-1 bg-primary-container text-on-primary-container font-label-caps text-[11px] uppercase rounded">Change</button>
+      </form>
+    </div>
+  </div>
+  {% if payment.subscription %}
   <div class="bg-surface-container border border-outline-variant p-6 rounded">
     <h3 class="font-label-caps text-[11px] text-on-surface-variant mb-4">Subscription</h3>
-    <p class="font-data-md text-[12px]">Elite Powerlifting • 2023-10-01 → 2024-10-01 • $108.00</p>
+    <p class="font-data-md text-[12px]">{{ payment.subscription.subscription_code }} • {{ payment.subscription.plan.name|default:"—" }} • {{ payment.subscription.start_date }} → {{ payment.subscription.end_date }} • ${{ payment.subscription.plan.price|default:"—" }}</p>
   </div>
-  <div class="flex gap-2"><button data-toast="View Invoice (demo)" class="px-4 py-2 border border-outline-variant font-label-caps text-[11px]">View Invoice</button><button data-toast="Refund (demo)" class="px-4 py-2 border border-error text-error font-label-caps text-[11px]">Refund</button></div>
+  {% endif %}
+  {% if payment.member %}
+  <div class="bg-surface-container border border-outline-variant p-6 rounded">
+    <h3 class="font-label-caps text-[11px] text-on-surface-variant mb-4">Member</h3>
+    <p class="font-data-md">{{ payment.member.full_name }} ({{ payment.member.member_code }})</p>
+    <p class="text-sm text-on-surface-variant">{{ payment.member.email|default:"" }} • {{ payment.member.phone|default:"" }}</p>
+    {% if payment.member.balance and payment.member.balance > 0 %}
+    <div class="mt-3 p-3 bg-amber-500/10 border border-amber-500/20 rounded flex items-center gap-2">
+      <span class="material-symbols-outlined text-amber-500 text-[18px]">account_balance_wallet</span>
+      <span class="font-label-caps text-[11px] text-amber-500">Remaining Balance: ${{ payment.member.balance|floatformat:2 }}</span>
+      <span class="text-xs text-on-surface-variant">- outstanding for this member</span>
+    </div>
+    {% elif payment.subscription and payment.subscription.plan %}
+    <div class="mt-3 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded flex items-center gap-2">
+      <span class="material-symbols-outlined text-emerald-500 text-[18px]">check_circle</span>
+      <span class="font-label-caps text-[11px] text-emerald-500">Plan {{ payment.subscription.plan.name }}: ${{ payment.subscription.plan.price|floatformat:2 }} - Paid ${{ payment.total|floatformat:2 }} {% if payment.member.balance == 0 %}✓ Fully Paid{% endif %}</span>
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+  <div class="flex gap-2"><a href="{% url 'payments' %}" class="px-4 py-2 border border-outline-variant font-label-caps text-[11px]">Back</a>
+  {% if receipt %}
+    <a href="{% url 'receipt-detail' receipt.id %}" class="px-4 py-2 bg-primary-container text-on-primary-container font-label-caps text-[11px]">View Receipt {{ receipt.receipt_no }}</a>
+  {% elif payment.receipt_no %}
+    <a href="{% url 'receipts' %}?q={{ payment.receipt_no }}" class="px-4 py-2 bg-primary-container text-on-primary-container font-label-caps text-[11px]">View Receipt {{ payment.receipt_no }}</a>
+  {% else %}
+    <a href="{% url 'receipts' %}" class="px-4 py-2 bg-primary-container text-on-primary-container font-label-caps text-[11px]">View Receipts</a>
+  {% endif %}
+  </div>
 </div>
+{% else %}
+<div class="max-w-2xl mx-auto p-8 bg-surface-container border border-outline-variant rounded text-center">
+  <p class="font-data-md text-on-surface-variant">Payment not found.</p>
+  <a href="{% url 'payments' %}" class="inline-flex mt-4 px-4 py-2 border border-outline-variant font-label-caps text-xs">Back to Payments</a>
+</div>
+{% endif %}
 {% endblock %}
