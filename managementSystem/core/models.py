@@ -419,6 +419,76 @@ class UserProfile(models.Model):
         return f"{self.user} ({self.role})" if self.user_id else f"UserProfile #{self.pk}"
 
 
+class AccountantPermission(models.Model):
+    """Admin-controlled toggles for what Accountant can access. One row per page."""
+    code = models.CharField(max_length=30, unique=True)
+    name = models.CharField(max_length=100)
+    enabled = models.BooleanField(default=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'accountant_permissions'
+        managed = False
+        ordering = ['code']
+
+    def __str__(self):
+        return f"{self.name} ({'✓' if self.enabled else '✗'})"
+
+    @classmethod
+    def get_all(cls):
+        defaults = {
+            'dashboard': ('Dashboard', True),
+            'members': ('Members', False),
+            'plans': ('Plans', False),
+            'subscriptions': ('Subscriptions', False),
+            'pricing': ('Pricing', False),
+            'payments': ('Payments', True),
+            'invoices': ('Invoices', True),
+            'renewals': ('Renewals', False),
+            'refunds': ('Refunds', True),
+            'attendance': ('Attendance', False),
+            'expenses': ('Expenses', True),
+            'notifications': ('Notifications', True),
+            'reports': ('Reports', True),
+            'users': ('Users', False),
+            'settings': ('Settings', False),
+            'statement': ('Statement', True),
+        }
+        rows = {r.code: r for r in cls.objects.all()}
+        for code, (name, enabled) in defaults.items():
+            if code not in rows:
+                try:
+                    rows[code] = cls.objects.create(code=code, name=name, enabled=enabled)
+                except Exception:
+                    # Table may not exist yet
+                    pass
+        # Return in defaults order, filter to existing
+        result = []
+        for code in defaults:
+            if code in rows and rows[code] is not None:
+                try:
+                    # Ensure it has enabled attr
+                    _ = rows[code].enabled
+                    result.append(rows[code])
+                except Exception:
+                    pass
+        return result
+
+    @classmethod
+    def is_allowed(cls, code):
+        try:
+            return bool(cls.objects.get(code=code).enabled)
+        except Exception:
+            # If table missing or code not found, use default
+            defaults = {
+                'dashboard': True, 'members': False, 'plans': False, 'subscriptions': False,
+                'pricing': False, 'payments': True, 'invoices': True, 'renewals': False,
+                'refunds': True, 'attendance': False, 'expenses': True, 'notifications': True,
+                'reports': True, 'users': False, 'settings': False, 'statement': True,
+            }
+            return defaults.get(code, False)
+
+
 class NotificationRead(models.Model):
     """Tracks which notification keys have been marked as read."""
 

@@ -1,0 +1,46 @@
+{% extends "layouts/dashboard.html" %}
+{% block title %}Accountant Permissions - Iron Core{% endblock %}
+{% block dashboard_content %}
+<div class="max-w-4xl mx-auto">
+  <div class="flex items-center gap-2 mb-4">
+    <a href="{% url 'users' %}" class="inline-flex items-center gap-1.5 font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant hover:text-primary">
+      <span class="material-symbols-outlined text-[16px]">arrow_back</span> Back to Users
+    </a>
+  </div>
+  <div class="mb-6 border-b border-outline-variant pb-6">
+    <div class="flex items-center gap-3 mb-2">
+      <span class="w-8 h-8 flex items-center justify-center rounded bg-primary-container text-on-primary-container"><span class="material-symbols-outlined text-[18px]">admin_panel_settings</span></span>
+      <span class="font-label-caps text-[11px] uppercase tracking-[0.12em] text-primary-container">Permissions</span>
+    </div>
+    <h1 class="font-headline-lg text-headline-lg text-on-surface uppercase tracking-tight">ACCOUNTANT PERMISSIONS</h1>
+    <p class="font-body-sm text-body-sm text-on-surface-variant mt-2">Admin controls what Accountant can access. Unchecked pages will show 403 for Accountant.</p>
+  </div>
+
+  {% if messages %}
+  <div class="space-y-2 mb-4">
+    {% for message in messages %}
+    <div class="p-3 rounded border {% if message.tags == 'success' %}bg-tertiary-container border-tertiary text-on-tertiary-container{% else %}bg-error-container border-error text-on-error-container{% endif %} font-body-sm text-sm">{{ message }}</div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <form method="post" action="{% url 'accountant-permissions' %}" class="bg-surface-container border border-outline-variant rounded-lg p-6 space-y-4">
+    {% csrf_token %}
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+      {% for perm in permissions %}
+      <label class="flex items-center justify-between p-4 border rounded cursor-pointer {% if perm.enabled %}border-primary bg-primary-container/10{% else %}border-outline-variant bg-surface-container-lowest{% endif %} hover:border-primary transition-colors">
+        <div>
+          <div class="font-label-caps text-[11px] uppercase tracking-widest {% if perm.enabled %}text-primary{% else %}text-on-surface-variant{% endif %}">{{ perm.name }}</div>
+          <div class="font-body-sm text-xs text-on-surface-variant">{{ perm.code }}</div>
+        </div>
+        <input type="checkbox" name="perm_{{ perm.code }}" {% if perm.enabled %}checked{% endif %} class="w-5 h-5 accent-primary"/>
+      </label>
+      {% endfor %}
+    </div>
+    <div class="flex gap-3 pt-4 border-t border-outline-variant">
+      <button type="submit" class="px-6 py-2.5 bg-primary-container text-on-primary-container font-label-caps text-[11px] uppercase font-bold rounded">Save Permissions</button>
+      <a href="{% url 'users' %}" class="px-6 py-2.5 border border-outline-variant font-label-caps text-[11px] uppercase rounded">Back</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

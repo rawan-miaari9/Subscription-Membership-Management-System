@@ -23,7 +23,7 @@ from .forms import MemberForm, PaymentForm, PlanForm, ServiceForm, UserAddForm
 from .notifications import get_notifications
 from .permissions import role_required
 
-from .models import User, Member, MembershipPlan, Subscription, BusinessInformation, FinancialSetting, PaymentMethod, NotificationSetting, Payment, Attendance, Service, PlanService, UserProfile, Invoice, Receipt, Financial, PricingConfig, Promotion, Refund, Expense, NotificationRead
+from .models import User, Member, MembershipPlan, Subscription, BusinessInformation, FinancialSetting, PaymentMethod, NotificationSetting, Payment, Attendance, Service, PlanService, UserProfile, Invoice, Receipt, Financial, PricingConfig, Promotion, Refund, Expense, NotificationRead, AccountantPermission
 
 def _decimal(value, default=Decimal('0.00')):
     try:
@@ -129,6 +129,38 @@ def login_required_custom(view_func):
                 return redirect(f"/login/?next={next_url}")
             return redirect("/login/")
         request.current_user = user
+        # For Accountant, check Admin-controlled per-page permission
+        if (user.role or "").lower() == 'accountant':
+            try:
+                from .models import AccountantPermission
+                view_code_map = {
+                    'dashboard_view': 'dashboard',
+                    'members_view': 'members',
+                    'plans_view': 'plans',
+                    'subscriptions_view': 'subscriptions',
+                    'pricing_view': 'pricing',
+                    'payments_view': 'payments',
+                    'invoices_view': 'invoices',
+                    'invoice_create_view': 'invoices',
+                    'invoice_edit_view': 'invoices',
+                    'invoice_detail_view': 'invoices',
+                    'renewals_view': 'renewals',
+                    'refunds_view': 'refunds',
+                    'attendance_view': 'attendance',
+                    'expenses_view': 'expenses',
+                    'notifications_view': 'notifications',
+                    'reports_view': 'reports',
+                    'reports_generate_view': 'reports',
+                    'users_view': 'users',
+                    'settings_view': 'settings',
+                    'statement_view': 'statement',
+                }
+                code = view_code_map.get(view_func.__name__)
+                if code and not AccountantPermission.is_allowed(code):
+                    from django.shortcuts import render as _render
+                    return _render(request, "errors/403.html", status=403)
+            except Exception:
+                pass
         return view_func(request, *args, **kwargs)
     return wrapper
 
@@ -1559,6 +1591,31 @@ def users_view(request):
     except Exception as e:
         context = {'current_user': get_current_user(request), 'user_profiles': user_profiles or [], 'users': []}
     return render(request, "users/list.html", context)
+
+@login_required_custom
+def accountant_permissions_view(request):
+    # Only Admin can manage Accountant permissions
+    user = get_current_user(request)
+    if not user or user.role != 'Admin':
+        messages.error(request, "Only Admin can manage permissions.")
+        return redirect('users')
+    if request.method == "POST":
+        # Save toggles
+        for perm in AccountantPermission.get_all():
+            enabled = request.POST.get(f"perm_{perm.code}") == 'on'
+            if perm.enabled != enabled:
+                perm.enabled = enabled
+                try:
+                    perm.save(update_fields=['enabled'])
+                except Exception:
+                    pass
+        messages.success(request, "Accountant permissions updated.")
+        return redirect('accountant-permissions')
+    perms = AccountantPermission.get_all()
+    return render(request, "users/permissions.html", {
+        "current_user": user,
+        "permissions": perms,
+    })
 
 def _get_admin_user():
     """Helper compatible with current User model (CharField avatar, no get_admin)."""

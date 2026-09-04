@@ -64,6 +64,7 @@ urlpatterns = [
     path("expenses/add/", views.expense_add_view, name="expense-add"),
     path("expenses/<int:pk>/edit/", views.expense_edit_view, name="expense-edit"),
     path("expenses/<int:pk>/delete/", views.expense_delete_view, name="expense-delete"),
+    path("users/permissions/", views.accountant_permissions_view, name="accountant-permissions"),
     path("users/add/", views.user_add_view, name="user-add"),
     path("users/edit/<int:pk>/", views.user_add_view, name="user-edit"),
     path("users/toggle/<int:pk>/", views.user_toggle_status_view, name="user-toggle-status"),

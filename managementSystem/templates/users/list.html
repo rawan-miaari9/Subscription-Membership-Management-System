@@ -18,10 +18,15 @@
 <h1 class="font-headline-lg-mobile md:font-headline-lg text-on-surface uppercase tracking-tight">USER MANAGEMENT</h1>
 <p class="font-body-sm text-on-surface-variant mt-1">Manage system administrators and accountants access roles. Admin has full access.</p>
 </div>
-<a href="/users/add.html" onclick="event.preventDefault(); if(typeof toast==='function') toast('Add / Edit User — opening frontend demo page','info'); setTimeout(()=>window.location.href='/users/add/', 300);" class="bg-primary-container text-on-primary-container hover:bg-[#D97706] px-6 py-2 font-label-caps uppercase transition-colors rounded-sm flex items-center gap-2 border border-primary-container">
+    <div class="flex gap-2">
+    <a href="{% url 'accountant-permissions' %}" class="bg-surface-container border border-outline-variant text-on-surface hover:border-primary hover:text-primary px-6 py-2 font-label-caps uppercase transition-colors rounded-sm flex items-center gap-2">
+      <span class="material-symbols-outlined text-[18px]">admin_panel_settings</span> Manage Accountant Permissions
+    </a>
+    <a href="/users/add.html" onclick="event.preventDefault(); if(typeof toast==='function') toast('Add / Edit User — opening frontend demo page','info'); setTimeout(()=>window.location.href='/users/add/', 300);" class="bg-primary-container text-on-primary-container hover:bg-[#D97706] px-6 py-2 font-label-caps uppercase transition-colors rounded-sm flex items-center gap-2 border border-primary-container">
 <span class="material-symbols-outlined text-[18px]">add</span>
                 Create User
             </a>
+    </div>
 </div>
 <!-- Bento Grid Layout -->
 <div class="grid grid-cols-1 lg:grid-cols-12 gap-bento-gap">
