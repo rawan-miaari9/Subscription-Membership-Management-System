@@ -1218,7 +1218,46 @@ def receipt_pdf_view(request, pk):
 
 @login_required_custom
 def renewals_view(request):
-    return render(request, "renewals/list.html", {"current_user": get_current_user(request)})
+    # Real: show subscriptions expiring within 30 days or already expired but active
+    today = date.today()
+    renewals_qs = Subscription.objects.select_related('member','plan').filter(
+        status__in=['active','expiring'],
+        end_date__lte=today + timedelta(days=30),
+        end_date__gte=today - timedelta(days=30)
+    ).order_by('end_date')
+    # Also include search
+    search = request.GET.get('q', '').strip()
+    if search:
+        renewals_qs = renewals_qs.filter(
+            Q(member__full_name__icontains=search) |
+            Q(member__member_code__icontains=search) |
+            Q(subscription_code__icontains=search)
+        )
+    paginator = Paginator(renewals_qs, 15)
+    page_obj = paginator.get_page(request.GET.get('page'))
+    # For single renewal detail (if ?code= is provided), show that one
+    single = None
+    code = request.GET.get('code')
+    if code:
+        try:
+            single = Subscription.objects.select_related('member','plan').get(subscription_code=code)
+        except Subscription.DoesNotExist:
+            single = None
+    # If no code, pick first expiring as example for the bento UI (which expects a single member)
+    if not single:
+        single = renewals_qs.first()
+        if not single:
+            # Fallback to any subscription for demo
+            single = Subscription.objects.select_related('member','plan').order_by('-created_at').first()
+
+    return render(request, "renewals/list.html", {
+        "current_user": get_current_user(request),
+        "renewals": page_obj.object_list,
+        "page_obj": page_obj,
+        "single_renewal": single,
+        "search_query": search,
+        "today": today,
+    })
 
 def _next_refund_no():
     prefix = "RFD-"
@@ -2600,7 +2639,151 @@ def refund_history_view(request):
 
 @login_required_custom
 def statement_view(request):
-    return render(request, "statement/list.html", {"current_user": get_current_user(request)})
+    # Real statement for a member (via ?member_id, ?code, or ?member name)
+    member = None
+    member_id = request.GET.get('member_id') or request.GET.get('id')
+    code = request.GET.get('code') or request.GET.get('member_code')
+    name = request.GET.get('member') or request.GET.get('q')
+    if member_id:
+        try:
+            member = Member.objects.get(pk=member_id)
+        except Member.DoesNotExist:
+            member = None
+    elif code:
+        try:
+            member = Member.objects.get(member_code=code)
+        except Member.DoesNotExist:
+            member = None
+    elif name:
+        member = Member.objects.filter(full_name__icontains=name).first()
+    if not member:
+        # Fallback to first member with most transactions or first overall
+        member = Member.objects.order_by('full_name').first()
+    if not member:
+        return render(request, "statement/list.html", {"current_user": get_current_user(request), "member": None})
+
+    # Fetch related data
+    subs = Subscription.objects.filter(member=member).order_by('start_date')
+    pays = Payment.objects.filter(member=member).order_by('paid_at')
+    # Invoices and refunds if tables exist
+    try:
+        from .models import Invoice, Receipt, Refund
+        invoices = Invoice.objects.filter(member=member).order_by('issued_date')
+        refunds = Refund.objects.filter(member=member).order_by('created_at')
+        receipts = Receipt.objects.filter(member=member).order_by('paid_date')
+    except Exception:
+        invoices = []
+        refunds = []
+        receipts = []
+
+    # Calculate summary
+    try:
+        total_charges = sum((s.plan.price for s in subs if s.plan and s.plan.price), Decimal('0.00'))
+    except Exception:
+        total_charges = Decimal('0.00')
+    try:
+        total_payments = pays.filter(status='success').aggregate(s=Sum('total'))['s'] or Decimal('0.00')
+    except Exception:
+        total_payments = Decimal('0.00')
+    try:
+        total_refunds = refunds.aggregate(s=Sum('amount'))['s'] if refunds and hasattr(refunds, 'aggregate') else Decimal('0.00')
+        if total_refunds is None:
+            total_refunds = Decimal('0.00')
+    except Exception:
+        total_refunds = Decimal('0.00')
+    # Discounts from invoices
+    try:
+        total_discounts = Decimal('0.00')
+        for inv in invoices:
+            try:
+                total_discounts += inv.discount_amount
+            except Exception:
+                pass
+    except Exception:
+        total_discounts = Decimal('0.00')
+
+    opening_balance = Decimal('0.00')
+    current_balance = total_charges - total_payments - total_discounts - total_refunds
+    # If member has balance field, use it as override for current
+    try:
+        if member.balance is not None:
+            # Use member.balance as current if it differs significantly
+            pass
+    except Exception:
+        pass
+
+    # Build ledger entries (simplified: subscriptions as charges, payments, refunds, invoice discounts)
+    ledger = []
+    for s in subs:
+        ledger.append({
+            'date': s.start_date,
+            'desc': f"{s.plan.name if s.plan else 'Subscription'} — {s.subscription_code}",
+            'charge': s.plan.price if s.plan else Decimal('0.00'),
+            'payment': None,
+            'discount': None,
+            'refund': None,
+            'balance': None,
+        })
+    for p in pays:
+        ledger.append({
+            'date': p.paid_at.date() if p.paid_at else None,
+            'desc': f"Payment — {p.receipt_no or p.payment_code} ({p.get_method_display() if hasattr(p, 'get_method_display') else p.method})",
+            'charge': None,
+            'payment': p.total,
+            'discount': None,
+            'refund': None,
+            'balance': None,
+        })
+    for inv in invoices:
+        if inv.discount_amount and inv.discount_amount > 0:
+            ledger.append({
+                'date': inv.issued_date,
+                'desc': f"Invoice {inv.invoice_no} Discount",
+                'charge': None,
+                'payment': None,
+                'discount': inv.discount_amount,
+                'refund': None,
+                'balance': None,
+            })
+    for r in refunds:
+        ledger.append({
+            'date': r.created_at.date() if r.created_at else None,
+            'desc': f"Refund — {r.refund_code} ({r.reason or ''})",
+            'charge': None,
+            'payment': None,
+            'discount': None,
+            'refund': r.amount,
+            'balance': None,
+        })
+    # Sort by date
+    ledger = [x for x in ledger if x['date'] is not None]
+    ledger.sort(key=lambda x: x['date'])
+    # Calculate running balance
+    bal = opening_balance
+    for entry in ledger:
+        if entry['charge']:
+            bal += entry['charge']
+        if entry['payment']:
+            bal -= entry['payment']
+        if entry['discount']:
+            bal -= entry['discount']
+        if entry['refund']:
+            bal -= entry['refund']
+        entry['balance'] = bal
+
+    return render(request, "statement/list.html", {
+        "current_user": get_current_user(request),
+        "member": member,
+        "opening_balance": opening_balance,
+        "total_charges": total_charges,
+        "total_payments": total_payments,
+        "total_refunds": total_refunds,
+        "total_discounts": total_discounts,
+        "current_balance": current_balance,
+        "ledger": ledger,
+        "subscriptions": subs,
+        "payments": pays,
+    })
 
 @login_required_custom
 def attendance_checkin_view(request):

@@ -20,21 +20,21 @@
 <div class="bento-card md:col-span-4 flex flex-col relative">
 <span class="font-label-caps text-label-caps text-on-surface-variant absolute top-4 right-4">MEMBER_DATA</span>
 <div class="flex items-center gap-4 mb-6 mt-2">
-<img alt="Member Photo" class="w-16 h-16 rounded object-cover grayscale border border-outline-variant" data-alt="A striking digital installation art piece featuring glowing, generative geometric shapes suspended in a vast, minimalist gallery space. The room is illuminated by high-key, soft white lighting that creates a bright, modern light-mode aesthetic. The artwork relies on a sophisticated palette of deep blacks and pristine whites, punctuated by intense accents of vibrant red. The mood is serene yet technologically advanced." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDm5PbQQltkwD15Ur9XQlhfkxxWivnO0vJGdMp4yLcPvVFnz4nosfHuUrRqrkEThhJIFV5P8u0QRDWj6HVQZH3Adtp1pVX3XgeE0E6i7rO7h14aY0EsWwnw2CN6YaFC8DQlCRn0CA0Zm6tVgTa83dYBi2rNbUfGh7lVsRujk-bOAEl7o9X2LUTPju09qXglQy29OmGJTSotxeItKxMS6c353dp1ihKqgQ9p58-PZOOdXrSL35U9-quFKA"/>
+<img alt="Member Photo" class="w-16 h-16 rounded object-cover grayscale border border-outline-variant" src="https://via.placeholder.com/64x64/1E293B/F59E0B?text={{ single_renewal.member.initials|default:"MV" }}"/>
 <div>
-<h3 class="font-headline-md text-headline-md text-on-surface">Marcus Vance</h3>
-<p class="font-data-md text-data-md text-on-surface-variant">ID: #99482-MV</p>
+<h3 class="font-headline-md text-headline-md text-on-surface">{{ single_renewal.member.full_name|default:"Marcus Vance" }}</h3>
+<p class="font-data-md text-data-md text-on-surface-variant">ID: {{ single_renewal.member.member_code|default:"#99482-MV" }} {% if single_renewal %}• {{ single_renewal.subscription_code }}{% endif %}</p>
 </div>
 </div>
 <div class="space-y-4">
 <div>
 <label class="block font-label-caps text-label-caps text-on-surface-variant mb-1">CURRENT PLAN</label>
-<div class="font-data-lg text-data-lg text-primary">Elite Powerhouse Annual</div>
+<div class="font-data-lg text-data-lg text-primary">{{ single_renewal.plan.name|default:"Elite Powerhouse Annual" }} {% if single_renewal.plan.price %}${{ single_renewal.plan.price }}{% endif %}</div>
 </div>
 <div>
 <label class="block font-label-caps text-label-caps text-on-surface-variant mb-1">STATUS</label>
 <div class="status-chip status-active font-label-caps text-label-caps text-on-surface">
-<span class="status-indicator"></span> ACTIVE (EXPIRES IN 5 DAYS)
+<span class="status-indicator"></span> {{ single_renewal.status|upper|default:"ACTIVE" }} {% if single_renewal.end_date %}(EXPIRES {{ single_renewal.end_date }}){% else %}(EXPIRES IN 5 DAYS){% endif %}
                                 </div>
 </div>
 </div>
@@ -50,15 +50,15 @@
 <div class="space-y-3">
 <div class="flex justify-between">
 <span class="font-body-sm text-body-sm text-on-surface-variant">Start Date</span>
-<span class="font-data-md text-data-md text-on-surface">Oct 15, 2022</span>
+<span class="font-data-md text-data-md text-on-surface">{{ single_renewal.start_date|default:"Oct 15, 2022" }}</span>
 </div>
 <div class="flex justify-between">
 <span class="font-body-sm text-body-sm text-on-surface-variant">End Date</span>
-<span class="font-data-md text-data-md text-error">Oct 15, 2023</span>
+<span class="font-data-md text-data-md text-error">{{ single_renewal.end_date|default:"Oct 15, 2023" }}</span>
 </div>
 <div class="flex justify-between">
 <span class="font-body-sm text-body-sm text-on-surface-variant">Billing Cycle</span>
-<span class="font-data-md text-data-md text-on-surface">Monthly ($120.00)</span>
+<span class="font-data-md text-data-md text-on-surface">{% if single_renewal.plan %}{{ single_renewal.plan.duration_days }} days (${{ single_renewal.plan.price }}){% else %}Monthly ($120.00){% endif %}</span>
 </div>
 </div>
 </div>

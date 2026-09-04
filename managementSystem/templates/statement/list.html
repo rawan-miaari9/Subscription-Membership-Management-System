@@ -6,7 +6,7 @@
   <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-outline-variant pb-4">
     <div>
       <h2 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface uppercase tracking-tight">Customer Statement</h2>
-      <p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Marcus Vance • MBR-8421 • Statement as of Oct 28, 2023</p>
+      <p class="font-body-sm text-body-sm text-on-surface-variant mt-1">{% if member %}{{ member.full_name }} • {{ member.member_code }} • Statement as of {% now "M d, Y" %}{% else %}Marcus Vance • MBR-8421 • Statement as of Oct 28, 2023{% endif %}</p>
     </div>
     <div class="flex flex-wrap gap-2">
       <button data-action="print" class="inline-flex items-center gap-1.5 px-4 py-2 border border-outline-variant text-on-surface-variant font-label-caps text-[11px] uppercase hover:bg-surface-container-highest hover:text-on-surface transition-colors">
@@ -21,37 +21,37 @@
     </div>
   </div>
 
-  <!-- Summary Cards -->
+  <!-- Summary Cards - Real -->
   <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-bento-gap">
     <div class="bg-surface-container border border-outline-variant rounded p-4 flex flex-col gap-1">
       <span class="font-label-caps text-[11px] text-on-surface-variant uppercase tracking-wider">Opening Balance</span>
-      <span class="font-data-lg text-data-lg text-on-surface">$0.00</span>
-      <span class="font-body-sm text-[11px] text-on-surface-variant">As of Sep 01</span>
+      <span class="font-data-lg text-data-lg text-on-surface">${{ opening_balance|default:"0.00"|floatformat:2 }}</span>
+      <span class="font-body-sm text-[11px] text-on-surface-variant">{% if member %}As of {{ member.join_date|default:"Sep 01" }}{% else %}As of Sep 01{% endif %}</span>
     </div>
     <div class="bg-surface-container border border-outline-variant rounded p-4 flex flex-col gap-1">
       <span class="font-label-caps text-[11px] text-on-surface-variant uppercase tracking-wider">Total Charges</span>
-      <span class="font-data-lg text-data-lg text-on-surface">$650.00</span>
-      <span class="font-body-sm text-[11px] text-on-surface-variant">+2 invoices</span>
+      <span class="font-data-lg text-data-lg text-on-surface">${{ total_charges|floatformat:2 }}</span>
+      <span class="font-body-sm text-[11px] text-on-surface-variant">{{ subscriptions|length }} subs</span>
     </div>
     <div class="bg-surface-container border border-outline-variant rounded p-4 flex flex-col gap-1">
       <span class="font-label-caps text-[11px] text-on-surface-variant uppercase tracking-wider">Total Payments</span>
-      <span class="font-data-lg text-data-lg text-tertiary">-$400.00</span>
-      <span class="font-body-sm text-[11px] text-on-surface-variant">2 payments</span>
+      <span class="font-data-lg text-data-lg text-tertiary">-${{ total_payments|floatformat:2 }}</span>
+      <span class="font-body-sm text-[11px] text-on-surface-variant">{{ payments|length }} payments</span>
     </div>
     <div class="bg-surface-container border border-outline-variant rounded p-4 flex flex-col gap-1">
       <span class="font-label-caps text-[11px] text-on-surface-variant uppercase tracking-wider">Total Refunds</span>
-      <span class="font-data-lg text-data-lg text-primary">-$45.00</span>
-      <span class="font-body-sm text-[11px] text-on-surface-variant">1 refund</span>
+      <span class="font-data-lg text-data-lg text-primary">-${{ total_refunds|floatformat:2 }}</span>
+      <span class="font-body-sm text-[11px] text-on-surface-variant">{% if total_refunds > 0 %}Refunds{% else %}0 refunds{% endif %}</span>
     </div>
     <div class="bg-surface-container border border-outline-variant rounded p-4 flex flex-col gap-1">
       <span class="font-label-caps text-[11px] text-on-surface-variant uppercase tracking-wider">Total Discounts</span>
-      <span class="font-data-lg text-data-lg text-tertiary">-$50.00</span>
-      <span class="font-body-sm text-[11px] text-on-surface-variant">Loyalty 10%</span>
+      <span class="font-data-lg text-data-lg text-tertiary">-${{ total_discounts|floatformat:2 }}</span>
+      <span class="font-body-sm text-[11px] text-on-surface-variant">{% if total_discounts > 0 %}Discounts{% else %}No discounts{% endif %}</span>
     </div>
     <div class="bg-primary-container border border-primary rounded p-4 flex flex-col gap-1">
       <span class="font-label-caps text-[11px] text-on-primary-container/80 uppercase tracking-wider">Current Balance</span>
-      <span class="font-data-lg text-data-lg text-on-primary-container">$155.00</span>
-      <span class="font-body-sm text-[11px] text-on-primary-container/80">Due</span>
+      <span class="font-data-lg text-data-lg text-on-primary-container">${{ current_balance|floatformat:2 }}</span>
+      <span class="font-body-sm text-[11px] text-on-primary-container/80">{% if current_balance > 0 %}Due{% elif current_balance < 0 %}Credit{% else %}Paid{% endif %}</span>
     </div>
   </div>
 
@@ -77,6 +77,19 @@
           </tr>
         </thead>
         <tbody class="font-data-md text-[12px] divide-y divide-outline-variant">
+          {% if ledger %}
+          {% for entry in ledger %}
+          <tr class="hover:bg-surface-container-high transition-colors">
+            <td class="p-3 text-on-surface-variant">{{ entry.date|date:"Y-m-d"|default:"—" }}</td>
+            <td class="p-3 text-on-surface">{{ entry.desc }}</td>
+            <td class="p-3 text-right text-on-surface">{% if entry.charge %}${{ entry.charge|floatformat:2 }}{% else %}—{% endif %}</td>
+            <td class="p-3 text-right text-tertiary">{% if entry.payment %}-${{ entry.payment|floatformat:2 }}{% else %}—{% endif %}</td>
+            <td class="p-3 text-right text-tertiary">{% if entry.discount %}-${{ entry.discount|floatformat:2 }}{% else %}—{% endif %}</td>
+            <td class="p-3 text-right text-primary">{% if entry.refund %}-${{ entry.refund|floatformat:2 }}{% else %}—{% endif %}</td>
+            <td class="p-3 text-right font-bold {% if entry.balance < 0 %}text-tertiary{% else %}text-on-surface{% endif %}">${{ entry.balance|floatformat:2 }}</td>
+          </tr>
+          {% endfor %}
+          {% else %}
           <tr class="hover:bg-surface-container-high transition-colors">
             <td class="p-3 text-on-surface-variant">2023-09-01</td>
             <td class="p-3 text-on-surface">Opening Balance</td>
@@ -140,6 +153,7 @@
             <td class="p-3 text-right text-primary">-$45.00</td>
             <td class="p-3 text-right font-bold text-on-surface">$155.00</td>
           </tr>
+          {% endif %}
         </tbody>
         <tfoot>
           <tr class="bg-surface-container-high border-t-2 border-outline-variant font-bold">
