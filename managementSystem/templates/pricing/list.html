@@ -10,7 +10,7 @@
 <p class="font-body-lg text-body-lg text-on-surface-variant">Configure base pricing and discount models for gym plans.</p>
 </div>
 <div class="hidden sm:flex space-x-4">
-<button class="btn-secondary px-6 py-2" type="button">Discard Changes</button>
+<button class="btn-secondary px-6 py-2" type="button" onclick="document.getElementById('pricing-form').reset(); updateCalculator();">Discard Changes</button>
 <button class="btn-primary px-6 py-2" form="pricing-form" type="submit">Save Configuration</button>
 </div>
 </div>
@@ -127,7 +127,7 @@
 <!-- Mobile Action Buttons -->
 <div class="sm:hidden col-span-1 flex flex-col space-y-4 mt-6">
 <button class="btn-primary w-full py-3" type="submit">Save Configuration</button>
-<button class="btn-secondary w-full py-3" type="button">Discard</button>
+<button class="btn-secondary w-full py-3" type="button" onclick="document.getElementById('pricing-form').reset(); updateCalculator();">Discard</button>
 </div>
 </form>
 </div>
