@@ -20,6 +20,7 @@ from django.views.decorators.http import require_http_methods
 from django.contrib.auth.hashers import make_password
 
 from .forms import MemberForm, PaymentForm, PlanForm, ServiceForm, UserAddForm
+from .notifications import get_notifications
 from .permissions import role_required
 
 from .models import User, Member, MembershipPlan, Subscription, BusinessInformation, FinancialSetting, PaymentMethod, NotificationSetting, Payment, Attendance, Service, PlanService, UserProfile, Invoice, Receipt, Financial, PricingConfig, Promotion, Refund, Expense, NotificationRead

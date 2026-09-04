@@ -341,6 +341,17 @@ class NotificationSetting(models.Model):
                 rows[code] = cls.objects.create(code=code, name=name, description=description, enabled=enabled)
         return [rows[code] for code in defaults]
 
+    @classmethod
+    def is_enabled(cls, code):
+        try:
+            return bool(cls.objects.get(code=code).enabled)
+        except cls.DoesNotExist:
+            # Also handle old table name core_notificationsetting vs notificationsetting
+            try:
+                return bool(cls.objects.get(code=code).enabled)
+            except Exception:
+                return True
+
 class Service(models.Model):
     service_code = models.CharField(max_length=50, unique=True, null=True, blank=True)
     name = models.CharField(max_length=150)
