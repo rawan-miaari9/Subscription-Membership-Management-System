@@ -2365,28 +2365,106 @@ def expense_add_view(request):
 
 @login_required_custom
 def subscription_renew_view(request, code):
-    # Renew same subscription: reactivate with same plan/duration from today
-    sub = get_object_or_404(Subscription, subscription_code=code)
-    if request.method != "POST":
-        return redirect(f"/subscriptions/detail/?code={code}")
-    # compute new dates from today using plan duration
+    sub = get_object_or_404(Subscription.objects.select_related('member','plan'), subscription_code=code)
+    plans = MembershipPlan.objects.filter(is_active=True).order_by('price')
+    current_plan = sub.plan
     today = date.today()
-    duration = sub.plan.duration_days if sub.plan else 30
+
+    if request.method == "GET":
+        # Show customizable renew page: upgrade/downgrade + recurring
+        return render(request, "subscriptions/renew.html", {
+            "current_user": get_current_user(request),
+            "subscription": sub,
+            "plans": plans,
+            "current_plan": current_plan,
+            "today": today,
+        })
+
+    # POST: handle customizable renew
+    new_plan_id = request.POST.get('new_plan_id') or request.POST.get('plan_id')
+    auto_renew = request.POST.get('auto_renew') == 'on' or request.POST.get('auto_renew') == 'true'
+    # Determine target plan
+    target_plan = current_plan
+    is_upgrade = False
+    is_downgrade = False
+    price_diff = Decimal('0.00')
+    if new_plan_id:
+        try:
+            target_plan = MembershipPlan.objects.get(pk=int(new_plan_id), is_active=True)
+            if current_plan and target_plan.price > current_plan.price:
+                is_upgrade = True
+                price_diff = target_plan.price - current_plan.price
+            elif current_plan and target_plan.price < current_plan.price:
+                is_downgrade = True
+                price_diff = current_plan.price - target_plan.price
+        except (ValueError, MembershipPlan.DoesNotExist):
+            target_plan = current_plan
+
+    # Handle recurring: if auto_renew checked, keep true, else set false
+    # Also allow custom duration override for recurring
+    duration = target_plan.duration_days if target_plan else 30
+    # If recurring with custom interval, allow override (e.g., 30, 90, 180)
+    recurring_interval = request.POST.get('recurring_interval')
+    if recurring_interval:
+        try:
+            duration = int(recurring_interval)
+            if duration <= 0:
+                duration = target_plan.duration_days if target_plan else 30
+        except ValueError:
+            pass
+
     new_end = today + timedelta(days=duration)
-    # update same row: keep same code, same member/plan, new dates, active
+
+    # Update subscription
+    sub.plan = target_plan
     sub.start_date = today
     sub.end_date = new_end
     sub.status = "active"
-    sub.save(update_fields=["start_date", "end_date", "status"])
+    sub.auto_renew = auto_renew
+    sub.save(update_fields=["plan", "start_date", "end_date", "status", "auto_renew"])
+
     cache.delete("sub_metrics")
     uid = request.session.get("user_id")
     cache.delete(f"page:subscriptions_view:{uid}:/subscriptions/")
     cache.delete(f"page:dashboard_view:{uid}:/dashboard/")
-    messages.success(request, f"Subscription {code} renewed: {today} → {new_end} ({sub.plan.name if sub.plan else ''})")
-    # support AJAX
+
+    # Handle payment for upgrade price difference if any
+    if is_upgrade and price_diff > 0:
+        try:
+            from django.db import connection as conn
+            with conn.cursor() as cur:
+                cur.execute("SELECT setval(pg_get_serial_sequence('payments','id'), COALESCE((SELECT MAX(id) FROM payments),0)+1, false)")
+        except Exception:
+            pass
+        try:
+            # Create pending payment for upgrade difference
+            Payment.objects.create(
+                payment_code=f"PAY-UPG-{sub.id:04d}-{int(timezone.now().timestamp())%10000:04d}",
+                receipt_no=f"RCPT-UPG-{sub.id:04d}",
+                member=sub.member,
+                subscription=sub,
+                amount=price_diff,
+                discount=Decimal('0.00'),
+                total=price_diff,
+                method='card',
+                status='pending',
+                paid_at=None,
+            )
+        except Exception:
+            pass
+
+    msg = f"Subscription {code} renewed: {today} → {new_end} ({target_plan.name if target_plan else ''})"
+    if is_upgrade:
+        msg += f" [Upgrade +${price_diff:.2f} pending]"
+    elif is_downgrade:
+        msg += f" [Downgrade -${price_diff:.2f} credit]"
+    msg += f" {'(Recurring)' if auto_renew else ''}"
+    messages.success(request, msg)
+
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
         from django.http import JsonResponse
-        return JsonResponse({"success": True, "code": code, "start": str(today), "end": str(new_end)})
+        return JsonResponse({"success": True, "code": code, "start": str(today), "end": str(new_end), "plan": target_plan.name if target_plan else "", "upgrade": is_upgrade, "downgrade": is_downgrade, "recurring": auto_renew})
+
     next_url = request.POST.get("next") or request.GET.get("next") or "/subscriptions/"
     return redirect(next_url)
 

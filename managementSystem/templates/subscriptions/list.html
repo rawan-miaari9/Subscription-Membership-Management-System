@@ -84,7 +84,7 @@
 <button data-action-toggle class="text-on-surface-variant hover:text-primary transition-colors p-1" onclick="event.stopPropagation()"><span class="material-symbols-outlined text-[20px]">more_vert</span></button>
 <div data-action-menu class="hidden absolute right-4 top-10 z-20 w-56 bg-surface-container border border-outline-variant rounded shadow-xl flex flex-col py-1">
 <a href="{% url 'subscription-detail' %}?code={{ sub.subscription_code }}" class="px-4 py-2.5 font-label-caps text-[11px] text-on-surface hover:bg-surface-container-high flex items-center gap-2"><span class="material-symbols-outlined text-[16px]">visibility</span> View Details</a>
-<form method="post" action="{% url 'subscription-renew' sub.subscription_code %}" class="w-full">{% csrf_token %}<button type="submit" class="w-full px-4 py-2.5 font-label-caps text-[11px] text-on-surface hover:bg-surface-container-high flex items-center gap-2 text-left"><span class="material-symbols-outlined text-[16px]">autorenew</span> Renew (same plan/duration)</button></form>
+<a href="{% url 'subscription-renew' sub.subscription_code %}" class="w-full px-4 py-2.5 font-label-caps text-[11px] text-on-surface hover:bg-surface-container-high flex items-center gap-2 text-left"><span class="material-symbols-outlined text-[16px]">autorenew</span> Renew (upgrade/downgrade/recurring)</a>
 <div class="border-t border-outline-variant my-1"></div>
 {% if sub.status == "suspended" %}
 <button data-action="activate" data-member="{{ sub.member.full_name }}" class="px-4 py-2.5 font-label-caps text-[11px] text-tertiary hover:bg-surface-container-high flex items-center gap-2 text-left w-full"><span class="material-symbols-outlined text-[16px]">check_circle</span> Activate</button>
