@@ -68,9 +68,8 @@
         <div class="relative">
           <select name="role" required class="w-full appearance-none bg-surface-container-lowest border {% if form.role.errors %}border-error{% else %}border-outline-variant{% endif %} rounded px-4 py-3 pr-10 font-body-sm text-body-sm text-on-surface focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all">
             <option value="" disabled {% if not form.role.value %}selected{% endif %}>Select role</option>
-            <option value="admin" {% if form.role.value == "admin" %}selected{% endif %}>Admin</option>
-            <option value="accountant" {% if form.role.value == "accountant" %}selected{% endif %}>Accountant</option>
-            <option value="staff" {% if form.role.value == "staff" %}selected{% endif %}>Staff</option>
+            <option value="admin" {% if form.role.value == "admin" %}selected{% endif %}>Admin (Full access)</option>
+            <option value="accountant" {% if form.role.value == "accountant" %}selected{% endif %}>Accountant (Billing & reports)</option>
           </select>
           <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none text-[20px]">expand_more</span>
         </div>

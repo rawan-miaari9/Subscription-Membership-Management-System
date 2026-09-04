@@ -16,7 +16,7 @@
 <div class="flex justify-between items-end pb-4 border-b border-[#334155] mb-4">
 <div>
 <h1 class="font-headline-lg-mobile md:font-headline-lg text-on-surface uppercase tracking-tight">USER MANAGEMENT</h1>
-<p class="font-body-sm text-on-surface-variant mt-1">Manage system administrators, accountants, and staff access roles.</p>
+<p class="font-body-sm text-on-surface-variant mt-1">Manage system administrators and accountants access roles. Admin has full access.</p>
 </div>
 <a href="/users/add.html" onclick="event.preventDefault(); if(typeof toast==='function') toast('Add / Edit User — opening frontend demo page','info'); setTimeout(()=>window.location.href='/users/add/', 300);" class="bg-primary-container text-on-primary-container hover:bg-[#D97706] px-6 py-2 font-label-caps uppercase transition-colors rounded-sm flex items-center gap-2 border border-primary-container">
 <span class="material-symbols-outlined text-[18px]">add</span>
@@ -53,13 +53,14 @@
 </div>
 </div>
 </div>
-<!-- Role Distribution Bento (Span 8) -->
+<!-- Role Distribution Bento (Span 8) - Admin has full access -->
 <div class="lg:col-span-8 bg-[#1E293B] border border-[#334155] rounded-lg p-6 flex flex-col">
 <h2 class="font-label-caps text-on-surface-variant mb-6 border-b border-[#334155] pb-2">ROLE DISTRIBUTION</h2>
-<div class="flex-1 grid grid-cols-3 gap-4">
+<div class="flex-1 grid grid-cols-2 gap-4">
 <div class="border border-[#334155] bg-[#0F172A] p-4 flex flex-col justify-center items-center rounded-sm hover:border-[#F59E0B] transition-colors cursor-pointer">
 <span class="font-data-lg text-[#F59E0B] mb-1">{{ admin_count|stringformat:"02d" }}</span>
 <span class="font-label-caps text-on-surface">ADMINISTRATOR</span>
+<span class="font-body-sm text-[11px] text-on-surface-variant mt-1">Full access</span>
 <div class="w-full bg-[#1E293B] h-1 mt-3">
 <div class="bg-[#F59E0B] h-1 w-full"></div>
 </div>
@@ -67,15 +68,9 @@
 <div class="border border-[#334155] bg-[#0F172A] p-4 flex flex-col justify-center items-center rounded-sm hover:border-[#F59E0B] transition-colors cursor-pointer">
 <span class="font-data-lg text-on-surface mb-1">{{ accountant_count|stringformat:"02d" }}</span>
 <span class="font-label-caps text-on-surface">ACCOUNTANT</span>
+<span class="font-body-sm text-[11px] text-on-surface-variant mt-1">Billing & reports</span>
 <div class="w-full bg-[#1E293B] h-1 mt-3">
-<div class="bg-secondary h-1 w-3/4"></div>
-</div>
-</div>
-<div class="border border-[#334155] bg-[#0F172A] p-4 flex flex-col justify-center items-center rounded-sm hover:border-[#F59E0B] transition-colors cursor-pointer">
-<span class="font-data-lg text-on-surface mb-1">{{ staff_count|stringformat:"02d" }}</span>
-<span class="font-label-caps text-on-surface">COACH/STAFF</span>
-<div class="w-full bg-[#1E293B] h-1 mt-3">
-<div class="bg-outline h-1 w-1/2"></div>
+<div class="bg-secondary h-1 w-full"></div>
 </div>
 </div>
 </div>
@@ -125,7 +120,6 @@
 {% if not profile.role %}<option value="" disabled selected>—</option>{% endif %}
 <option value="admin" {% if profile.role == "admin" %}selected{% endif %}>Admin</option>
 <option value="accountant" {% if profile.role == "accountant" %}selected{% endif %}>Accountant</option>
-<option value="staff" {% if profile.role == "staff" %}selected{% endif %}>Staff</option>
 </select>
 </form>
 </td>

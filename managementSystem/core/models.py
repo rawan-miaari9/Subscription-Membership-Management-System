@@ -11,7 +11,6 @@ class User(models.Model):
     ROLE_CHOICES = [
         ("Admin", "Admin"),
         ("Accountant", "Accountant"),
-        ("Staff", "Staff"),
     ]
     STATUS_CHOICES = [
         ("Active", "Active"),
@@ -396,11 +395,9 @@ class PlanService(models.Model):
 class UserProfile(models.Model):
     ROLE_ADMIN = 'admin'
     ROLE_ACCOUNTANT = 'accountant'
-    ROLE_STAFF = 'staff'
     ROLE_CHOICES = [
         (ROLE_ADMIN, 'Admin'),
         (ROLE_ACCOUNTANT, 'Accountant'),
-        (ROLE_STAFF, 'Staff'),
     ]
 
     user = models.OneToOneField(

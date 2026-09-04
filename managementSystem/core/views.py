@@ -1542,14 +1542,7 @@ def users_view(request):
         total_active = User.objects.filter(status='Active').count()
         admin_count = User.objects.filter(role='Admin').count()
         accountant_count = User.objects.filter(role='Accountant').count()
-        try:
-            staff_count = UserProfile.objects.filter(role=UserProfile.ROLE_STAFF).count()
-        except Exception:
-            # Fallback count staff from User role if profile table missing
-            try:
-                staff_count = User.objects.filter(role='Staff').count()
-            except Exception:
-                staff_count = 0
+        staff_count = 0
         try:
             all_users = list(User.objects.all().order_by('full_name')[:100])
         except Exception:
@@ -3096,7 +3089,7 @@ def user_add_view(request, pk=None):
             # Split full_name for dev's full_name field (dev stores full_name, not first/last)
             full_name = data['full_name'].strip()
             status_val = 'Active' if data['status'] == 'active' else 'Inactive'
-            role_map = {'admin': 'Admin', 'accountant': 'Accountant', 'staff': 'Staff'}
+            role_map = {'admin': 'Admin', 'accountant': 'Accountant'}
             role_val = role_map.get(data['role'], data['role'].title() if isinstance(data['role'], str) else 'Admin')
 
             if instance_user is not None:
@@ -3104,7 +3097,7 @@ def user_add_view(request, pk=None):
                 instance_user.email = data['email']
                 instance_user.full_name = full_name
                 instance_user.status = status_val
-                instance_user.role = role_val if role_val in ['Admin','Accountant','Staff'] else 'Admin'
+                instance_user.role = role_val if role_val in ['Admin','Accountant'] else 'Admin'
                 if data['password']:
                     instance_user.set_password(data['password'])
                 instance_user.save()
@@ -3132,7 +3125,7 @@ def user_add_view(request, pk=None):
                     username=data['username'],
                     email=data['email'],
                     full_name=full_name,
-                    role=role_val if role_val in ['Admin','Accountant','Staff'] else 'Admin',
+                    role=role_val if role_val in ['Admin','Accountant'] else 'Admin',
                     status=status_val,
                 )
                 new_user.set_password(data['password'])
@@ -3208,9 +3201,9 @@ def user_change_role_view(request, pk):
         user = get_object_or_404(User, pk=pk)
         profile = None
     new_role = request.POST.get('role')
-    valid_roles = dict(UserProfile.ROLE_CHOICES) if 'UserProfile' in globals() else {'admin':'Admin','accountant':'Accountant','staff':'Staff'}
+    valid_roles = dict(UserProfile.ROLE_CHOICES) if 'UserProfile' in globals() else {'admin':'Admin','accountant':'Accountant'}
     # also allow dev roles
-    role_lower_map = {'admin':'Admin','accountant':'Accountant','staff':'Staff'}
+    role_lower_map = {'admin':'Admin','accountant':'Accountant'}
     if new_role not in valid_roles and new_role.lower() not in role_lower_map:
         messages.error(request, "Invalid role selected.")
         return redirect('users')

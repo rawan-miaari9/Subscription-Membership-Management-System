@@ -95,7 +95,7 @@ class ModelsExistenceTests(SimpleTestCase):
         self.assertEqual(u.last_name, "Doe")
         self.assertTrue(u.is_active)
         self.assertTrue(u.is_authenticated)
-        u2 = User(full_name="Single", email="s@test.com", username="single", password="x", role="Staff", status="Inactive")
+        u2 = User(full_name="Single", email="s@test.com", username="single", password="x", role="Accountant", status="Inactive")
         self.assertEqual(u2.first_name, "Single")
         self.assertEqual(u2.last_name, "")
         self.assertFalse(u2.is_active)
@@ -103,7 +103,7 @@ class ModelsExistenceTests(SimpleTestCase):
     def test_user_role_choices_include_staff(self):
         from core.models import User
         roles = [c[0] for c in User.ROLE_CHOICES]
-        self.assertIn("Staff", roles)
+        self.assertNotIn("Staff", roles)
         self.assertIn("Admin", roles)
         self.assertIn("Accountant", roles)
 
@@ -202,8 +202,8 @@ class PermissionsTests(SimpleTestCase):
             resp = dummy(req)
             self.assertEqual(resp.status_code, 200)
 
-        # Non-allowed role should get 403
-        mock_user2 = User(full_name="Staff", email="s@test.com", username="staff", password="x", role="Staff", status="Active")
+        # Non-allowed role should get 403 (Accountant not allowed for admin-only)
+        mock_user2 = User(full_name="Accountant User", email="acc@test.com", username="acc", password="x", role="Accountant", status="Active")
         with patch('core.views.get_current_user', return_value=mock_user2):
             resp = dummy(req)
             self.assertEqual(resp.status_code, 403)
