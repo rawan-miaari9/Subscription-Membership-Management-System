@@ -2983,7 +2983,8 @@ def attendance_checkout_save_view(request):
 
 @login_required_custom
 def expense_add_view(request):
-    return render(request, "expenses/add.html", {"current_user": get_current_user(request)})
+    today = date.today()
+    return render(request, "expenses/add.html", {"current_user": get_current_user(request), "today": today})
 
 @login_required_custom
 def subscription_renew_view(request, code):
