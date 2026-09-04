@@ -624,3 +624,41 @@ class Financial(models.Model):
 
     def __str__(self):
         return f"Financial (id={self.pk})"
+
+
+class Promotion(models.Model):
+    DISCOUNT_TYPE_CHOICES = [
+        ('flat', 'Flat'),
+        ('percent', 'Percent'),
+    ]
+    code = models.CharField(max_length=50, unique=True)
+    discount_type = models.CharField(max_length=10, choices=DISCOUNT_TYPE_CHOICES, default='flat')
+    discount_value = models.DecimalField(max_digits=10, decimal_places=2)
+    valid_until = models.DateField(null=True, blank=True)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'promotions'
+        managed = False
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.code} ({self.discount_value}{'%' if self.discount_type=='percent' else ''})"
+
+    def is_valid(self):
+        if not self.is_active:
+            return False
+        if self.valid_until and self.valid_until < timezone.localdate():
+            return False
+        return True
+
+    def apply(self, amount):
+        """Apply promotion to amount and return discounted amount and discount."""
+        if not self.is_valid():
+            return amount, Decimal('0.00')
+        if self.discount_type == 'percent':
+            discount = (amount * self.discount_value / Decimal('100')).quantize(Decimal('0.01'))
+        else:
+            discount = min(self.discount_value, amount)
+        return max(amount - discount, Decimal('0.00')), discount

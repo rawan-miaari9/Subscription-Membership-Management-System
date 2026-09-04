@@ -21,7 +21,7 @@ from django.contrib.auth.hashers import make_password
 from .forms import MemberForm, PlanForm, ServiceForm, UserAddForm
 from .permissions import role_required
 
-from .models import User, Member, MembershipPlan, Subscription, BusinessInformation, FinancialSetting, PaymentMethod, NotificationSetting, Payment, Attendance, Service, PlanService, UserProfile, Invoice, Receipt, Financial
+from .models import User, Member, MembershipPlan, Subscription, BusinessInformation, FinancialSetting, PaymentMethod, NotificationSetting, Payment, Attendance, Service, PlanService, UserProfile, Invoice, Receipt, Financial, Promotion
 
 def _decimal(value, default=Decimal('0.00')):
     try:
@@ -2371,13 +2371,18 @@ def subscription_renew_view(request, code):
     today = date.today()
 
     if request.method == "GET":
-        # Show customizable renew page: upgrade/downgrade + recurring
+        # Show customizable renew page: upgrade/downgrade + recurring + promotion
+        try:
+            promotions = list(Promotion.objects.filter(is_active=True).order_by('code')[:20])
+        except Exception:
+            promotions = []
         return render(request, "subscriptions/renew.html", {
             "current_user": get_current_user(request),
             "subscription": sub,
             "plans": plans,
             "current_plan": current_plan,
             "today": today,
+            "promotions": promotions,
         })
 
     # POST: handle customizable renew
@@ -2399,6 +2404,29 @@ def subscription_renew_view(request, code):
                 price_diff = current_plan.price - target_plan.price
         except (ValueError, MembershipPlan.DoesNotExist):
             target_plan = current_plan
+
+    # Handle promotion
+    promotion_code = request.POST.get('promotion_code', '').strip()
+    promotion = None
+    promotion_discount = Decimal('0.00')
+    if promotion_code:
+        try:
+            promo = Promotion.objects.get(code__iexact=promotion_code, is_active=True)
+            if promo.is_valid():
+                promotion = promo
+                # Apply to upgrade price diff, or to plan price if same plan
+                base_amount = price_diff if is_upgrade else (target_plan.price if target_plan else Decimal('0.00'))
+                if base_amount > 0:
+                    _, discount = promo.apply(base_amount)
+                    promotion_discount = discount
+                    if is_upgrade:
+                        price_diff = max(price_diff - discount, Decimal('0.00'))
+            else:
+                messages.warning(request, f"Promotion '{promotion_code}' is expired or inactive.")
+        except Promotion.DoesNotExist:
+            messages.warning(request, f"Promotion code '{promotion_code}' not found.")
+        except Exception:
+            pass
 
     # Handle recurring: if auto_renew checked, keep true, else set false
     # Also allow custom duration override for recurring
@@ -2437,14 +2465,14 @@ def subscription_renew_view(request, code):
         except Exception:
             pass
         try:
-            # Create pending payment for upgrade difference
+            # Create pending payment for upgrade difference (with promotion discount if any)
             Payment.objects.create(
                 payment_code=f"PAY-UPG-{sub.id:04d}-{int(timezone.now().timestamp())%10000:04d}",
                 receipt_no=f"RCPT-UPG-{sub.id:04d}",
                 member=sub.member,
                 subscription=sub,
-                amount=price_diff,
-                discount=Decimal('0.00'),
+                amount=price_diff + promotion_discount,
+                discount=promotion_discount,
                 total=price_diff,
                 method='card',
                 status='pending',
@@ -2456,9 +2484,13 @@ def subscription_renew_view(request, code):
     msg = f"Subscription {code} renewed: {today} → {new_end} ({target_plan.name if target_plan else ''})"
     if is_upgrade:
         msg += f" [Upgrade +${price_diff:.2f} pending]"
+        if promotion:
+            msg += f" (Promotion {promotion.code} -${promotion_discount:.2f})"
     elif is_downgrade:
         msg += f" [Downgrade -${price_diff:.2f} credit]"
     msg += f" {'(Recurring)' if auto_renew else ''}"
+    if promotion and not is_upgrade:
+        msg += f" [Promotion {promotion.code}]"
     messages.success(request, msg)
 
     if request.headers.get("x-requested-with") == "XMLHttpRequest":

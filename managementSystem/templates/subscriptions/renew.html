@@ -52,6 +52,15 @@
       </div>
     </div>
 
+    <div class="bg-surface-container border border-outline-variant rounded-lg p-6 space-y-4">
+      <h2 class="font-label-caps text-[11px] uppercase tracking-widest text-on-surface">3. Promotion</h2>
+      <div>
+        <label class="block font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">Promotion Code (optional)</label>
+        <input name="promotion_code" placeholder="e.g. SAVE10, WELCOME20" class="w-full md:w-64 bg-surface-container-lowest border border-outline-variant rounded px-4 py-2 font-body-sm text-sm"/>
+        <p class="font-body-sm text-[11px] text-on-surface-variant mt-1">Discount on upgrade. Available: {% for p in promotions %}{{ p.code }} ({{ p.discount_value }}{% if p.discount_type == 'percent' %}%{% else %}$ off{% endif %}){% if not forloop.last %}, {% endif %}{% empty %}None yet - create in admin{% endfor %}</p>
+      </div>
+    </div>
+
     <div class="flex gap-3">
       <button type="submit" class="px-8 py-3 bg-primary-container text-on-primary-container font-label-caps text-[11px] uppercase font-bold rounded">Confirm Renew</button>
       <a href="{% url 'subscriptions' %}" class="px-8 py-3 border border-outline-variant font-label-caps text-[11px] uppercase rounded">Cancel</a>
