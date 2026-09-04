@@ -2,9 +2,34 @@
 {% block title %}Generate Report - Iron Core{% endblock %}
 
 {% block dashboard_content %}
+<style>
+@media print {
+  html, body {
+    zoom: 1 !important;
+    background: #ffffff !important;
+    width: 100% !important;
+  }
+  #sidebar, header, .dashboard-header, [data-reports-actions], .reports-params,
+  [data-success], .sidebar-group, .confirm-modal {
+    display: none !important;
+  }
+  .print-list *, .flex-1 * {
+    color: #1a1c1d !important;
+    background-color: transparent !important;
+    border-color: #d6c7bb !important;
+  }
+  .bg-surface-container, .bg-surface-container-high, .bg-surface-container-lowest,
+  .bg-surface-container-highest {
+    background-color: #ffffff !important;
+  }
+  .text-on-surface-variant, .font-label-caps {
+    color: #555 !important;
+  }
+}
+</style>
 <div class="max-w-[1400px] mx-auto">
   <!-- Header -->
-  <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-6 gap-4">
+  <div class="dashboard-header flex flex-col md:flex-row justify-between items-start md:items-end mb-6 gap-4">
     <div>
       <div class="flex items-center gap-2 mb-2">
         <a href="{% url 'reports' %}" class="inline-flex items-center gap-1.5 font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant hover:text-primary transition-colors">
@@ -12,9 +37,9 @@
         </a>
       </div>
       <h2 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface uppercase tracking-tight">GENERATE REPORT</h2>
-      <p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Select report type, filters and export — all frontend-only.</p>
+      <p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Select report type, filters and export.</p>
     </div>
-    <div class="flex flex-wrap gap-2">
+    <div data-reports-actions class="flex flex-wrap gap-2">
       <button data-action="generate" class="bg-primary-container text-on-primary-container font-label-caps text-[11px] uppercase font-bold px-5 py-2.5 hover:bg-primary-container/90 transition-colors flex items-center gap-2 border border-primary-container">
         <span class="material-symbols-outlined text-[16px]">analytics</span> Generate
       </button>
@@ -32,7 +57,7 @@
 
   <div class="flex flex-col lg:flex-row gap-bento-gap pb-8">
     <!-- Sidebar Filters -->
-    <aside class="w-full lg:w-72 flex flex-col gap-bento-gap shrink-0">
+    <aside class="reports-params w-full lg:w-72 flex flex-col gap-bento-gap shrink-0">
       <div class="bg-surface-container border border-outline-variant rounded-lg p-5 flex flex-col gap-6">
         <h3 class="font-label-caps text-[11px] uppercase tracking-widest text-on-surface border-b border-outline-variant pb-2">PARAMETERS</h3>
 
@@ -197,7 +222,7 @@
           <span data-preview-meta class="font-label-caps text-[10px] uppercase tracking-widest text-on-surface-variant">No report generated yet — click Generate</span>
         </div>
         <div class="overflow-x-auto">
-          <table class="w-full text-left font-data-md text-data-md" id="preview-table">
+          <table class="print-list w-full text-left font-data-md text-data-md" id="preview-table">
             <thead class="bg-background border-b border-outline-variant">
               <tr>
                 <th class="p-3 font-label-caps text-[11px] text-on-surface-variant uppercase">Date</th>
@@ -209,7 +234,7 @@
             </thead>
             <tbody class="divide-y divide-outline-variant">
               <tr>
-                <td colspan="5" class="p-8 text-center font-body-sm text-on-surface-variant">Click <span class="text-primary font-bold">Generate</span> to populate preview (frontend demo data).</td>
+                <td colspan="5" class="p-8 text-center font-body-sm text-on-surface-variant">Click <span class="text-primary font-bold">Generate</span> to populate preview.</td>
               </tr>
             </tbody>
           </table>
@@ -237,7 +262,6 @@
 
 <script>
 (function(){
-  const form = document; // filters are not a form, use document
   function toastLocal(msg, type){
     if(typeof toast==='function') toast(msg,type);
     else if(window.toast) window.toast(msg,type);
@@ -256,7 +280,6 @@
     });
   }
 
-  // Keep KPI type in sync
   document.querySelectorAll('input[name="report_type"]').forEach(r=>{
     r.addEventListener('change', ()=>{
       const kpiType = document.querySelector('[data-kpi="type"]');
@@ -269,49 +292,53 @@
     return checked ? checked.value : null;
   }
 
-  function generateDemoRows(type){
-    const categories = {
-      Revenue: ['SUBSCRIPTIONS','MERCHANDISE'],
-      Payments: ['CASH','CARD','TRANSFER'],
-      Subscriptions: ['SILVER','GOLD','PREMIUM'],
-      Expenses: ['EQUIPMENT','MAINTENANCE','SALARY','UTILITY'],
-      Refunds: ['REFUND-REQ','CHARGEBACK'],
-      Members: ['ACTIVE','EXPIRING','EXPIRED'],
-      Attendance: ['CHECK-IN','CHECK-OUT'],
-      Expiring: ['EXPIRING SOON'],
-      Expired: ['EXPIRED']
-    };
-    const cats = categories[type] || ['GENERAL'];
-    const now = new Date();
-    const rows = [];
-    for(let i=0;i<5;i++){
-      const d = new Date(now); d.setDate(d.getDate()-i);
-      const dateStr = d.toISOString().slice(0,10);
-      const cat = cats[i % cats.length];
-      const amount = (Math.random()*2000 + 100).toFixed(2);
-      const status = i%3===0 ? 'VERIFIED' : i%3===1 ? 'PENDING' : 'PAID';
-      const id = (type.slice(0,3).toUpperCase()+'-90'+(12+i));
-      rows.push({date:dateStr, id, cat, amount, status});
+  function collectParams(){
+    const params = new URLSearchParams();
+    const type = getSelectedType();
+    if(type) params.set('report_type', type);
+    let dr = document.querySelector('[data-filter="date_range"]');
+    if(dr) params.set('date_range', dr.value);
+    if(dr && dr.value==='custom'){
+      const f = document.querySelector('[data-filter="date_from"]');
+      const t = document.querySelector('[data-filter="date_to"]');
+      if(f && f.value) params.set('date_from', f.value);
+      if(t && t.value) params.set('date_to', t.value);
     }
-    return rows;
+    const status = document.querySelector('[data-filter="status"]');
+    if(status && status.value) params.set('status', status.value);
+    const category = document.querySelector('[data-filter="category"]');
+    if(category && category.value) params.set('category', category.value);
+    const plan = document.querySelector('[data-filter="plan"]');
+    if(plan && plan.value) params.set('plan', plan.value);
+    return params;
   }
 
   function renderTable(rows){
     const tbody = document.querySelector('#preview-table tbody');
     if(!tbody) return;
     tbody.innerHTML = '';
+    if(!rows || rows.length===0){
+      const tr = document.createElement('tr');
+      tr.innerHTML = '<td colspan="5" class="p-8 text-center font-body-sm text-on-surface-variant">No records match the selected filters.</td>';
+      tbody.appendChild(tr);
+      return;
+    }
     rows.forEach(r=>{
       const tr = document.createElement('tr');
       tr.className = 'hover:bg-surface-container-high transition-colors';
-      const statusColor = r.status==='VERIFIED' ? 'bg-tertiary' : r.status==='PENDING' ? 'bg-primary-container' : 'bg-on-surface';
+      const s=(r.status||'').toUpperCase();
+      let color='bg-tertiary';
+      if(s.indexOf('PENDING')!==-1) color='bg-primary-container';
+      else if(s.indexOf('FAILED')!==-1 || s.indexOf('EXPIRED')!==-1 || s.indexOf('REJECT')!==-1) color='bg-error';
+      else if(s.indexOf('OPEN')!==-1) color='bg-primary';
       tr.innerHTML = `
-        <td class="p-3 text-on-surface">${r.date}</td>
-        <td class="p-3 text-primary">${r.id}</td>
-        <td class="p-3 text-on-surface">${r.cat}</td>
-        <td class="p-3 text-on-surface text-right">$${parseFloat(r.amount).toLocaleString('en-US', {minimumFractionDigits:2})}</td>
+        <td class="p-3 text-on-surface">${(r.date||'')}</td>
+        <td class="p-3 text-primary">${(r.metric_id||'')}</td>
+        <td class="p-3 text-on-surface">${(r.category||'')}</td>
+        <td class="p-3 text-on-surface text-right">${(r.value_display||'')}</td>
         <td class="p-3 text-center">
           <span class="inline-flex items-center gap-1 px-2 py-1 bg-surface-container-highest border border-outline-variant rounded font-label-caps text-[10px] text-on-surface">
-            <span class="w-1.5 h-1.5 ${statusColor} rounded-full"></span> ${r.status}
+            <span class="w-1.5 h-1.5 ${color} rounded-full"></span> ${s}
           </span>
         </td>
       `;
@@ -319,7 +346,14 @@
     });
   }
 
-  function doGenerate(){
+  function showSuccess(type){
+    const el=document.querySelector('[data-success]');
+    if(!el) return;
+    el.classList.remove('hidden');
+    clearTimeout(showSuccess._t);
+    showSuccess._t=setTimeout(()=>el.classList.add('hidden'), 2500);
+  }
+  function doGenerate(silent){
     const type = getSelectedType();
     const err = document.querySelector('[data-error="report_type"]');
     if(!type){
@@ -330,24 +364,29 @@
     if(err) err.classList.add('hidden');
     const loadingEls = document.querySelectorAll('[data-loading]');
     loadingEls.forEach(el=>el.classList.remove('hidden'));
-    const success = document.querySelector('[data-success]');
-    if(success) success.classList.add('hidden');
-    setTimeout(()=>{
-      loadingEls.forEach(el=>el.classList.add('hidden'));
-      const rows = generateDemoRows(type);
-      renderTable(rows);
-      const total = rows.reduce((sum,r)=>sum+parseFloat(r.amount),0);
-      const totalEl = document.querySelector('[data-kpi="total"]');
-      if(totalEl) totalEl.textContent = '$' + total.toLocaleString('en-US', {minimumFractionDigits:2});
-      const countEl = document.querySelector('[data-kpi="count"]');
-      if(countEl) countEl.textContent = rows.length;
-      const trendEl = document.querySelector('[data-kpi-trend]');
-      if(trendEl) trendEl.textContent = type + ' • ' + document.querySelector('[data-filter="date_range"]').value.replace('_',' ').toUpperCase();
-      const meta = document.querySelector('[data-preview-meta]');
-      if(meta) meta.textContent = rows.length + ' rows • ' + type + ' • ' + new Date().toLocaleDateString();
-      if(success) success.classList.remove('hidden');
-      toastLocal(type + ' report generated','success');
-    }, 800);
+    document.querySelector('[data-success]').classList.add('hidden');
+    const params = collectParams();
+    fetch('/reports/api/?' + params.toString(), {headers:{'X-Requested-With':'XMLHttpRequest'}})
+      .then(res=>res.json())
+      .then(data=>{
+        loadingEls.forEach(el=>el.classList.add('hidden'));
+        if(!data.ok){ toastLocal(data.error||'Failed to generate report','error'); return; }
+        renderTable(data.rows||[]);
+        const kpi=data.kpi||{};
+        const totalEl = document.querySelector('[data-kpi="total"]');
+        if(totalEl) totalEl.textContent = kpi.total_value || '$0.00';
+        const countEl = document.querySelector('[data-kpi="count"]');
+        if(countEl) countEl.textContent = kpi.record_count || 0;
+        const trendEl = document.querySelector('[data-kpi-trend]');
+        if(trendEl) trendEl.textContent = type + ' • ' + (document.querySelector('[data-filter="date_range"]').value||'').replace('_',' ').toUpperCase();
+        const meta = document.querySelector('[data-preview-meta]');
+        if(meta) meta.textContent = (kpi.record_count||0) + ' rows • ' + type + ' • ' + new Date().toLocaleDateString();
+        if(!silent){ showSuccess(type); toastLocal(type + ' report generated','success'); }
+      })
+      .catch(()=>{
+        loadingEls.forEach(el=>el.classList.add('hidden'));
+        toastLocal('Failed to connect to reports API','error');
+      });
   }
 
   document.querySelectorAll('[data-action="generate"]').forEach(btn=>{
@@ -356,14 +395,14 @@
 
   function handleExport(kind){
     const type = getSelectedType() || 'Report';
-    const hasRows = document.querySelector('#preview-table tbody tr td[colspan]') === null;
-    if(kind==='pdf'){
-      toastLocal('Exporting PDF for ' + type + ' — frontend demo', 'info');
-      if(hasRows) window.print(); // fallback
+    const tbody = document.querySelector('#preview-table tbody');
+    const hasRows = tbody && tbody.querySelectorAll('tr:not(:has(td[colspan]))').length > 0;
+    if(kind==='pdf' || kind==='print'){
+      if(!hasRows){ toastLocal('Generate a report before exporting','error'); return; }
+      window.print();
     } else if(kind==='csv'){
       if(!hasRows){ toastLocal('Generate a report before exporting CSV','error'); return; }
-      // Build CSV frontend
-      const rows = Array.from(document.querySelectorAll('#preview-table tbody tr')).map(tr=>{
+      const rows = Array.from(tbody.querySelectorAll('tr:not(:has(td[colspan]))')).map(tr=>{
         return Array.from(tr.querySelectorAll('td')).map(td=> '"' + td.textContent.trim().replace(/"/g,'""') + '"').join(',');
       });
       const header = Array.from(document.querySelectorAll('#preview-table thead th')).map(th=> '"' + th.textContent.trim() + '"').join(',');
@@ -372,9 +411,6 @@
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a'); a.href=url; a.download= type.toLowerCase() + '_report_' + new Date().toISOString().slice(0,10) + '.csv'; a.click(); URL.revokeObjectURL(url);
       toastLocal('CSV downloaded','success');
-    } else if(kind==='print'){
-      window.print();
-      toastLocal('Print dialog opened','info');
     }
   }
 
@@ -382,6 +418,7 @@
   document.querySelectorAll('[data-action="csv"]').forEach(btn=> btn.addEventListener('click', ()=>handleExport('csv')));
   document.querySelectorAll('[data-action="print"]').forEach(btn=> btn.addEventListener('click', ()=>handleExport('print')));
 
+  doGenerate(true);
 })();
 </script>
 {% endblock %}

@@ -1298,7 +1298,7 @@ def notification_mark_all_read_view(request):
 
 @login_required_custom
 def reports_view(request):
-    return render(request, "reports/index.html", {"current_user": get_current_user(request)})
+    return render(request, "reports/index.html")
 
 def _safe_user_profiles(*args, **kwargs):
     try:
@@ -2726,7 +2726,268 @@ def user_change_role_view(request, pk):
 
 @login_required_custom
 def reports_generate_view(request):
-    return render(request, "reports/generate.html", {"current_user": get_current_user(request)})
+    return render(request, "reports/generate.html")
+
+def _build_rows_sql(report_type, date_range, date_from, date_to, status, category, plan):
+    cfg = REPORT_TYPES[report_type]
+    where_parts = []
+    params = []
+
+    if "{where}" not in cfg["base"]:
+        pass
+    elif report_type == "Expiring" or report_type == "Expired":
+        pass
+    else:
+        pass
+
+    sql = cfg["base"]
+    dp = _date_condition(date_range, date_from, date_to, cfg["date_col"])
+    if dp[0]:
+        where_parts.append(dp[0])
+        params.extend(dp[1])
+
+    if status and "status_map" in cfg:
+        mapped = cfg["status_map"].get(status)
+        if mapped:
+            where_parts.append(mapped)
+
+    if category and cfg.get("category_filter"):
+        where_parts.append("e.category = %s")
+        params.append(category)
+
+    if plan and cfg.get("plan_filter"):
+        where_parts.append("p.name = %s")
+        params.append(plan)
+
+    if where_parts:
+        if "WHERE 1=1" in sql:
+            sql += " AND " + " AND ".join(where_parts)
+        elif "WHERE" in sql:
+            sql += " AND " + " AND ".join(where_parts)
+
+    sql += " ORDER BY 1 DESC NULLS LAST"
+    return sql, params
+
+def _build_chart_sql(report_type, date_range, date_from, date_to, status, category, plan):
+    cfg = REPORT_TYPES[report_type]
+    sql = cfg["chart_sql"]
+    params = []
+
+    where_parts = []
+    dp = _date_condition(date_range, date_from, date_to, cfg["date_col"])
+    if dp[0]:
+        where_parts.append(dp[0])
+        params.extend(dp[1])
+
+    if status and "status_map" in cfg:
+        mapped = cfg["status_map"].get(status)
+        if mapped:
+            where_parts.append(mapped)
+
+    if category and cfg.get("category_filter"):
+        where_parts.append("e.category = %s")
+        params.append(category)
+
+    if plan and cfg.get("plan_filter"):
+        where_parts.append("p.name = %s")
+        params.append(plan)
+
+    if where_parts:
+        joined = " AND ".join(where_parts)
+        if "{where}" in sql:
+            prefix = sql[:sql.index("{where}")]
+            if re.search(r"\bWHERE\b", prefix, re.IGNORECASE):
+                sql = sql.replace("{where}", " AND " + joined)
+            else:
+                sql = sql.replace("{where}", " WHERE " + joined)
+        else:
+            sql += " AND " + joined
+    else:
+        sql = sql.replace("{where}", "")
+
+    return sql, params
+
+def _render_row(report_type, row_dict):
+    """Convert a raw row dict into the generic 5-column format."""
+    d = row_dict
+    if report_type == "Revenue":
+        return {
+            "date": d["paid_at"].strftime("%Y-%m-%d") if d.get("paid_at") else "",
+            "metric_id": d.get("payment_code") or "",
+            "category": "SUBSCRIPTIONS",
+            "value": float(d.get("total") or 0),
+            "value_display": f"${float(d.get('total') or 0):,.2f}",
+            "status": "SUCCESS",
+        }
+    if report_type == "Payments":
+        status = (d.get("status") or "").upper()
+        return {
+            "date": d["paid_at"].strftime("%Y-%m-%d") if d.get("paid_at") else "",
+            "metric_id": d.get("payment_code") or d.get("receipt_no") or "",
+            "category": (d.get("method") or "").upper(),
+            "value": float(d.get("amount") or 0),
+            "value_display": f"${float(d.get('amount') or 0):,.2f}",
+            "status": status,
+        }
+    if report_type == "Subscriptions":
+        return {
+            "date": d["start_date"].strftime("%Y-%m-%d") if d.get("start_date") else "",
+            "metric_id": d.get("subscription_code") or "",
+            "category": (d.get("plan_name") or "N/A").upper(),
+            "value": float(d.get("plan_price") or 0),
+            "value_display": f"${float(d.get('plan_price') or 0):,.2f}",
+            "status": (d.get("status") or "").upper(),
+        }
+    if report_type == "Expenses":
+        return {
+            "date": d["expense_date"].strftime("%Y-%m-%d") if d.get("expense_date") else "",
+            "metric_id": d.get("expense_code") or "",
+            "category": (d.get("category") or "").upper(),
+            "value": float(d.get("amount") or 0),
+            "value_display": f"${float(d.get('amount') or 0):,.2f}",
+            "status": (d.get("status") or "").upper(),
+        }
+    if report_type == "Refunds":
+        status = (d.get("status") or "").upper()
+        return {
+            "date": d["created_at"].strftime("%Y-%m-%d") if d.get("created_at") else "",
+            "metric_id": d.get("refund_code") or "",
+            "category": (d.get("reason") or "REFUND").upper()[:30],
+            "value": float(d.get("amount") or 0),
+            "value_display": f"${float(d.get('amount') or 0):,.2f}",
+            "status": status,
+        }
+    if report_type == "Members":
+        return {
+            "date": d["join_date"].strftime("%Y-%m-%d") if d.get("join_date") else "",
+            "metric_id": d.get("member_code") or "",
+            "category": (d.get("status") or "").upper(),
+            "value": 1,
+            "value_display": "1",
+            "status": (d.get("status") or "").upper(),
+        }
+    if report_type == "Attendance":
+        ci = d.get("check_in")
+        co = d.get("check_out")
+        time_str = ""
+        if ci:
+            time_str = ci.strftime("%H:%M")
+            if co:
+                time_str += "-" + co.strftime("%H:%M")
+        return {
+            "date": d["date"].strftime("%Y-%m-%d") if d.get("date") else "",
+            "metric_id": d.get("member_name") or f"#{d.get('member_id')}",
+            "category": "CHECK-IN" if not co else "CHECK-OUT",
+            "value": d.get("duration_min") or 0,
+            "value_display": f"{d.get('duration_min') or 0} min",
+            "status": "COMPLETE" if co else "OPEN",
+        }
+    if report_type in ("Expiring", "Expired"):
+        end = d.get("end_date")
+        days = ""
+        if end:
+            from datetime import date as _date
+            diff = (end - _date.today()).days
+            days = f" ({diff}d)" if diff >= 0 else f" ({abs(diff)}d ago)"
+        return {
+            "date": end.strftime("%Y-%m-%d") if end else "",
+            "metric_id": d.get("subscription_code") or "",
+            "category": (d.get("plan_name") or "N/A").upper(),
+            "value": 1,
+            "value_display": "1",
+            "status": ("EXPIRING" if report_type == "Expiring" else "EXPIRED") + days,
+        }
+    return {
+        "date": "",
+        "metric_id": "",
+        "category": "",
+        "value": 0,
+        "value_display": "$0.00",
+        "status": "",
+    }
+
+
+@require_http_methods(["GET"])
+
+def reports_api(request):
+    report_type = request.GET.get("report_type", "Revenue")
+    if report_type not in REPORT_TYPES:
+        return JsonResponse({"ok": False, "error": f"Invalid report type: {report_type}"}, status=400)
+
+    date_range = request.GET.get("date_range", "last_30")
+    date_from = request.GET.get("date_from", "")
+    date_to = request.GET.get("date_to", "")
+    status = request.GET.get("status", "")
+    category = request.GET.get("category", "")
+    plan = request.GET.get("plan", "")
+
+    try:
+        rows_sql, rows_params = _build_rows_sql(
+            report_type, date_range, date_from, date_to, status, category, plan
+        )
+        with connection.cursor() as cur:
+            cur.execute(rows_sql, rows_params)
+            cols = [d[0] for d in cur.description]
+            raw_rows = [dict(zip(cols, row)) for row in cur.fetchall()]
+
+        chart_sql, chart_params = _build_chart_sql(
+            report_type, date_range, date_from, date_to, status, category, plan
+        )
+        with connection.cursor() as cur:
+            cur.execute(chart_sql, chart_params)
+            chart_cols = [d[0] for d in cur.description]
+            chart_raw = [dict(zip(chart_cols, row)) for row in cur.fetchall()]
+
+        from calendar import month_abbr as _ma
+        today = localdate()
+        chart_labels = []
+        chart_series = []
+        chart_map = {}
+        for cr in chart_raw:
+            ym = cr.get("ym", "")
+            if ym:
+                chart_map[ym] = float(cr.get(REPORT_TYPES[report_type]["chart_value"], 0))
+
+        year, month = today.year, today.month
+        for i in range(5, -1, -1):
+            y, m = year, month - i
+            while m <= 0:
+                m += 12
+                y -= 1
+            ym = "%04d-%02d" % (y, m)
+            chart_labels.append(_ma[m].upper())
+            chart_series.append(chart_map.get(ym, 0))
+
+        rows = [_render_row(report_type, r) for r in raw_rows]
+
+        if report_type in ("Revenue", "Payments", "Expenses", "Refunds", "Subscriptions"):
+            total_value = sum(r["value"] for r in rows)
+        else:
+            total_value = len(rows)
+
+        if report_type in ("Revenue", "Payments", "Expenses", "Refunds"):
+            value_display = f"${total_value:,.2f}"
+        else:
+            value_display = str(int(total_value))
+
+        return JsonResponse({
+            "ok": True,
+            "kpi": {
+                "total_value": value_display,
+                "total_value_num": total_value,
+                "record_count": len(rows),
+                "report_type": report_type,
+            },
+            "chart": {
+                "labels": chart_labels,
+                "series": chart_series,
+            },
+            "rows": rows,
+            "total_rows": len(rows),
+        })
+
+    except Exception as e:
+        return JsonResponse({"ok": False, "error": str(e)}, status=500)
 
 @login_required_custom
 

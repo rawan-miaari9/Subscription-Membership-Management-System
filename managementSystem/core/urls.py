@@ -69,6 +69,7 @@ urlpatterns = [
     path("users/toggle/<int:pk>/", views.user_toggle_status_view, name="user-toggle-status"),
     path("users/role/<int:pk>/", views.user_change_role_view, name="user-change-role"),
     path("reports/generate/", views.reports_generate_view, name="reports-generate"),
+    path("reports/api/", views.reports_api, name="reports-api"),
     path("receipts/", views.receipts_view, name="receipts"),
     path("receipts/create/", views.receipt_create_view, name="receipt-create"),
     path("receipts/<int:pk>/", views.receipt_detail_view, name="receipt-detail"),
