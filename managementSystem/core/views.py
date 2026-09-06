@@ -2687,7 +2687,48 @@ def refund_detail_view(request, pk):
 
 @login_required_custom
 def refund_history_view(request):
-    return render(request, "refunds/history.html", {"current_user": get_current_user(request)})
+    refunds_qs = Refund.objects.select_related('payment', 'member').order_by('-created_at', '-id')
+
+    search = request.GET.get('q', '').strip()
+    status = request.GET.get('status', '').strip()
+
+    if search:
+        refunds_qs = refunds_qs.filter(
+            Q(refund_code__icontains=search)
+            | Q(payment__payment_code__icontains=search)
+            | Q(member__full_name__icontains=search)
+            | Q(reason__icontains=search)
+        )
+    if status:
+        refunds_qs = refunds_qs.filter(status=status)
+
+    pending_count = refunds_qs.filter(status='pending').count()
+    approved_total = refunds_qs.filter(status='approved').aggregate(t=Sum('amount'))['t'] or 0
+    rejected_total = refunds_qs.filter(status='rejected').aggregate(t=Sum('amount'))['t'] or 0
+
+    paginator = Paginator(refunds_qs, 15)
+    page_obj = paginator.get_page(request.GET.get('page'))
+
+    filters_querydict = request.GET.copy()
+    filters_querydict.pop('page', None)
+    filters_querystring = filters_querydict.urlencode()
+
+    context = {
+        'current_user': get_current_user(request),
+        'refunds': page_obj.object_list,
+        'page_obj': page_obj,
+        'filters_querystring': filters_querystring,
+        'filter_search': search,
+        'filter_status': status,
+        'filters_active': bool(search or status),
+        'stat_count': refunds_qs.count(),
+        'stat_pending': pending_count,
+        'stat_approved': approved_total,
+        'stat_rejected': rejected_total,
+        'statuses': Refund.STATUS_CHOICES,
+        'today': timezone.localdate(),
+    }
+    return render(request, "refunds/history.html", context)
 
 @login_required_custom
 def statement_view(request):
