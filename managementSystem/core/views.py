@@ -844,6 +844,8 @@ def invoice_create_view(request):
             except (Member.DoesNotExist, ValueError):
                 return render(request, "invoices/create.html", {
                     'error': "Selected member no longer exists.",
+                    'next_invoice_no': _next_invoice_no(),
+                    'today': timezone.localdate(),
                 })
 
         if invoice_no and Invoice.objects.filter(invoice_no=invoice_no).exclude(pk=None).exists():
