@@ -917,6 +917,8 @@ def invoice_edit_view(request, pk):
                 return render(request, "invoices/create.html", {
                     'invoice': invoice,
                     'error': "Selected member no longer exists.",
+                    'next_invoice_no': _next_invoice_no(),
+                    'today': timezone.localdate(),
                 })
 
         if invoice_no and Invoice.objects.filter(invoice_no=invoice_no).exclude(pk=invoice.pk).exists():
@@ -1171,6 +1173,9 @@ def receipt_edit_view(request, pk):
                 return render(request, "receipts/create.html", {
                     'receipt': receipt,
                     'error': "Selected member no longer exists.",
+                    'methods': Receipt.METHOD_CHOICES,
+                    'next_receipt_no': _next_receipt_no(),
+                    'today': timezone.localdate(),
                 })
 
         try:
@@ -1179,6 +1184,9 @@ def receipt_edit_view(request, pk):
             return render(request, "receipts/create.html", {
                 'receipt': receipt,
                 'error': str(exc),
+                'methods': Receipt.METHOD_CHOICES,
+                'next_receipt_no': _next_receipt_no(),
+                'today': timezone.localdate(),
             })
 
         if receipt_no and Receipt.objects.filter(receipt_no=receipt_no).exclude(pk=receipt.pk).exists():
