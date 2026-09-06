@@ -2681,8 +2681,9 @@ def payment_detail_view(request):
     return render(request, "payments/detail.html", {"current_user": get_current_user(request), "payment": payment, "receipt": receipt})
 
 @login_required_custom
-def refund_detail_view(request):
-    return render(request, "refunds/detail.html", {"current_user": get_current_user(request)})
+def refund_detail_view(request, pk):
+    refund = get_object_or_404(Refund.objects.select_related('member', 'payment'), pk=pk)
+    return render(request, "refunds/detail.html", {"current_user": get_current_user(request), "refund": refund})
 
 @login_required_custom
 def refund_history_view(request):
