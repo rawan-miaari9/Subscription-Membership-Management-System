@@ -3549,9 +3549,6 @@ def reports_api(request):
     except Exception as e:
         return JsonResponse({"ok": False, "error": str(e)}, status=500)
 
-@login_required_custom
-
-
 def _expense_form_context(expense=None):
     context = {
         'categories': Expense.CATEGORY_CHOICES,
