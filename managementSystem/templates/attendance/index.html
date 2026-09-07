@@ -6,7 +6,10 @@
 <header class="mb-6 flex justify-between items-end">
 <div>
 <h2 class="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface uppercase tracking-tight">ATTENDANCE &amp; ACCESS</h2>
-<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Live monitoring and check-in history.</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Live monitoring and check-in history. Use Check-In for entry and Check-Out on exit.</p>
+</div>
+<div class="flex gap-2">
+<a href="{% url 'attendance-checkin' %}" class="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-container text-on-primary-container font-label-caps text-[11px] font-bold uppercase rounded"> <span class="material-symbols-outlined text-[16px]">login</span> Check-In / Check-Out</a>
 </div>
 </header>
 <!-- Bento Grid -->
@@ -77,6 +80,7 @@
 <th class="p-4 font-label-caps text-label-caps text-on-surface-variant font-normal">Member</th>
 <th class="p-4 font-label-caps text-label-caps text-on-surface-variant font-normal">Type</th>
 <th class="p-4 font-label-caps text-label-caps text-on-surface-variant font-normal">Status</th>
+<th class="p-4 font-label-caps text-label-caps text-on-surface-variant font-normal text-right">Actions</th>
 </tr>
 </thead>
 <tbody>
@@ -116,10 +120,23 @@
 {% endif %}
 </div>
 </td>
+<td class="p-4 text-right">
+{% if not record.check_out and record.member %}
+<form method="post" action="{% url 'attendance-checkout-save' %}" class="inline-flex">
+{% csrf_token %}
+<input type="hidden" name="member_id" value="{{ record.member.id }}"/>
+<button type="submit" class="px-3 py-1 border border-outline-variant bg-transparent text-on-surface font-label-caps text-[11px] uppercase hover:bg-surface-container-high hover:text-primary transition-colors">Check-Out</button>
+</form>
+{% elif record.check_out %}
+<span class="font-data-md text-xs text-on-surface-variant">{{ record.duration_min|default:"—" }} min</span>
+{% else %}
+<span class="text-on-surface-variant">—</span>
+{% endif %}
+</td>
 </tr>
 {% empty %}
 <tr class="border-b border-outline-variant">
-<td colspan="4" class="p-8 text-center font-body-sm text-body-sm text-on-surface-variant">No attendance records yet.</td>
+<td colspan="5" class="p-8 text-center font-body-sm text-body-sm text-on-surface-variant">No attendance records yet. <a href="{% url 'attendance-checkin' %}" class="text-primary hover:underline">Check-In a member</a></td>
 </tr>
 {% endfor %}
 </tbody>
