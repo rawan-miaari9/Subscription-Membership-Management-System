@@ -1,0 +1,96 @@
+{% extends "layouts/dashboard.html" %}
+{% block title %}Promotions - Iron Core{% endblock %}
+{% block dashboard_content %}
+<div class="max-w-5xl mx-auto">
+  <div class="flex justify-between items-end mb-6 border-b border-outline-variant pb-4">
+    <div>
+      <h2 class="font-headline-lg text-headline-lg text-on-surface uppercase">PROMOTIONS</h2>
+      <p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Manage promo codes for renewals and subscriptions. Admin only.</p>
+    </div>
+  </div>
+
+  {% if messages %}
+  <div class="space-y-2 mb-4">
+    {% for message in messages %}
+    <div class="p-3 rounded border {% if message.tags == 'success' %}bg-tertiary-container border-tertiary text-on-tertiary-container{% else %}bg-error-container border-error text-on-error-container{% endif %} font-body-sm text-sm">{{ message }}</div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-bento-gap">
+    <!-- Add Form -->
+    <div class="lg:col-span-4 bg-surface-container border border-outline-variant rounded-lg p-6">
+      <h3 class="font-label-caps text-[11px] uppercase tracking-widest text-on-surface mb-4">Add Promotion</h3>
+      <form method="post" action="{% url 'promotions' %}" class="space-y-4">
+        {% csrf_token %}
+        <div>
+          <label class="block font-label-caps text-[11px] text-on-surface-variant mb-2">Code * (e.g. SAVE10)</label>
+          <input name="code" required placeholder="SAVE10" class="w-full bg-surface-container-lowest border border-outline-variant rounded px-4 py-2 font-mono text-sm uppercase"/>
+        </div>
+        <div>
+          <label class="block font-label-caps text-[11px] text-on-surface-variant mb-2">Discount Type *</label>
+          <select name="discount_type" class="w-full bg-surface-container-lowest border border-outline-variant rounded px-4 py-2 font-body-sm text-sm">
+            <option value="flat">Flat ($)</option>
+            <option value="percent">Percent (%)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block font-label-caps text-[11px] text-on-surface-variant mb-2">Discount Value *</label>
+          <input name="discount_value" required type="number" step="0.01" min="0.01" placeholder="10.00" class="w-full bg-surface-container-lowest border border-outline-variant rounded px-4 py-2 font-body-sm text-sm"/>
+        </div>
+        <div>
+          <label class="block font-label-caps text-[11px] text-on-surface-variant mb-2">Valid Until (optional)</label>
+          <input name="valid_until" type="date" class="w-full bg-surface-container-lowest border border-outline-variant rounded px-4 py-2 font-body-sm text-sm"/>
+        </div>
+        <div class="flex items-center gap-2">
+          <input type="checkbox" name="is_active" checked id="is_active" class="w-4 h-4 accent-primary"/>
+          <label for="is_active" class="font-body-sm text-sm">Active</label>
+        </div>
+        <button type="submit" class="w-full py-2.5 bg-primary-container text-on-primary-container font-label-caps text-[11px] font-bold uppercase rounded">Create Promotion</button>
+      </form>
+    </div>
+
+    <!-- List -->
+    <div class="lg:col-span-8 bg-surface-container border border-outline-variant rounded-lg overflow-hidden">
+      <div class="p-4 border-b border-outline-variant bg-surface-container-high flex justify-between items-center">
+        <h3 class="font-label-caps text-[11px] uppercase tracking-widest text-on-surface">Existing Promotions ({{ promotions|length }})</h3>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="border-b border-outline-variant bg-background">
+              <th class="p-3 font-label-caps text-[11px] text-on-surface-variant uppercase">Code</th>
+              <th class="p-3 font-label-caps text-[11px] text-on-surface-variant uppercase">Discount</th>
+              <th class="p-3 font-label-caps text-[11px] text-on-surface-variant uppercase">Valid Until</th>
+              <th class="p-3 font-label-caps text-[11px] text-on-surface-variant uppercase">Active</th>
+              <th class="p-3 font-label-caps text-[11px] text-on-surface-variant uppercase text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-outline-variant font-body-sm text-sm">
+            {% for promo in promotions %}
+            <tr class="hover:bg-surface-container-high">
+              <td class="p-3 font-mono font-bold text-primary">{{ promo.code }}</td>
+              <td class="p-3">{{ promo.discount_value }}{% if promo.discount_type == 'percent' %}%{% else %}$ {% endif %}<span class="text-xs text-on-surface-variant">({{ promo.discount_type }})</span></td>
+              <td class="p-3 text-on-surface-variant">{{ promo.valid_until|default:"—" }}</td>
+              <td class="p-3">{% if promo.is_active %}<span class="inline-flex items-center gap-1 px-2 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded font-label-caps text-[10px] text-emerald-500">Active</span>{% else %}<span class="inline-flex items-center gap-1 px-2 py-1 bg-surface-container-high border border-outline-variant rounded font-label-caps text-[10px] text-on-surface-variant">Inactive</span>{% endif %}</td>
+              <td class="p-3 text-right">
+                <form method="post" action="{% url 'promotions' %}" class="inline-flex" onsubmit="return confirm('Delete {{ promo.code }}?')">
+                  {% csrf_token %}
+                  <input type="hidden" name="delete_id" value="{{ promo.id }}"/>
+                  <button type="submit" class="px-3 py-1 border border-error text-error font-label-caps text-[11px] uppercase hover:bg-error-container">Delete</button>
+                </form>
+              </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5" class="p-8 text-center text-on-surface-variant">No promotions yet. Create one on the left.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="p-3 bg-background border-t border-outline-variant font-body-sm text-xs text-on-surface-variant">
+        Use these codes in <a href="{% url 'subscription-renew' 'SUB-TEST' %}" class="text-primary hover:underline">Renew</a> → Promotion Code field. They apply to upgrade price differences.
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

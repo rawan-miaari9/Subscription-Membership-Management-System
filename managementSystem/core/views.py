@@ -613,6 +613,75 @@ def pricing_view(request):
     })
 
 @login_required_custom
+def promotions_view(request):
+    user = get_current_user(request)
+    if not user or user.role != 'Admin':
+        messages.error(request, "Only Admin can manage promotions.")
+        return redirect('pricing')
+    if request.method == "POST":
+        # Handle add or delete
+        if 'delete_id' in request.POST:
+            try:
+                promo = Promotion.objects.get(pk=request.POST.get('delete_id'))
+                promo.delete()
+                messages.success(request, f"Promotion {promo.code} deleted.")
+            except Promotion.DoesNotExist:
+                messages.error(request, "Promotion not found.")
+            return redirect('promotions')
+        # Add new promotion
+        code = request.POST.get('code', '').strip().upper()
+        discount_type = request.POST.get('discount_type', 'flat').strip()
+        discount_value = request.POST.get('discount_value', '').strip()
+        valid_until = request.POST.get('valid_until', '').strip()
+        is_active = request.POST.get('is_active') == 'on'
+        errors = []
+        if not code:
+            errors.append("Code is required.")
+        elif not re.match(r'^[A-Z0-9_-]+$', code):
+            errors.append("Code must be uppercase letters, numbers, _ or -.")
+        elif Promotion.objects.filter(code__iexact=code).exists():
+            errors.append(f"Code {code} already exists.")
+        if discount_type not in ('flat', 'percent'):
+            errors.append("Discount type must be flat or percent.")
+        try:
+            disc_val = Decimal(discount_value)
+            if disc_val <= 0:
+                errors.append("Discount must be > 0.")
+            if discount_type == 'percent' and disc_val > 100:
+                errors.append("Percent discount cannot exceed 100.")
+        except (InvalidOperation, ValueError, TypeError):
+            errors.append("Invalid discount value.")
+            disc_val = Decimal('0.00')
+        vu = None
+        if valid_until:
+            try:
+                vu = datetime.datetime.strptime(valid_until, "%Y-%m-%d").date()
+            except ValueError:
+                errors.append("Invalid valid_until date.")
+        if errors:
+            for e in errors:
+                messages.error(request, e)
+        else:
+            try:
+                Promotion.objects.create(
+                    code=code,
+                    discount_type=discount_type,
+                    discount_value=disc_val,
+                    valid_until=vu,
+                    is_active=is_active,
+                )
+                messages.success(request, f"Promotion {code} created ({disc_val}{'%' if discount_type=='percent' else ''} off).")
+            except Exception as e:
+                messages.error(request, f"Failed to create promotion: {e}")
+        return redirect('promotions')
+
+    promotions = Promotion.objects.all().order_by('-created_at')
+    return render(request, "promotions/list.html", {
+        "current_user": user,
+        "promotions": promotions,
+    })
+
+@login_required_custom
 def payments_view(request):
     # Handle POST: process new payment via PaymentForm
     if request.method == "POST":
