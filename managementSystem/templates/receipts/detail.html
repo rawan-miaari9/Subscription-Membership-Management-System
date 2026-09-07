@@ -1,0 +1,144 @@
+{% extends "layouts/dashboard.html" %}
+{% block title %}{{ receipt.receipt_no }} - Iron Core{% endblock %}
+
+{% block dashboard_content %}
+<div class="max-w-7xl mx-auto space-y-6">
+  <!-- Page Header -->
+  <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-outline-variant pb-4">
+    <div>
+      <h2 class="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface uppercase tracking-tight">{{ receipt.receipt_no }}</h2>
+      <p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Received {{ receipt.paid_date|date:"M j, Y" }} · {{ receipt.get_method_display }}</p>
+    </div>
+    <div class="flex flex-wrap gap-3 invoice-header-actions">
+      <a href="{% url 'receipts' %}" class="px-5 py-2.5 bg-transparent border border-[#334155] text-slate-50 font-label-caps text-label-caps uppercase hover:bg-slate-800 transition-colors flex items-center gap-2"><span class="material-symbols-outlined text-[16px]">arrow_back</span> Back</a>
+      <a href="{% url 'receipt-pdf' receipt.pk %}" class="px-5 py-2.5 bg-transparent border border-[#334155] text-slate-50 font-label-caps text-label-caps uppercase hover:bg-slate-800 transition-colors flex items-center gap-2"><span class="material-symbols-outlined text-[16px]">visibility</span> View PDF</a>
+      <a href="#" data-print-trigger class="px-5 py-2.5 bg-transparent border border-[#334155] text-slate-50 font-label-caps text-label-caps uppercase hover:bg-slate-800 transition-colors flex items-center gap-2"><span class="material-symbols-outlined text-[16px]">print</span> Print</a>
+      <a href="{% url 'receipt-pdf' receipt.pk %}?download=1" class="px-5 py-2.5 bg-primary-container text-[#0F172A] font-label-caps text-label-caps uppercase font-bold hover:bg-amber-600 transition-colors flex items-center gap-2"><span class="material-symbols-outlined text-[16px]">download</span> Download PDF</a>
+      <a href="{% url 'receipt-edit' receipt.pk %}" class="px-5 py-2.5 bg-transparent border border-[#334155] text-slate-50 font-label-caps text-label-caps uppercase hover:bg-slate-800 transition-colors flex items-center gap-2"><span class="material-symbols-outlined text-[16px]">edit</span> Edit</a>
+      <form id="receipt-delete-form" method="post" action="{% url 'receipt-delete' receipt.pk %}" class="inline">{% csrf_token %}</form>
+      <button type="button" data-confirm="Delete this receipt? This cannot be undone." data-confirm-title="Delete Receipt" data-confirm-text="Delete" data-confirm-form="#receipt-delete-form" class="px-5 py-2.5 bg-transparent border border-error/50 text-error font-label-caps text-label-caps uppercase hover:bg-error/10 transition-colors flex items-center gap-2"><span class="material-symbols-outlined text-[16px]">delete</span> Delete</button>
+    </div>
+  </div>
+
+  <!-- Split Layout -->
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-bento-gap">
+    <!-- Receipt Document -->
+    <div class="lg:col-span-8 bg-background border border-outline-variant p-8 relative overflow-hidden">
+      <div class="absolute inset-0 opacity-10 pointer-events-none" style="background-image: radial-gradient(#334155 1px, transparent 1px); background-size: 16px 16px;"></div>
+      <div class="bg-[#1E293B] border border-[#334155] w-full p-8 relative shadow-[0_0_15px_rgba(0,0,0,0.5)]">
+        <div class="flex flex-col sm:flex-row justify-between items-start gap-6 border-b border-[#334155] pb-6 mb-6">
+          <div>
+            {% if receipt.logo %}<img src="{{ receipt.logo }}" alt="Logo" class="w-12 h-12 object-contain mb-2">{% endif %}
+            <h2 class="font-display text-2xl uppercase tracking-widest text-on-surface">IRON CORE</h2>
+            <p class="font-label-caps text-[10px] text-on-surface-variant mt-1">784 Industrial Pkwy, Sector 4</p>
+            <p class="font-label-caps text-[10px] text-on-surface-variant">info@ironcore.gym · +1 555-0199</p>
+          </div>
+          <div class="text-right">
+            <p class="font-label-caps text-[10px] text-primary uppercase tracking-widest">Receipt</p>
+            <p class="font-data-lg text-data-lg text-on-surface mt-1">{{ receipt.receipt_no }}</p>
+            <p class="font-label-caps text-[10px] text-on-surface-variant mt-1">Received: {{ receipt.paid_date|date:"M j, Y" }}</p>
+            <p class="font-label-caps text-[10px] text-on-surface-variant">Method: {{ receipt.get_method_display }}</p>
+          </div>
+        </div>
+
+        <div class="flex justify-between items-start gap-6 mb-8">
+          <div class="border border-[#334155] p-4 bg-background flex-1">
+            <h4 class="font-label-caps text-label-caps text-on-surface-variant mb-2">RECEIVED FROM</h4>
+            <p class="font-body-lg text-body-lg text-on-surface font-semibold">{{ receipt.received_from }}</p>
+            {% if receipt.member.email %}<p class="font-body-sm text-body-sm text-on-surface-variant">{{ receipt.member.email }}</p>{% endif %}
+            {% if receipt.member.phone %}<p class="font-body-sm text-body-sm text-on-surface-variant">{{ receipt.member.phone }}</p>{% endif %}
+            {% if receipt.member.member_code %}<p class="font-label-caps text-label-caps text-on-surface-variant mt-1">{{ receipt.member.member_code }}</p>{% endif %}
+          </div>
+          <div class="border border-[#334155] p-4 bg-background max-w-[240px]">
+            <h4 class="font-label-caps text-label-caps text-on-surface-variant mb-2">PAYMENT FOR</h4>
+            <p class="font-body-sm text-body-sm text-on-surface">{{ receipt.description|default:"—" }}</p>
+          </div>
+        </div>
+
+        <!-- Amounts -->
+        <div class="w-full max-w-sm ml-auto space-y-3 font-data-md text-data-md">
+          <div class="flex justify-between text-on-surface-variant"><span>Subtotal</span><span>${{ receipt.subtotal|floatformat:2 }}</span></div>
+          {% if receipt.discount_amount > 0 %}
+          <div class="flex justify-between text-on-surface-variant">
+            <span>Discount{% if receipt.discount_type == 'percent' %} ({{ receipt.discount|floatformat:2 }}%){% endif %}</span>
+            <span class="text-emerald-400">-${{ receipt.discount_amount|floatformat:2 }}</span>
+          </div>
+          {% endif %}
+          {% if receipt.tax_amount > 0 %}
+          <div class="flex justify-between text-on-surface-variant"><span>Tax ({{ receipt.tax_rate|floatformat:2 }}%)</span><span>+${{ receipt.tax_amount|floatformat:2 }}</span></div>
+          {% endif %}
+          <div class="flex justify-between items-center pt-3 border-t border-[#334155]">
+            <span class="font-headline-md text-headline-md text-on-surface">Total Received</span>
+            <span class="font-headline-md text-headline-md text-primary-container">${{ receipt.total|floatformat:2 }}</span>
+          </div>
+        </div>
+
+        {% if receipt.notes %}
+        <div class="mt-8 pt-6 border-t border-[#334155]">
+          <h4 class="font-label-caps text-label-caps text-on-surface-variant mb-2">NOTES</h4>
+          <p class="font-body-sm text-body-sm text-on-surface text-sm">{{ receipt.notes|linebreaksbr }}</p>
+        </div>
+        {% endif %}
+        <div class="text-center font-label-caps text-[10px] text-on-surface-variant mt-8 pt-4 border-t border-dashed border-[#334155]">
+          <p>NO REFUNDS. NO EXCUSES. THANK YOU</p>
+          <p class="mt-1">Created {{ receipt.created_at|date:"M j, Y H:i" }}</p>
+        </div>
+
+        <!-- Paid Stamp -->
+        <div class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-80">
+          <div class="border-4 border-tertiary text-tertiary font-display text-4xl uppercase tracking-widest px-4 py-2 transform -rotate-12 rounded">PAID</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Summary -->
+    <div class="lg:col-span-4 flex flex-col gap-4 invoice-actions-panel">
+      <div class="bg-surface-container border border-outline-variant rounded-lg p-6">
+        <h3 class="font-label-caps text-label-caps text-on-surface uppercase tracking-wider mb-4">Receipt Summary</h3>
+        <div class="space-y-3 font-data-md text-data-md">
+          <div class="flex justify-between text-on-surface-variant"><span>Subtotal</span><span>${{ receipt.subtotal|floatformat:2 }}</span></div>
+          {% if receipt.discount_amount > 0 %}
+          <div class="flex justify-between text-on-surface-variant"><span>Discount</span><span class="text-emerald-400">-${{ receipt.discount_amount|floatformat:2 }}</span></div>
+          {% endif %}
+          {% if receipt.tax_amount > 0 %}
+          <div class="flex justify-between text-on-surface-variant"><span>Tax</span><span>+${{ receipt.tax_amount|floatformat:2 }}</span></div>
+          {% endif %}
+          <div class="flex justify-between items-center pt-3 border-t border-outline-variant"><span class="text-on-surface">Total Received</span><span class="text-primary">${{ receipt.total|floatformat:2 }}</span></div>
+        </div>
+        <div class="mt-4 pt-4 border-t border-outline-variant space-y-2 font-label-caps text-label-caps text-on-surface-variant uppercase">
+          <div class="flex justify-between"><span>Received</span><span>{{ receipt.paid_date|date:"M j, Y" }}</span></div>
+          <div class="flex justify-between"><span>Method</span><span>{{ receipt.get_method_display }}</span></div>
+          <div class="flex justify-between"><span>Reference</span><span>{{ receipt.receipt_no }}</span></div>
+        </div>
+        <div class="mt-4 pt-4 border-t border-outline-variant flex flex-col gap-2">
+          <a href="{% url 'receipt-pdf' receipt.pk %}" class="w-full bg-primary-container text-on-primary-container border border-primary font-label-caps text-label-caps uppercase px-4 py-3 rounded flex items-center justify-center gap-2 hover:bg-primary-fixed-dim transition-colors"><span class="material-symbols-outlined text-[18px]">picture_as_pdf</span> View PDF</a>
+          <a href="{% url 'receipt-pdf' receipt.pk %}?download=1" class="w-full bg-transparent border border-outline-variant font-label-caps text-label-caps uppercase px-4 py-3 rounded hover:bg-surface-container-high transition-colors flex items-center justify-center gap-2 text-on-surface-variant"><span class="material-symbols-outlined text-[18px]">download</span> Download PDF</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<style>
+@media print {
+  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+  aside, header, .invoice-actions-panel, .invoice-header-actions, #toast-container,
+  .confirm-modal-overlay, .lg\:col-span-4 { display: none !important; }
+  main { padding: 0 !important; }
+  .max-w-7xl { max-width: 100% !important; }
+  .lg\:col-span-8 { width: 100% !important; }
+}
+</style>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('[data-print-trigger]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      window.print();
+    });
+  });
+});
+</script>
+{% endblock %}

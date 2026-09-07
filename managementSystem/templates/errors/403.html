@@ -1,0 +1,15 @@
+{% extends "layouts/dashboard.html" %}
+{% block title %}Access Denied - Iron Core{% endblock %}
+
+{% block dashboard_content %}
+<div class="flex flex-col items-center justify-center text-center py-24 max-w-lg mx-auto">
+<span class="w-16 h-16 flex items-center justify-center rounded-full bg-error-container text-on-error-container mb-6">
+<span class="material-symbols-outlined text-[32px]">lock</span>
+</span>
+<h1 class="font-headline-lg text-headline-lg text-on-surface uppercase tracking-tight mb-2">Access Denied</h1>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-8">You don't have permission to view this page. If you believe this is a mistake, contact your administrator.</p>
+<a href="{% url 'dashboard' %}" class="inline-flex items-center justify-center gap-2 px-8 py-3 bg-primary-container text-on-primary-container border border-primary-container font-label-caps text-[11px] uppercase tracking-widest font-bold rounded hover:bg-primary-container/90 transition-colors">
+<span class="material-symbols-outlined text-[16px]">arrow_back</span> Back to Dashboard
+</a>
+</div>
+{% endblock %}

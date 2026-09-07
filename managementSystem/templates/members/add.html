@@ -1,0 +1,52 @@
+{% extends "layouts/dashboard.html" %}
+{% block title %}{% if is_edit %}Edit Member{% else %}Add Member{% endif %} - Iron Core{% endblock %}
+{% block dashboard_content %}
+<div class="max-w-3xl mx-auto">
+  <div class="mb-6">
+    <h1 class="font-headline-lg text-headline-lg text-on-surface uppercase">{% if is_edit %}EDIT MEMBER{% else %}ADD MEMBER{% endif %}</h1>
+    <p class="font-body-sm text-on-surface-variant">{% if is_edit %}Update {{ edit_member.full_name }}'s details.{% else %}Create a new gym member.{% endif %}</p>
+  </div>
+  <form method="post" action="{% if is_edit %}{% url 'member-edit' edit_member.id %}{% else %}{% url 'member-add' %}{% endif %}" class="bg-surface-container border border-outline-variant p-6 rounded space-y-6" novalidate>
+    {% csrf_token %}
+    {% if form.errors %}
+    <div class="p-3 rounded border border-error bg-error-container text-on-error-container text-sm">Please fix the highlighted fields before saving.</div>
+    {% endif %}
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div>
+        <label class="block font-label-caps text-[11px] text-on-surface-variant mb-2">Full Name *</label>
+        <input name="full_name" required value="{{ form.full_name.value|default:'' }}" class="w-full bg-surface-container-lowest border {% if form.full_name.errors %}border-error{% else %}border-outline-variant{% endif %} rounded px-4 py-3 font-body-sm text-on-surface" placeholder="John Doe">
+        <p class="{% if not form.full_name.errors %}hidden{% endif %} text-error text-xs mt-1">{{ form.full_name.errors.0 }}</p>
+      </div>
+      <div>
+        <label class="block font-label-caps text-[11px] text-on-surface-variant mb-2">Phone *</label>
+        <input name="phone" required value="{{ form.phone.value|default:'' }}" class="w-full bg-surface-container-lowest border {% if form.phone.errors %}border-error{% else %}border-outline-variant{% endif %} rounded px-4 py-3 font-body-sm text-on-surface" placeholder="555-0192">
+        <p class="{% if not form.phone.errors %}hidden{% endif %} text-error text-xs mt-1">{{ form.phone.errors.0 }}</p>
+      </div>
+      <div>
+        <label class="block font-label-caps text-[11px] text-on-surface-variant mb-2">Email</label>
+        <input name="email" type="email" value="{{ form.email.value|default:'' }}" class="w-full bg-surface-container-lowest border {% if form.email.errors %}border-error{% else %}border-outline-variant{% endif %} rounded px-4 py-3 font-body-sm text-on-surface" placeholder="john@example.com">
+        <p class="{% if not form.email.errors %}hidden{% endif %} text-error text-xs mt-1">{{ form.email.errors.0 }}</p>
+      </div>
+      <div>
+        <label class="block font-label-caps text-[11px] text-on-surface-variant mb-2">Join Date *</label>
+        <input name="join_date" type="date" required value="{{ form.join_date.value|default:'' }}" class="w-full bg-surface-container-lowest border {% if form.join_date.errors %}border-error{% else %}border-outline-variant{% endif %} rounded px-4 py-3 font-body-sm text-on-surface">
+        <p class="{% if not form.join_date.errors %}hidden{% endif %} text-error text-xs mt-1">{{ form.join_date.errors.0 }}</p>
+      </div>
+      <div>
+        <label class="block font-label-caps text-[11px] text-on-surface-variant mb-2">Status</label>
+        <select name="status" class="w-full bg-surface-container-lowest border {% if form.status.errors %}border-error{% else %}border-outline-variant{% endif %} rounded px-4 py-3 font-body-sm text-on-surface">
+          <option value="active" {% if form.status.value != "expiring" and form.status.value != "suspended" and form.status.value != "expired" %}selected{% endif %}>Active</option>
+          <option value="expiring" {% if form.status.value == "expiring" %}selected{% endif %}>Expiring</option>
+          <option value="suspended" {% if form.status.value == "suspended" %}selected{% endif %}>Suspended</option>
+          {% if form.status.value == "expired" %}<option value="expired" selected>Expired</option>{% endif %}
+        </select>
+        <p class="{% if not form.status.errors %}hidden{% endif %} text-error text-xs mt-1">{{ form.status.errors.0 }}</p>
+      </div>
+    </div>
+    <div class="flex gap-3 pt-4">
+      <button type="submit" class="px-6 py-3 bg-primary text-surface-dim font-label-caps text-[11px]">{% if is_edit %}Update{% else %}Save{% endif %}</button>
+      <a href="{% url 'members' %}" class="px-6 py-3 border border-outline-variant font-label-caps text-[11px] text-on-surface hover:bg-surface-container-high">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Gym Core Login{% endblock %}
+{% block body_class %}text-on-background font-body-sm{% endblock %}
+
+{% block body %}
+<div class="min-h-screen flex flex-col md:flex-row">
+<!-- Left Split: Hero Visual & Stats -->
+<div class="hidden md:flex w-1/2 relative bg-surface-container-lowest border-r border-outline-variant overflow-hidden">
+    <!-- Grayscale Image Background -->
+    <div class="absolute inset-0 grayscale bg-cover bg-center" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBH-Po6ctnKNekNrrL8hqsw7A5f6Kqvo6yi-INkiyt5ijmNRuHE3ojOgbXu7c5-fT1gg1rIqBHoDV71uvnfnUoMo-Hby4aZ6GPJrzANkytMSFCGqnLGeV7w8BmcZMSAkVe-AGK5SlwtUzGzxRKMbF85MKju1ogBVHfJtVJe4H0ygNJQ_tXYsTwVjkgpy8SWDLpUZw81Yf2Oz3sYhr5ZiYDMUC_OAtLyoZJoeVVtiMGR4nD4xDPmIUP7cA')"></div>
+    <!-- Multiply Overlay (20% as per guidance) -->
+    <div class="absolute inset-0 bg-background mix-blend-multiply opacity-20"></div>
+    <!-- Darkening Gradient for legibility -->
+    <div class="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent"></div>
+</div>
+
+<!-- Right Split: Form Area -->
+<div class="w-full md:w-1/2 flex items-center justify-center p-margin-mobile md:p-margin-desktop min-h-screen">
+    <!-- Bento Login Card -->
+    <div class="w-full max-w-[440px] bg-surface-container border border-outline-variant rounded-lg p-[24px] shadow-2xl">
+        <div class="mb-8 text-center md:text-left">
+            <h1 class="font-display text-display text-on-surface uppercase tracking-tight mb-2">GYM CORE LOGIN</h1>
+            <p data-login-subtitle class="font-body-sm text-body-sm text-on-surface-variant">Access your administrative dashboard.</p>
+        </div>
+        <!-- Role Selector (backend-aware) -->
+        <div class="flex gap-2 mb-6 p-1 bg-surface-container-lowest border border-outline-variant rounded-DEFAULT">
+            <button data-role="admin" class="flex-1 py-2 font-label-caps text-label-caps uppercase text-primary bg-surface-container-high border border-outline-variant rounded-DEFAULT transition-colors" type="button">
+                Admin
+            </button>
+            <button data-role="accountant" class="flex-1 py-2 font-label-caps text-label-caps uppercase text-on-surface-variant hover:bg-surface-container-high transition-colors rounded-DEFAULT" type="button">
+                Accountant
+            </button>
+        </div>
+        <form data-login-form class="space-y-5" method="post" action="{% url 'login' %}{% if next %}?next={{ next }}{% endif %}" novalidate>
+            {% csrf_token %}
+            <input type="hidden" name="role" id="role-input" value="Admin">
+            {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+            {% if error %}
+            <div class="p-3 rounded border border-error bg-error-container text-on-error-container font-body-sm text-sm">{{ error }}</div>
+            {% endif %}
+            {% if messages %}
+                {% for message in messages %}
+                <div class="p-3 rounded border {% if message.tags == 'error' %}border-error bg-error-container text-on-error-container{% else %}border-tertiary bg-tertiary-container text-on-tertiary-container{% endif %} font-body-sm text-sm">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+            <div data-form-msg class="hidden p-3 rounded border border-error bg-error-container text-on-error-container font-body-sm text-sm"></div>
+            <!-- Email Field -->
+            <div>
+                <label class="block font-label-caps text-label-caps text-on-surface-variant uppercase mb-2" for="email">Email Address</label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <span class="material-symbols-outlined text-on-surface-variant text-[18px]">mail</span>
+                    </span>
+                    <input class="w-full pl-10 pr-4 py-3 bg-surface-container-lowest border border-outline-variant rounded-DEFAULT font-body-sm text-body-sm text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all placeholder-on-surface-variant/50" id="email" name="email" placeholder="admin@ironcore.gym" type="email" value="{{ email|default:'' }}" required/>
+                </div>
+            </div>
+            <!-- Password Field -->
+            <div>
+                <label class="block font-label-caps text-label-caps text-on-surface-variant uppercase mb-2" for="password">Password</label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <span class="material-symbols-outlined text-on-surface-variant text-[18px]">lock</span>
+                    </span>
+                    <input class="w-full pl-10 pr-4 py-3 bg-surface-container-lowest border border-outline-variant rounded-DEFAULT font-body-sm text-body-sm text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all placeholder-on-surface-variant/50" id="password" name="password" placeholder="••••••••" type="password" required/>
+                </div>
+            </div>
+            <!-- Options -->
+            <div class="flex items-center justify-between pt-2">
+                <div class="flex items-center">
+                    <input class="h-4 w-4 bg-surface-container-lowest border-outline-variant rounded-DEFAULT text-primary focus:ring-primary focus:ring-offset-background" id="remember-me" name="remember_me" type="checkbox"/>
+                    <label class="ml-2 block font-body-sm text-body-sm text-on-surface-variant" for="remember-me">
+                        Remember me
+                    </label>
+                </div>
+                <div class="text-sm">
+                    <a class="font-body-sm text-body-sm text-primary hover:text-primary-container transition-colors" href="#" data-toast="Password reset link sent">Forgot password?</a>
+                </div>
+            </div>
+            <!-- Submit Button -->
+            <button class="w-full py-3 mt-4 bg-primary text-surface-dim font-label-caps text-label-caps uppercase rounded-DEFAULT hover:bg-primary-container transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background" type="submit">
+                Sign In
+            </button>
+        </form>
+    </div>
+</div>
+</div>
+{% endblock %}

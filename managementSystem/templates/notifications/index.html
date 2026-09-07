@@ -1,0 +1,148 @@
+{% extends "layouts/dashboard.html" %}
+{% block title %}Notifications - Iron Core{% endblock %}
+
+{% block dashboard_content %}
+<div class="w-full flex flex-col gap-6">
+  <!-- Page Header & Action Bar -->
+  <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+    <div>
+      <h2 class="font-headline-lg text-headline-lg text-on-surface uppercase tracking-tight">NOTIFICATION CENTER</h2>
+      <p class="font-body-sm text-body-sm text-on-surface-variant mt-1">System alerts, member expirations, payments and refunds generated from your live data.</p>
+    </div>
+    <div class="flex items-center gap-3">
+      {% if unread_count and unread_count > 0 %}
+      <form method="post" action="{% url 'notification-mark-all-read' %}">{% csrf_token %}
+        <button type="submit" class="bg-primary-container text-on-primary-container font-label-caps text-label-caps uppercase px-6 h-10 rounded border border-primary hover:bg-primary-fixed-dim transition-colors flex items-center gap-2 inline-flex">
+          <span class="material-symbols-outlined text-[18px]">done_all</span>
+          Mark all as read
+        </button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Stat Bento -->
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-bento-gap">
+    <div class="bg-surface-container border border-outline-variant rounded-lg p-6">
+      <span class="font-label-caps text-label-caps text-on-surface-variant uppercase block mb-1">Total Notifications</span>
+      <span class="font-display text-display text-on-surface tracking-tighter">{{ total_count }}</span>
+    </div>
+    <div class="bg-surface-container border border-outline-variant rounded-lg p-6">
+      <span class="font-label-caps text-label-caps text-on-surface-variant uppercase block mb-1">Unread</span>
+      <span class="font-display text-display text-primary tracking-tighter">{{ unread_count }}</span>
+    </div>
+    <div class="bg-surface-container border border-outline-variant rounded-lg p-6">
+      <span class="font-label-caps text-label-caps text-on-surface-variant uppercase block mb-1">Expirations / Renewals</span>
+      <span class="font-display text-display text-amber-400 tracking-tighter">{{ cat_expiration|add:cat_renewal }}</span>
+    </div>
+    <div class="bg-surface-container border border-outline-variant rounded-lg p-6">
+      <span class="font-label-caps text-label-caps text-on-surface-variant uppercase block mb-1">Payments / Refunds</span>
+      <span class="font-display text-display text-emerald-400 tracking-tighter">{{ cat_payment|add:cat_refund }}</span>
+    </div>
+  </div>
+
+  <!-- Filter Bar -->
+  <div class="flex flex-col sm:flex-row items-center gap-3 flex-wrap">
+    <div class="flex gap-1 flex-wrap">
+      <a href="{% url 'notifications' %}" class="px-3 h-8 inline-flex items-center rounded font-label-caps text-[11px] uppercase {% if not filter_category %}bg-surface-container-high text-primary border border-primary{% else %}bg-surface-container border border-outline-variant text-on-surface-variant hover:text-primary{% endif %}">All</a>
+      <a href="{% url 'notifications' %}?category=expiration" class="px-3 h-8 inline-flex items-center rounded font-label-caps text-[11px] uppercase {% if filter_category == 'expiration' %}bg-surface-container-high text-primary border border-primary{% else %}bg-surface-container border border-outline-variant text-on-surface-variant hover:text-primary{% endif %}">Expiring <span class="ml-1 opacity-70">({{ cat_expiration }})</span></a>
+      <a href="{% url 'notifications' %}?category=renewal" class="px-3 h-8 inline-flex items-center rounded font-label-caps text-[11px] uppercase {% if filter_category == 'renewal' %}bg-surface-container-high text-primary border border-primary{% else %}bg-surface-container border border-outline-variant text-on-surface-variant hover:text-primary{% endif %}">Renewal <span class="ml-1 opacity-70">({{ cat_renewal }})</span></a>
+      <a href="{% url 'notifications' %}?category=expired" class="px-3 h-8 inline-flex items-center rounded font-label-caps text-[11px] uppercase {% if filter_category == 'expired' %}bg-surface-container-high text-primary border border-primary{% else %}bg-surface-container border border-outline-variant text-on-surface-variant hover:text-primary{% endif %}">Expired <span class="ml-1 opacity-70">({{ cat_expired }})</span></a>
+      <a href="{% url 'notifications' %}?category=payment" class="px-3 h-8 inline-flex items-center rounded font-label-caps text-[11px] uppercase {% if filter_category == 'payment' %}bg-surface-container-high text-primary border border-primary{% else %}bg-surface-container border border-outline-variant text-on-surface-variant hover:text-primary{% endif %}">Payments <span class="ml-1 opacity-70">({{ cat_payment }})</span></a>
+      <a href="{% url 'notifications' %}?category=refund" class="px-3 h-8 inline-flex items-center rounded font-label-caps text-[11px] uppercase {% if filter_category == 'refund' %}bg-surface-container-high text-primary border border-primary{% else %}bg-surface-container border border-outline-variant text-on-surface-variant hover:text-primary{% endif %}">Refunds <span class="ml-1 opacity-70">({{ cat_refund }})</span></a>
+    </div>
+    <div class="ml-auto w-full sm:w-auto">
+      <form method="get" action="{% url 'notifications' %}" class="flex items-center gap-2">
+        {% if filter_category %}<input type="hidden" name="category" value="{{ filter_category }}">{% endif %}
+        <div class="relative">
+          <span class="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">search</span>
+          <input name="q" value="{{ filter_q }}" placeholder="Search notifications..." class="bg-surface-container border border-outline-variant rounded h-9 pl-9 pr-3 text-on-surface font-body-sm w-56 focus:ring-1 focus:ring-primary focus:border-primary outline-none placeholder:text-on-surface-variant text-sm"/>
+        </div>
+        <button type="submit" class="h-9 px-4 bg-surface-container-high border border-outline-variant rounded font-label-caps text-[11px] uppercase text-on-surface hover:text-primary">Search</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Notifications List -->
+  <div class="bg-surface border border-outline-variant rounded-lg flex flex-col overflow-hidden">
+    <div class="flex flex-col gap-2 p-4">
+      {% for n in notifications %}
+      <div class="flex flex-col sm:flex-row sm:items-center gap-3 p-4 border border-outline-variant rounded-lg {% if not n.read %}bg-surface-container bg-opacity-50{% else %}opacity-70{% endif %}">
+        <div class="w-10 h-10 rounded bg-surface-container-high flex items-center justify-center border border-outline-variant shrink-0
+          {% if n.tone == 'danger' %}text-error{% elif n.tone == 'success' %}text-emerald-400{% elif n.tone == 'warn' %}text-amber-400{% else %}text-primary{% endif %}">
+          <span class="material-symbols-outlined text-[20px]">{{ n.icon }}</span>
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-2 flex-wrap mb-0.5">
+            <span class="px-2 py-0.5 bg-surface-container-highest rounded text-on-surface font-label-caps text-[10px] uppercase border border-outline-variant">
+              {% if n.ntype == 'expiration' %}EXPIRATION{% elif n.ntype == 'renewal' %}RENEWAL{% elif n.ntype == 'expired' %}EXPIRED{% elif n.ntype == 'payment' %}PAYMENT{% elif n.ntype == 'refund' %}REFUND{% endif %}
+            </span>
+            {% if not n.read %}<span class="w-2 h-2 rounded-full bg-primary"></span>{% endif %}
+            <span class="font-data-md text-[12px] text-on-surface-variant ml-auto">{{ n.relative }}</span>
+          </div>
+          <h4 class="font-headline-md text-headline-md text-on-surface">{{ n.title }}</h4>
+          <p class="font-body-sm text-body-sm text-on-surface-variant max-w-3xl">{{ n.message }}</p>
+        </div>
+        <div class="flex flex-row sm:flex-col gap-2 shrink-0">
+          {% if n.url %}
+          <a href="{{ n.url }}" class="flex-1 sm:flex-none border border-outline-variant bg-transparent text-on-surface font-label-caps text-[10px] px-3 py-1.5 hover:bg-surface-container transition-colors rounded text-center uppercase">{{ n.btn_text|default:"View" }}</a>
+          {% endif %}
+          {% if not n.read %}
+          <form method="post" action="{% url 'notification-mark-read' n.key %}">{% csrf_token %}
+            <button type="submit" class="flex-1 sm:flex-none border border-outline-variant bg-transparent text-on-surface-variant font-label-caps text-[10px] px-3 py-1.5 hover:bg-surface-container transition-colors rounded text-center uppercase">Mark read</button>
+          </form>
+          {% endif %}
+        </div>
+      </div>
+      {% empty %}
+      <div class="py-16 text-center">
+        <span class="material-symbols-outlined text-[48px] text-on-surface-variant mb-3 block">notifications_off</span>
+        <p class="font-body-lg text-body-lg text-on-surface-variant">No notifications found.</p>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if page_obj.paginator.num_pages > 1 %}
+    <div class="border-t border-outline-variant bg-surface-container-low p-4 flex justify-between items-center">
+      <span class="font-label-caps text-label-caps text-on-surface-variant uppercase">
+        Showing {{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ page_obj.paginator.count }}
+      </span>
+      <div class="flex gap-2">
+        {% if page_obj.has_previous %}
+        <a href="{% url 'notifications' %}?{% if filter_category %}category={{ filter_category }}&{% endif %}{% if filter_q %}q={{ filter_q }}&{% endif %}page={{ page_obj.previous_page_number }}" class="w-8 h-8 flex items-center justify-center border border-outline-variant rounded hover:bg-surface-container transition-colors"><span class="material-symbols-outlined text-[18px]">chevron_left</span></a>
+        {% else %}
+        <span class="w-8 h-8 flex items-center justify-center border border-outline-variant rounded opacity-40"><span class="material-symbols-outlined text-[18px]">chevron_left</span></span>
+        {% endif %}
+        {% for num in page_obj.paginator.page_range %}
+          {% if num == page_obj.number %}
+          <span class="w-8 h-8 flex items-center justify-center border border-outline-variant rounded bg-surface-container-high text-primary"><span class="font-data-md text-data-md">{{ num }}</span></span>
+          {% else %}
+          <a href="{% url 'notifications' %}?{% if filter_category %}category={{ filter_category }}&{% endif %}{% if filter_q %}q={{ filter_q }}&{% endif %}page={{ num }}" class="w-8 h-8 flex items-center justify-center border border-outline-variant rounded hover:bg-surface-container transition-colors"><span class="font-data-md text-data-md">{{ num }}</span></a>
+          {% endif %}
+        {% endfor %}
+        {% if page_obj.has_next %}
+        <a href="{% url 'notifications' %}?{% if filter_category %}category={{ filter_category }}&{% endif %}{% if filter_q %}q={{ filter_q }}&{% endif %}page={{ page_obj.next_page_number }}" class="w-8 h-8 flex items-center justify-center border border-outline-variant rounded hover:bg-surface-container transition-colors"><span class="material-symbols-outlined text-[18px]">chevron_right</span></a>
+        {% else %}
+        <span class="w-8 h-8 flex items-center justify-center border border-outline-variant rounded opacity-40"><span class="material-symbols-outlined text-[18px]">chevron_right</span></span>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Notification settings summary -->
+  <div class="bg-surface-container border border-outline-variant rounded-lg p-4 mt-2 flex items-center justify-between">
+    <div class="flex items-start gap-3">
+      <span class="material-symbols-outlined text-primary text-[20px]">settings</span>
+      <div>
+        <p class="font-label-caps text-[11px] text-on-surface uppercase">Notification Preferences</p>
+        <p class="font-body-sm text-[12px] text-on-surface-variant mt-0.5">
+          {% for s in settings %}Notify on {{ s.name|default:s.code }}: {% if s.enabled %}<span class="text-emerald-400">On</span>{% else %}<span class="text-error">Off</span>{% endif %}{% if not forloop.last %} · {% endif %}{% endfor %}
+        </p>
+      </div>
+    </div>
+    <a href="{% url 'settings' %}" class="inline-flex items-center gap-2 text-primary font-label-caps text-[11px] uppercase hover:underline">Edit settings</a>
+  </div>
+</div>
+{% endblock %}

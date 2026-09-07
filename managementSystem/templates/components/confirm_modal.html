@@ -1,0 +1,11 @@
+<div id="confirm-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+  <div class="absolute inset-0 bg-background/80 backdrop-blur-sm" data-close-modal></div>
+  <div class="relative bg-surface-container border border-outline-variant rounded-lg p-6 max-w-md w-full shadow-2xl">
+    <h3 class="font-headline-md text-headline-md text-on-surface mb-2" id="confirm-title">Are you sure?</h3>
+    <p class="font-body-sm text-body-sm text-on-surface-variant mb-6" id="confirm-message">This action cannot be undone.</p>
+    <div class="flex justify-end gap-3">
+      <button data-close-modal class="px-6 py-2 border border-outline-variant font-label-caps text-[11px] text-on-surface hover:bg-surface-container-high">Cancel</button>
+      <button id="confirm-action" class="px-6 py-2 bg-error text-on-error font-label-caps text-[11px] hover:bg-error-container">Confirm</button>
+    </div>
+  </div>
+</div>

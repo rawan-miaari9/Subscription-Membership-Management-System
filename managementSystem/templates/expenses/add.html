@@ -1,0 +1,111 @@
+{% extends "layouts/dashboard.html" %}
+{% block title %}{% if expense %}Edit Expense{% else %}Add Expense{% endif %} - Iron Core{% endblock %}
+
+{% block dashboard_content %}
+<div class="max-w-3xl mx-auto">
+  <div class="flex items-center gap-2 mb-4">
+    <a href="{% url 'expenses' %}" class="inline-flex items-center gap-1.5 font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant hover:text-primary transition-colors">
+      <span class="material-symbols-outlined text-[16px]">arrow_back</span> Back to Expenses
+    </a>
+  </div>
+  <div class="mb-8 border-b border-outline-variant pb-6">
+    <div class="flex items-center gap-3 mb-2">
+      <span class="w-8 h-8 flex items-center justify-center rounded bg-primary-container text-on-primary-container">
+        <span class="material-symbols-outlined text-[18px]">receipt_long</span>
+      </span>
+      <span class="font-label-caps text-[11px] uppercase tracking-[0.12em] text-primary-container">Expenses</span>
+    </div>
+    <h1 class="font-headline-lg text-headline-lg text-on-surface uppercase tracking-tight">{% if expense %}EDIT EXPENSE{% else %}ADD EXPENSE{% endif %}</h1>
+    <p class="font-body-sm text-body-sm text-on-surface-variant mt-2 max-w-2xl">{% if expense %}Update the details of this expense record.{% else %}Record a new facility expense.{% endif %}</p>
+  </div>
+
+  {% if error %}
+  <div class="p-4 bg-error-container border border-error text-on-error-container rounded-lg font-body-sm text-sm flex items-center gap-2 mb-6">
+    <span class="material-symbols-outlined text-[18px]">error</span> {{ error }}
+  </div>
+  {% endif %}
+
+  <form method="post" action="{% if expense %}{% url 'expense-edit' expense.pk %}{% else %}{% url 'expense-add' %}{% endif %}" class="bg-surface-container border border-outline-variant rounded-lg p-6 md:p-8 space-y-6">
+    {% csrf_token %}
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <!-- Category -->
+      <div>
+        <label class="block font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">Category *</label>
+        <div class="relative">
+          <select name="category" required class="w-full appearance-none bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 pr-10 font-body-sm text-body-sm text-on-surface focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all">
+            <option value="" {% if not expense %}disabled{% endif %} {% if not expense or not expense.category %}selected{% endif %}>Select category</option>
+            {% for value, label in categories %}
+            <option value="{{ value }}" {% if expense and expense.category == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+          <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none text-[20px]">expand_more</span>
+        </div>
+      </div>
+
+      <!-- Date -->
+      <div>
+        <label class="block font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">Date *</label>
+        <input name="expense_date" type="date" required value="{{ expense.expense_date|date:'Y-m-d'|default:today|date:'Y-m-d' }}" class="w-full bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 font-body-sm text-body-sm text-on-surface focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all" />
+      </div>
+
+      <!-- Amount -->
+      <div>
+        <label class="block font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">Amount *</label>
+        <div class="relative">
+          <span class="absolute left-3 top-1/2 -translate-y-1/2 font-data-md text-data-md text-on-surface-variant">$</span>
+          <input name="amount" type="number" min="0.01" step="0.01" required placeholder="0.00" value="{{ expense.amount|default:'' }}" class="w-full bg-surface-container-lowest border border-outline-variant rounded pl-8 pr-4 py-3 font-body-sm text-body-sm text-on-surface placeholder:text-on-surface-variant/60 focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all" />
+        </div>
+      </div>
+
+      <!-- Payment Method -->
+      <div>
+        <label class="block font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">Payment Method</label>
+        <div class="relative">
+          <select name="payment_method" class="w-full appearance-none bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 pr-10 font-body-sm text-body-sm text-on-surface focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all">
+            <option value="" {% if not expense or not expense.payment_method %}selected{% endif %}>Select method</option>
+            {% for value, label in methods %}
+            <option value="{{ value }}" {% if expense and expense.payment_method == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+          <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none text-[20px]">expand_more</span>
+        </div>
+      </div>
+
+      <!-- Status -->
+      <div>
+        <label class="block font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">Status</label>
+        <div class="relative">
+          <select name="status" class="w-full appearance-none bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 pr-10 font-body-sm text-body-sm text-on-surface focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all">
+            {% for value, label in statuses %}
+            <option value="{{ value }}" {% if expense and expense.status == value %}selected{% elif not expense and value == 'pending' %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+          <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none text-[20px]">expand_more</span>
+        </div>
+      </div>
+
+      <!-- Description -->
+      <div class="md:col-span-2">
+        <label class="block font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">Description *</label>
+        <textarea name="description" required rows="3" placeholder="e.g. Eleiko barbell replacement, HVAC maintenance, staff payroll..." class="w-full bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 font-body-sm text-body-sm text-on-surface placeholder:text-on-surface-variant/60 focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all resize-none">{{ expense.description|default:'' }}</textarea>
+      </div>
+
+      <!-- Notes -->
+      <div class="md:col-span-2">
+        <label class="block font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">Notes <span class="normal-case tracking-normal text-on-surface-variant/70 font-body-sm text-xs">(optional)</span></label>
+        <textarea name="notes" rows="3" placeholder="Additional context, vendor, invoice reference..." class="w-full bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 font-body-sm text-body-sm text-on-surface placeholder:text-on-surface-variant/60 focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all resize-none">{{ expense.notes|default:'' }}</textarea>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="flex flex-wrap items-center gap-3 pt-6 border-t border-outline-variant">
+      <button type="submit" class="inline-flex items-center justify-center gap-2 px-8 py-3 bg-primary-container text-on-primary-container border border-primary-container font-label-caps text-[11px] uppercase tracking-widest font-bold rounded hover:bg-primary-container/90 transition-colors">
+        <span class="material-symbols-outlined text-[16px]">save</span> {% if expense %}Save Changes{% else %}Save Expense{% endif %}
+      </button>
+      <a href="{% url 'expenses' %}" class="inline-flex items-center justify-center px-8 py-3 border border-outline-variant bg-transparent text-on-surface font-label-caps text-[11px] uppercase tracking-widest rounded hover:bg-surface-container-high transition-colors">
+        Cancel
+      </a>
+    </div>
+  </form>
+</div>
+{% endblock %}

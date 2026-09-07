@@ -1,0 +1,123 @@
+{% extends "layouts/dashboard.html" %}
+{% block title %}Custom Plan - Iron Core{% endblock %}
+
+{% block dashboard_content %}
+<div class="max-w-3xl mx-auto">
+  <!-- Back link -->
+  <div class="flex items-center gap-2 mb-4">
+    <a href="{% url 'plans' %}" class="inline-flex items-center gap-1.5 font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant hover:text-primary transition-colors">
+      <span class="material-symbols-outlined text-[16px]">arrow_back</span> Back to Plans
+    </a>
+  </div>
+  <div class="mb-8 border-b border-outline-variant pb-6">
+    <div class="flex items-center gap-3 mb-2">
+      <span class="w-8 h-8 flex items-center justify-center rounded bg-surface-container-high border border-outline-variant text-primary-container">
+        <span class="material-symbols-outlined text-[18px]">tune</span>
+      </span>
+      <span class="font-label-caps text-[11px] uppercase tracking-[0.12em] text-primary-container">Custom Plans</span>
+    </div>
+    <h1 class="font-headline-lg text-headline-lg text-on-surface uppercase tracking-tight">Create Custom Plan</h1>
+    <p class="font-body-sm text-body-sm text-on-surface-variant mt-2 max-w-2xl">Define bespoke membership parameters for corporate clients, athletic teams, or VIP members requiring non-standard access rules.</p>
+  </div>
+
+  <!-- Form Card -->
+  <form method="post" action="{% url 'plan-custom' %}" class="bg-surface-container border border-outline-variant rounded-lg p-6 md:p-8 space-y-6" novalidate>
+    {% csrf_token %}
+    {% if form.errors %}
+    <div class="p-3 rounded border border-error bg-error-container text-on-error-container font-body-sm text-sm">Please fix the highlighted fields before saving.</div>
+    {% endif %}
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <!-- Custom Plan Name -->
+      <div class="md:col-span-2">
+        <label class="block font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">Custom Plan Name *</label>
+        <input name="custom_plan_name" required value="{{ form.name.value|default:'' }}" placeholder="e.g. Police Dept. Corp, State Rugby Team" class="w-full bg-surface-container-lowest border {% if form.name.errors %}border-error{% else %}border-outline-variant{% endif %} rounded px-4 py-3 font-body-sm text-body-sm text-on-surface placeholder:text-on-surface-variant/60 focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all" />
+        <p class="{% if not form.name.errors %}hidden{% endif %} text-error text-xs mt-1.5 font-body-sm">{{ form.name.errors.0 }}</p>
+      </div>
+
+      <!-- Description -->
+      <div class="md:col-span-2">
+        <label class="block font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">Description</label>
+        <textarea name="description" rows="3" placeholder="Purpose of this custom tier — client, contract terms, special conditions..." class="w-full bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 font-body-sm text-body-sm text-on-surface placeholder:text-on-surface-variant/60 focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all resize-none"></textarea>
+        <p class="font-body-sm text-[11px] text-on-surface-variant mt-1.5">Not saved yet — there's no field for this on a plan yet.</p>
+      </div>
+
+      <!-- Duration -->
+      <div>
+        <label class="block font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">Duration *</label>
+        <div class="relative">
+          <select name="duration" id="custom-duration-select" required class="w-full appearance-none bg-surface-container-lowest border {% if form.duration_days.errors %}border-error{% else %}border-outline-variant{% endif %} rounded px-4 py-3 pr-10 font-body-sm text-body-sm text-on-surface focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all">
+            <option value="" disabled {% if not submitted_duration %}selected{% endif %}>Select duration</option>
+            <option value="1_month" {% if submitted_duration == "1_month" %}selected{% endif %}>1 Month</option>
+            <option value="3_months" {% if submitted_duration == "3_months" %}selected{% endif %}>3 Months</option>
+            <option value="6_months" {% if submitted_duration == "6_months" %}selected{% endif %}>6 Months</option>
+            <option value="12_months" {% if submitted_duration == "12_months" %}selected{% endif %}>12 Months / Yearly</option>
+            <option value="custom" {% if submitted_duration == "custom" %}selected{% endif %}>Custom — negotiable</option>
+          </select>
+          <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none text-[20px]">expand_more</span>
+        </div>
+        <p class="{% if not form.duration_days.errors %}hidden{% endif %} text-error text-xs mt-1.5 font-body-sm">{{ form.duration_days.errors.0 }}</p>
+      </div>
+
+      <!-- Custom Duration Days (only meaningful when Duration = Custom) -->
+      <div id="custom-duration-days-wrap" class="{% if submitted_duration != 'custom' %}hidden{% endif %}">
+        <label class="block font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">Custom Duration (days) *</label>
+        <input type="number" name="custom_duration_days" min="1" step="1" value="{% if submitted_duration == 'custom' %}{{ form.duration_days.value|default:'' }}{% endif %}" placeholder="e.g. 45" class="w-full bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 font-body-sm text-body-sm text-on-surface placeholder:text-on-surface-variant/60 focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all" />
+        <p class="font-body-sm text-[11px] text-on-surface-variant mt-1.5">Exact number of days for this negotiated tier — required when Duration is "Custom".</p>
+      </div>
+
+      <!-- Price -->
+      <div>
+        <label class="block font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">Price *</label>
+        <div class="relative">
+          <span class="absolute left-3 top-1/2 -translate-y-1/2 font-data-md text-data-md text-on-surface-variant">$</span>
+          <input name="price" type="number" min="0" step="0.01" required value="{{ form.price.value|default:'' }}" placeholder="0.00" class="w-full bg-surface-container-lowest border {% if form.price.errors %}border-error{% else %}border-outline-variant{% endif %} rounded pl-8 pr-4 py-3 font-body-sm text-body-sm text-on-surface placeholder:text-on-surface-variant/60 focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all" />
+        </div>
+        <p class="{% if not form.price.errors %}hidden{% endif %} text-error text-xs mt-1.5 font-body-sm">{{ form.price.errors.0 }}</p>
+      </div>
+
+      <!-- Status -->
+      <div>
+        <label class="block font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">Status *</label>
+        <div class="relative">
+          <select name="status" required class="w-full appearance-none bg-surface-container-lowest border {% if form.status.errors %}border-error{% else %}border-outline-variant{% endif %} rounded px-4 py-3 pr-10 font-body-sm text-body-sm text-on-surface focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all">
+            <option value="active" {% if form.status.value != "inactive" %}selected{% endif %}>Active</option>
+            <option value="inactive" {% if form.status.value == "inactive" %}selected{% endif %}>Inactive</option>
+          </select>
+          <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none text-[20px]">expand_more</span>
+        </div>
+        <p class="{% if not form.status.errors %}hidden{% endif %} text-error text-xs mt-1.5 font-body-sm">{{ form.status.errors.0 }}</p>
+      </div>
+
+      <div class="md:col-span-2 flex items-start gap-2 p-3 rounded border border-outline-variant bg-surface-container-high">
+        <span class="material-symbols-outlined text-primary-container text-[18px] mt-0.5 shrink-0">shield</span>
+        <p class="font-body-sm text-xs leading-relaxed text-on-surface-variant">Custom plans are isolated from standard tiers and require admin approval if set to Active. Inactive keeps the draft for later mapping.</p>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="flex flex-wrap items-center gap-3 pt-6 border-t border-outline-variant">
+      <button type="submit" class="inline-flex items-center justify-center gap-2 px-8 py-3 bg-primary-container text-on-primary-container border border-primary-container font-label-caps text-[11px] uppercase tracking-widest font-bold rounded hover:bg-primary-container/90 transition-colors">
+        Save Custom Plan
+      </button>
+      <a href="{% url 'plans' %}" class="inline-flex items-center justify-center px-8 py-3 border border-outline-variant bg-transparent text-on-surface font-label-caps text-[11px] uppercase tracking-widest rounded hover:bg-surface-container-high transition-colors">
+        Cancel
+      </a>
+    </div>
+  </form>
+</div>
+
+<script>
+(function(){
+  // Purely a visibility toggle for the Custom-Duration-Days input — not a
+  // validation/save simulation. Shown whenever Duration = "Custom", since
+  // that's the only case where the server needs a manually entered day count.
+  const select = document.getElementById('custom-duration-select');
+  const wrap = document.getElementById('custom-duration-days-wrap');
+  if(!select || !wrap) return;
+  function sync(){ wrap.classList.toggle('hidden', select.value !== 'custom'); }
+  select.addEventListener('change', sync);
+  sync();
+})();
+</script>
+{% endblock %}

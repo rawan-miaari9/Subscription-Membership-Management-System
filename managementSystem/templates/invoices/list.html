@@ -1,0 +1,206 @@
+{% extends "layouts/dashboard.html" %}
+{% block title %}Invoices - Iron Core{% endblock %}
+
+{% block dashboard_content %}
+<div class="w-full flex flex-col gap-6">
+  <!-- Page Header & Action Bar -->
+  <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+    <div>
+      <h2 class="font-headline-lg text-headline-lg text-on-surface uppercase tracking-tight">INVOICING &amp; RECEIPTS</h2>
+      <p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Create, track and collect on invoices.</p>
+    </div>
+    <div class="flex items-center gap-3">
+      <a href="{% url 'receipt-create' %}" class="border border-outline-variant font-label-caps text-label-caps uppercase px-6 h-10 rounded hover:bg-surface-container-high transition-colors flex items-center gap-2 inline-flex text-on-surface-variant">
+        <span class="material-symbols-outlined text-[18px]">receipt_long</span>
+        New Receipt
+      </a>
+      <a href="{% url 'invoice-create' %}" class="bg-primary-container text-on-primary-container font-label-caps text-label-caps uppercase px-6 h-10 rounded border border-primary hover:bg-primary-fixed-dim transition-colors flex items-center gap-2 inline-flex">
+        <span class="material-symbols-outlined text-[18px]">add</span>
+        New Invoice
+      </a>
+    </div>
+  </div>
+
+  <!-- Stat Bento -->
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-bento-gap">
+    <div class="bg-surface-container border border-outline-variant rounded-lg p-6">
+      <span class="font-label-caps text-label-caps text-on-surface-variant uppercase block mb-1">Invoices</span>
+      <span class="font-display text-display text-on-surface tracking-tighter">{{ stat_total }}</span>
+    </div>
+    <div class="bg-surface-container border border-outline-variant rounded-lg p-6">
+      <span class="font-label-caps text-label-caps text-on-surface-variant uppercase block mb-1">Total Billed</span>
+      <span class="font-display text-display text-on-surface tracking-tighter">${{ stat_billed|floatformat:2 }}</span>
+    </div>
+    <div class="bg-surface-container border border-outline-variant rounded-lg p-6">
+      <span class="font-label-caps text-label-caps text-on-surface-variant uppercase block mb-1">Outstanding</span>
+      <span class="font-display text-display text-primary tracking-tighter">${{ stat_outstanding|floatformat:2 }}</span>
+    </div>
+    <div class="bg-surface-container border border-outline-variant rounded-lg p-6">
+      <span class="font-label-caps text-label-caps text-on-surface-variant uppercase block mb-1">Overdue</span>
+      <span class="font-display text-display text-error tracking-tighter">{{ stat_overdue }}</span>
+    </div>
+  </div>
+
+  <!-- Filter Bar -->
+  <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+    <div class="relative flex-1 max-w-xs">
+      <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">search</span>
+      <form method="get" action="{% url 'invoices' %}" class="contents">
+        {% if filter_status %}<input type="hidden" name="status" value="{{ filter_status }}">{% endif %}
+        <input name="q" value="{{ filter_search }}" placeholder="Search by number or member..." class="w-full bg-surface-container border border-outline-variant rounded h-10 pl-10 pr-4 text-on-surface font-body-sm focus:ring-1 focus:ring-primary focus:border-primary outline-none placeholder:text-on-surface-variant"/>
+      </form>
+    </div>
+    <div class="relative">
+      <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">filter_list</span>
+      <select data-invoice-status-filter class="appearance-none bg-surface-container border border-outline-variant rounded h-10 pl-10 pr-10 text-on-surface font-label-caps text-label-caps uppercase focus:ring-1 focus:ring-primary focus:border-primary outline-none cursor-pointer">
+        <option value="" {% if not filter_status %}selected{% endif %}>All Statuses</option>
+        <option value="draft" {% if filter_status == 'draft' %}selected{% endif %}>Draft</option>
+        <option value="sent" {% if filter_status == 'sent' %}selected{% endif %}>Sent</option>
+        <option value="paid" {% if filter_status == 'paid' %}selected{% endif %}>Paid</option>
+        <option value="partial" {% if filter_status == 'partial' %}selected{% endif %}>Partial</option>
+        <option value="overdue" {% if filter_status == 'overdue' %}selected{% endif %}>Overdue</option>
+        <option value="void" {% if filter_status == 'void' %}selected{% endif %}>Void</option>
+      </select>
+      <span class="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none">arrow_drop_down</span>
+    </div>
+    {% if filters_active %}
+    <a href="{% url 'invoices' %}" class="font-label-caps text-label-caps text-primary hover:underline inline-flex items-center gap-1 h-10">
+      <span class="material-symbols-outlined text-[16px]">close</span> Clear filters
+    </a>
+    {% endif %}
+  </div>
+
+  <!-- Data Table -->
+  <div class="bg-surface border border-outline-variant rounded-lg flex flex-col overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-left border-collapse">
+        <thead>
+          <tr class="bg-surface-container-low border-b border-outline-variant">
+            <th class="py-4 px-6 font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider">Invoice</th>
+            <th class="py-4 px-6 font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider hidden sm:table-cell">Member</th>
+            <th class="py-4 px-6 font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider hidden md:table-cell">Issued</th>
+            <th class="py-4 px-6 font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider hidden md:table-cell">Due</th>
+            <th class="py-4 px-6 font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider text-right">Amount</th>
+            <th class="py-4 px-6 font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider text-right">Balance</th>
+            <th class="py-4 px-6 font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider">Status</th>
+            <th class="py-4 px-6 font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider text-center">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-outline-variant">
+          {% for invoice in invoices %}
+          <tr class="hover:bg-surface-container-high transition-colors group">
+            <td class="py-4 px-6">
+              <a href="{% url 'invoice-detail' invoice.pk %}" class="font-data-lg text-data-lg text-on-surface group-hover:text-primary transition-colors">{{ invoice.invoice_no }}</a>
+              <p class="font-body-sm text-[12px] text-on-surface-variant">{{ invoice.description|default:"—"|truncatechars:48 }}</p>
+            </td>
+            <td class="py-4 px-6 font-data-md text-data-md text-on-surface hidden sm:table-cell">{{ invoice.billed_to }}</td>
+            <td class="py-4 px-6 font-data-md text-data-md text-on-surface-variant hidden md:table-cell">{{ invoice.issued_date|date:"M j, Y" }}</td>
+            <td class="py-4 px-6 font-data-md text-data-md text-on-surface-variant hidden md:table-cell">
+              {{ invoice.due_date|date:"M j, Y" }}
+              {% if invoice.effective_status == 'overdue' %}<span class="ml-1 text-error">●</span>{% endif %}
+            </td>
+            <td class="py-4 px-6 font-data-md text-data-md text-on-surface text-right">${{ invoice.total|floatformat:2 }}</td>
+            <td class="py-4 px-6 font-data-md text-data-md text-right {% if invoice.effective_status == 'overdue' %}text-error{% else %}text-on-surface-variant{% endif %}">
+              ${{ invoice.balance|floatformat:2 }}
+            </td>
+            <td class="py-4 px-6">
+              {% if invoice.effective_status == 'paid' %}
+              <div class="inline-flex items-center gap-2 bg-surface-container-highest border border-outline-variant px-2 py-1 rounded font-label-caps text-label-caps text-on-surface"><div class="w-[6px] h-[6px] bg-tertiary"></div> PAID</div>
+              {% elif invoice.effective_status == 'draft' %}
+              <div class="inline-flex items-center gap-2 bg-surface-container-highest border border-outline-variant px-2 py-1 rounded font-label-caps text-label-caps text-on-surface-variant"><div class="w-[6px] h-[6px] bg-on-surface-variant"></div> DRAFT</div>
+              {% elif invoice.effective_status == 'sent' %}
+              <div class="inline-flex items-center gap-2 bg-surface-container-highest border border-outline-variant px-2 py-1 rounded font-label-caps text-label-caps text-on-surface"><div class="w-[6px] h-[6px] bg-primary"></div> SENT</div>
+              {% elif invoice.effective_status == 'partial' %}
+              <div class="inline-flex items-center gap-2 bg-surface-container-highest border border-outline-variant px-2 py-1 rounded font-label-caps text-label-caps text-on-surface"><div class="w-[6px] h-[6px] bg-secondary"></div> PARTIAL</div>
+              {% elif invoice.effective_status == 'overdue' %}
+              <div class="inline-flex items-center gap-2 bg-surface-container-highest border border-outline-variant px-2 py-1 rounded font-label-caps text-label-caps text-on-surface"><div class="w-[6px] h-[6px] bg-error"></div> OVERDUE</div>
+              {% else %}
+              <div class="inline-flex items-center gap-2 bg-surface-container-highest border border-outline-variant px-2 py-1 rounded font-label-caps text-label-caps text-on-surface-variant"><div class="w-[6px] h-[6px] bg-on-surface-variant"></div> {{ invoice.effective_status|upper }}</div>
+              {% endif %}
+            </td>
+            <td class="py-4 px-6 text-center relative">
+              <button data-action-toggle class="text-on-surface-variant hover:text-primary transition-colors p-1"><span class="material-symbols-outlined text-[20px]">more_vert</span></button>
+              <div data-action-menu class="hidden absolute right-6 top-10 z-20 w-56 bg-surface-container border border-outline-variant rounded shadow-xl flex flex-col py-1">
+                <a href="{% url 'invoice-detail' invoice.pk %}" class="px-4 py-2.5 font-label-caps text-[11px] text-on-surface hover:bg-surface-container-high flex items-center gap-2"><span class="material-symbols-outlined text-[16px]">visibility</span> View</a>
+                <a href="{% url 'invoice-pdf' invoice.pk %}" class="px-4 py-2.5 font-label-caps text-[11px] text-on-surface hover:bg-surface-container-high flex items-center gap-2"><span class="material-symbols-outlined text-[16px]">download</span> Download PDF</a>
+                <div class="border-t border-outline-variant my-1"></div>
+                {% if invoice.status == 'draft' %}
+                <form method="post" action="{% url 'invoice-status' invoice.pk %}">
+                  {% csrf_token %}<input type="hidden" name="action" value="mark_sent">
+                  <button type="submit" class="px-4 py-2.5 font-label-caps text-[11px] text-on-surface hover:bg-surface-container-high flex items-center gap-2 text-left w-full"><span class="material-symbols-outlined text-[16px]">send</span> Mark as Sent</button>
+                </form>
+                {% endif %}
+                {% if invoice.status not in 'paid,void' %}
+                <form method="post" action="{% url 'invoice-status' invoice.pk %}">
+                  {% csrf_token %}<input type="hidden" name="action" value="mark_paid">
+                  <button type="submit" class="px-4 py-2.5 font-label-caps text-[11px] text-tertiary hover:bg-surface-container-high flex items-center gap-2 text-left w-full"><span class="material-symbols-outlined text-[16px]">check_circle</span> Mark as Paid</button>
+                </form>
+                {% endif %}
+                {% if invoice.status != 'void' %}
+                <form method="post" action="{% url 'invoice-status' invoice.pk %}">
+                  {% csrf_token %}<input type="hidden" name="action" value="void">
+                  <button type="submit" class="px-4 py-2.5 font-label-caps text-[11px] text-error hover:bg-surface-container-high flex items-center gap-2 text-left w-full"><span class="material-symbols-outlined text-[16px]">block</span> Void</button>
+                </form>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="8" class="py-16 text-center">
+              <span class="material-symbols-outlined text-[48px] text-on-surface-variant mb-3 block">receipt_long</span>
+              <p class="font-body-lg text-body-lg text-on-surface-variant">No invoices yet.</p>
+              <a href="{% url 'invoice-create' %}" class="mt-4 inline-flex items-center gap-2 bg-primary-container text-on-primary-container font-label-caps text-label-caps uppercase px-6 h-10 rounded border border-primary hover:bg-primary-fixed-dim transition-colors">
+                <span class="material-symbols-outlined text-[18px]">add</span> Create your first invoice
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if page_obj.paginator.num_pages > 1 %}
+    <div class="border-t border-outline-variant bg-surface-container-low p-4 flex justify-between items-center">
+      <span class="font-label-caps text-label-caps text-on-surface-variant uppercase">
+        Showing {{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ page_obj.paginator.count }}
+      </span>
+      <div class="flex gap-2">
+        {% if page_obj.has_previous %}
+        <a href="{% url 'invoices' %}?{% if filters_querystring %}{{ filters_querystring }}&{% endif %}page={{ page_obj.previous_page_number }}" class="w-8 h-8 flex items-center justify-center border border-outline-variant rounded hover:bg-surface-container transition-colors"><span class="material-symbols-outlined text-[18px]">chevron_left</span></a>
+        {% else %}
+        <span class="w-8 h-8 flex items-center justify-center border border-outline-variant rounded opacity-40"><span class="material-symbols-outlined text-[18px]">chevron_left</span></span>
+        {% endif %}
+        {% for num in page_obj.paginator.page_range %}
+          {% if num == page_obj.number %}
+          <span class="w-8 h-8 flex items-center justify-center border border-outline-variant rounded bg-surface-container-high text-primary"><span class="font-data-md text-data-md">{{ num }}</span></span>
+          {% else %}
+          <a href="{% url 'invoices' %}?{% if filters_querystring %}{{ filters_querystring }}&{% endif %}page={{ num }}" class="w-8 h-8 flex items-center justify-center border border-outline-variant rounded hover:bg-surface-container transition-colors"><span class="font-data-md text-data-md">{{ num }}</span></a>
+          {% endif %}
+        {% endfor %}
+        {% if page_obj.has_next %}
+        <a href="{% url 'invoices' %}?{% if filters_querystring %}{{ filters_querystring }}&{% endif %}page={{ page_obj.next_page_number }}" class="w-8 h-8 flex items-center justify-center border border-outline-variant rounded hover:bg-surface-container transition-colors"><span class="material-symbols-outlined text-[18px]">chevron_right</span></a>
+        {% else %}
+        <span class="w-8 h-8 flex items-center justify-center border border-outline-variant rounded opacity-40"><span class="material-symbols-outlined text-[18px]">chevron_right</span></span>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const sel = document.querySelector('[data-invoice-status-filter]');
+  if (sel) sel.addEventListener('change', () => {
+    const params = new URLSearchParams(window.location.search);
+    if (sel.value) params.set('status', sel.value); else params.delete('status');
+    params.delete('page');
+    window.location.search = params.toString();
+  });
+});
+</script>
+{% endblock %}
