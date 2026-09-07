@@ -2,6 +2,7 @@ from decimal import Decimal
 
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.db.models import Sum
 from django.core.validators import validate_email
 from django.contrib.auth.hashers import make_password, check_password
 from django.utils import timezone
@@ -181,6 +182,24 @@ class Payment(models.Model):
     class Meta:
         managed = False
         db_table = 'payments'
+        ordering = ['-paid_at', '-id']
+
+    @property
+    def member_name(self):
+        if self.member:
+            return self.member.full_name
+        return "Walk-in / Guest"
+
+    def refunded_amount(self):
+        """Total of non-rejected refunds already issued against this payment."""
+        try:
+            total = self.refunds.exclude(status='rejected').aggregate(Sum('amount'))['amount__sum']
+            return total or Decimal('0.00')
+        except Exception:
+            return Decimal('0.00')
+
+    def refundable_amount(self):
+        return (self.total or Decimal('0.00')) - self.refunded_amount()
 
     def __str__(self):
         return self.payment_code or f"Payment #{self.pk}"
