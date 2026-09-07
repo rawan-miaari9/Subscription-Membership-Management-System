@@ -251,11 +251,23 @@
     {% include "components/confirm_modal.html" %}
     <script src="{% static 'js/app.js' %}" defer></script>
     <script>
+      // Register service worker for offline instant (0ms on 2nd load)
+      if('serviceWorker' in navigator){
+        navigator.serviceWorker.register('/static/js/sw.js').catch(()=>{});
+      }
       // Instant smoothness: prefetch, View Transitions, lazy, debounce - no waiting
       document.addEventListener('DOMContentLoaded', () => {
         // Lazy load all images + add will-change for smoothness
         document.querySelectorAll('img:not([loading])').forEach(img => { img.loading = 'lazy'; img.decoding = 'async'; });
-        // Prefetch all sidebar links on hover for instant navigation (0ms)
+        // Prefetch all sidebar links on load + hover for 0ms instant
+        const prefetchAll = () => {
+          document.querySelectorAll('#sidebar a[href^="/"]').forEach(a=>{
+            const link=document.createElement('link'); link.rel='prefetch'; link.href=a.href; document.head.appendChild(link);
+          });
+        };
+        // Prefetch on load (after 1s idle) + on hover for instant
+        if('requestIdleCallback' in window) requestIdleCallback(prefetchAll, {timeout:1000});
+        else setTimeout(prefetchAll, 1000);
         document.querySelectorAll('#sidebar a[href^="/"]').forEach(a=>{
           a.addEventListener('mouseenter', ()=>{
             const link=document.createElement('link'); link.rel='prefetch'; link.href=a.href; document.head.appendChild(link);

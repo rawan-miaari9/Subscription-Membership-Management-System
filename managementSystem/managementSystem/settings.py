@@ -152,15 +152,26 @@ LOGOUT_REDIRECT_URL = '/login/'
 SESSION_COOKIE_AGE = 60 * 60 * 8  # 8 hours default
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 
-# Cache (filebased for persistence across reloads + shared, faster than locmem per-process)
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
-        'LOCATION': '/tmp/django_cache',
-        'TIMEOUT': 900,
-        'OPTIONS': {'MAX_ENTRIES': 1000},
+# Cache (filebased for persistence + shared, try Redis if available for 0.5ms)
+try:
+    import django_redis  # noqa
+    CACHES = {
+        'default': {
+            'BACKEND': 'django_redis.cache.RedisCache',
+            'LOCATION': 'redis://127.0.0.1:6379/1',
+            'OPTIONS': {'CLIENT_CLASS': 'django_redis.client.DefaultClient'},
+            'TIMEOUT': 900,
+        }
     }
-}
+except ImportError:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+            'LOCATION': '/tmp/django_cache',
+            'TIMEOUT': 900,
+            'OPTIONS': {'MAX_ENTRIES': 10000},
+        }
+    }
 
 # DB performance: pooler = pgbouncer, keep connection 60s (faster than 0)
 DATABASES['default']['CONN_MAX_AGE'] = 60

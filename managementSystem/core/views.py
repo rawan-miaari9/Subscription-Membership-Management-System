@@ -230,6 +230,11 @@ def logout_view(request):
 
 def dashboard_data():
     """Collect all dashboard data from existing tables and return it as a dict."""
+    # Cache 5min for instant 0ms on 2nd hit
+    cache_key = "dashboard_data"
+    cached = cache.get(cache_key)
+    if cached:
+        return cached
 
     def fetch(sql, params=None):
         with connection.cursor() as cur:
@@ -352,7 +357,7 @@ def dashboard_data():
             "percent": pct,
         })
 
-    return {
+    result = {
         "ok": True,
         "active_members": active_members,
         "monthly_revenue": monthly_revenue,
@@ -364,6 +369,8 @@ def dashboard_data():
         "subscription_mix": subscription_mix,
         "subscription_mix_total": total_subs,
     }
+    cache.set(cache_key, result, 300)
+    return result
 
 def dashboard_context():
     """Return a template-friendly version of the dashboard data."""
