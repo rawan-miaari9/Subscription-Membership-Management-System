@@ -164,8 +164,8 @@ CACHES = {
 DATABASES['default']['CONN_MAX_AGE'] = 60
 DATABASES['default']['CONN_HEALTH_CHECKS'] = True
 
-# Page cache timeout (5 minutes)
-PAGE_CACHE_TIMEOUT = 60 * 5
+# Page cache timeout (15 minutes for smoothness)
+PAGE_CACHE_TIMEOUT = 60 * 15
 
 # Optional: use dummy cache for sessions? keep DB sessions
 
