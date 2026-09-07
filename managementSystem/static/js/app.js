@@ -140,22 +140,38 @@ document.addEventListener('DOMContentLoaded', () => {
   const addBtn = document.querySelector('[data-add-member]');
   if (addBtn) addBtn.addEventListener('click', () => toast('Add Member modal (frontend demo) - backend later', 'info'));
 
-  // ── Sidebar collapse/expand ──
+  // ── Sidebar hover expand (no scrollbar, no arrow) ──
   const sidebar = document.getElementById('sidebar');
-  const sidebarToggle = document.getElementById('sidebar-toggle');
-  if (sidebar && sidebarToggle) {
+  if (sidebar) {
+    // Start collapsed by default for more content space, hover to expand
     const saved = localStorage.getItem('sidebar-collapsed');
-    if (saved === '1') sidebar.classList.add('sidebar-collapsed');
-    sidebarToggle.addEventListener('click', () => {
-      sidebar.classList.toggle('sidebar-collapsed');
-      const collapsed = sidebar.classList.contains('sidebar-collapsed');
-      localStorage.setItem('sidebar-collapsed', collapsed ? '1' : '0');
-      sidebarToggle.querySelector('span').textContent = collapsed ? 'chevron_right' : 'chevron_left';
-      sidebarToggle.title = collapsed ? 'Expand sidebar' : 'Collapse sidebar';
+    // Default to collapsed (1) for cleaner look, unless user explicitly expanded before
+    if (saved !== '0') sidebar.classList.add('sidebar-collapsed');
+    // Hover to expand
+    sidebar.addEventListener('mouseenter', () => {
+      if (sidebar.classList.contains('sidebar-collapsed')) {
+        sidebar.classList.remove('sidebar-collapsed');
+      }
     });
-    // set initial icon
-    if (sidebar.classList.contains('sidebar-collapsed')) {
-      sidebarToggle.querySelector('span').textContent = 'chevron_right';
+    sidebar.addEventListener('mouseleave', () => {
+      const shouldCollapse = localStorage.getItem('sidebar-collapsed') !== '0';
+      if (shouldCollapse) sidebar.classList.add('sidebar-collapsed');
+    });
+    // Click on sidebar logo to toggle pinned state (optional)
+    const logo = sidebar.querySelector('.sidebar-logo');
+    if (logo) {
+      logo.style.cursor = 'pointer';
+      logo.title = 'Click to pin/unpin sidebar';
+      logo.addEventListener('click', () => {
+        const isCollapsed = sidebar.classList.contains('sidebar-collapsed');
+        if (isCollapsed) {
+          sidebar.classList.remove('sidebar-collapsed');
+          localStorage.setItem('sidebar-collapsed', '0');
+        } else {
+          sidebar.classList.add('sidebar-collapsed');
+          localStorage.setItem('sidebar-collapsed', '1');
+        }
+      });
     }
   }
 

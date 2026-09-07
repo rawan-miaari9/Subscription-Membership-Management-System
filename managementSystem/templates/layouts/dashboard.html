@@ -1,18 +1,26 @@
 {% extends "base.html" %}
-{% block extra_head %}<style>#sidebar.sidebar-collapsed{width:4rem;}#sidebar.sidebar-collapsed .sidebar-text{display:none;}#sidebar.sidebar-collapsed .sidebar-logo{justify-content:center;}</style>{% endblock %}
+{% block extra_head %}<style>
+#sidebar{width:16rem; transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);}
+#sidebar.sidebar-collapsed{width:4rem;}
+#sidebar.sidebar-collapsed .sidebar-text{display:none;}
+#sidebar.sidebar-collapsed .sidebar-logo{justify-content:center;}
+#sidebar.sidebar-collapsed:hover{width:16rem;}
+#sidebar.sidebar-collapsed:hover .sidebar-text{display:inline;}
+#sidebar.sidebar-collapsed:hover .sidebar-logo{justify-content:flex-start;}
+#sidebar nav{scrollbar-width: none; -ms-overflow-style: none;}
+#sidebar nav::-webkit-scrollbar{display:none;}
+#sidebar:hover nav{scrollbar-width: thin;}
+#sidebar:hover nav::-webkit-scrollbar{display:block; width:6px;}
+</style>{% endblock %}
 {% block body_class %}text-on-surface antialiased font-body-sm{% endblock %}
 
 {% block body %}
 <div class="flex min-h-screen w-full bg-background">
 <!-- Sidebar -->
 <aside id="sidebar" class="flex flex-col w-64 shrink-0 bg-background border-r border-outline-variant sticky top-0 h-screen overflow-hidden transition-all duration-300">
-    <div class="px-4 py-5 border-b border-outline-variant shrink-0 flex items-center justify-between gap-2">
-        <div class="flex items-center justify-center flex-1 sidebar-logo">
-            <span class="font-display text-[18px] font-bold tracking-widest text-primary sidebar-text">IRON</span>
-        </div>
-        <button id="sidebar-toggle" class="w-8 h-8 flex items-center justify-center rounded border border-outline-variant bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-primary transition-colors shrink-0" title="Collapse sidebar">
-            <span class="material-symbols-outlined text-[18px]">chevron_left</span>
-        </button>
+    <div class="px-4 py-5 border-b border-outline-variant shrink-0 flex items-center justify-center">
+        <span class="font-display text-[18px] font-bold tracking-widest text-primary sidebar-text">IRON CORE</span>
+        <span class="font-display text-[18px] font-bold tracking-widest text-primary hidden sidebar-text-collapsed">IC</span>
     </div>
     <nav class="flex-1 overflow-y-auto py-3">
         <ul class="flex flex-col gap-0.5 px-2">
