@@ -3340,6 +3340,242 @@ def user_change_role_view(request, pk):
 def reports_generate_view(request):
     return render(request, "reports/generate.html")
 
+def _date_condition(date_range, date_from, date_to, col):
+    """Return (sql_fragment, params) for date filtering."""
+    if date_range == "last_7":
+        return f"{col} >= NOW() - INTERVAL '7 days'", []
+    if date_range == "last_30":
+        return f"{col} >= NOW() - INTERVAL '30 days'", []
+    if date_range == "this_month":
+        return f"date_trunc('month', {col}) = date_trunc('month', CURRENT_DATE)", []
+    if date_range == "this_quarter":
+        return f"date_trunc('quarter', {col}) = date_trunc('quarter', CURRENT_DATE)", []
+    if date_range == "year_to_date":
+        return f"{col} >= DATE_TRUNC('year', CURRENT_DATE)", []
+    if date_range == "custom" and date_from and date_to:
+        return f"{col}::date BETWEEN %s AND %s", [date_from, date_to]
+    return None, []
+
+def _month_trunc(col):
+    return f"date_trunc('month', {col})"
+
+
+REPORT_TYPES = {
+    "Revenue": {
+        "base": (
+            "SELECT p.paid_at, p.total, p.status, p.method, p.payment_code, "
+            "       COALESCE(m.full_name, 'Unknown') AS member_name "
+            "FROM payments p "
+            "LEFT JOIN members m ON m.id = p.member_id "
+            "WHERE p.status = 'success'"
+        ),
+        "date_col": "p.paid_at",
+        "plan_filter": False,
+        "category_filter": False,
+        "chart_sql": (
+            "SELECT to_char(date_trunc('month', p.paid_at), 'YYYY-MM') AS ym, "
+            "       COALESCE(SUM(p.total), 0) AS total "
+            "FROM payments p WHERE p.status = 'success'{where} "
+            "GROUP BY ym ORDER BY ym"
+        ),
+        "chart_value": "total",
+    },
+    "Payments": {
+        "base": (
+            "SELECT p.paid_at, p.total AS amount, p.status, p.method, "
+            "       p.payment_code, p.receipt_no, "
+            "       COALESCE(m.full_name, 'Unknown') AS member_name "
+            "FROM payments p "
+            "LEFT JOIN members m ON m.id = p.member_id "
+            "WHERE 1=1"
+        ),
+        "date_col": "p.paid_at",
+        "status_map": {
+            "paid": "p.status = 'success'",
+            "pending": "p.status = 'pending'",
+            "failed": "p.status = 'failed'",
+        },
+        "plan_filter": False,
+        "category_filter": False,
+        "chart_sql": (
+            "SELECT to_char(date_trunc('month', p.paid_at), 'YYYY-MM') AS ym, "
+            "       COALESCE(SUM(p.total), 0) AS total "
+            "FROM payments p {where} "
+            "GROUP BY ym ORDER BY ym"
+        ),
+        "chart_value": "total",
+    },
+    "Subscriptions": {
+        "base": (
+            "SELECT s.start_date, s.end_date, s.status, "
+            "       s.subscription_code, "
+            "       COALESCE(m.full_name, 'Unknown') AS member_name, "
+            "       COALESCE(p.name, 'N/A') AS plan_name, "
+            "       COALESCE(p.price, 0) AS plan_price "
+            "FROM subscriptions s "
+            "LEFT JOIN members m ON m.id = s.member_id "
+            "LEFT JOIN membership_plans p ON p.id = s.plan_id "
+            "WHERE 1=1"
+        ),
+        "date_col": "s.start_date",
+        "status_map": {
+            "active": "s.status = 'active'",
+            "expired": "s.status = 'expired' OR s.end_date < CURRENT_DATE",
+            "suspended": "s.status = 'suspended'",
+        },
+        "plan_filter": True,
+        "category_filter": False,
+        "chart_sql": (
+            "SELECT to_char(date_trunc('month', s.start_date), 'YYYY-MM') AS ym, "
+            "       COUNT(*) AS cnt "
+            "FROM subscriptions s "
+            "LEFT JOIN membership_plans p ON p.id = s.plan_id {where} "
+            "GROUP BY ym ORDER BY ym"
+        ),
+        "chart_value": "cnt",
+    },
+    "Expenses": {
+        "base": (
+            "SELECT e.expense_date, e.amount, e.status, "
+            "       e.expense_code, e.category, e.description "
+            "FROM expenses e "
+            "WHERE 1=1"
+        ),
+        "date_col": "e.expense_date",
+        "status_map": {
+            "paid": "e.status = 'cleared'",
+            "pending": "e.status = 'pending'",
+        },
+        "plan_filter": False,
+        "category_filter": True,
+        "chart_sql": (
+            "SELECT to_char(date_trunc('month', e.expense_date), 'YYYY-MM') AS ym, "
+            "       COALESCE(SUM(e.amount), 0) AS total "
+            "FROM expenses e {where} "
+            "GROUP BY ym ORDER BY ym"
+        ),
+        "chart_value": "total",
+    },
+    "Refunds": {
+        "base": (
+            "SELECT r.created_at, r.amount, r.status, "
+            "       r.refund_code, r.reason, "
+            "       COALESCE(m.full_name, 'Unknown') AS member_name "
+            "FROM refunds r "
+            "LEFT JOIN members m ON m.id = r.member_id "
+            "WHERE 1=1"
+        ),
+        "date_col": "r.created_at",
+        "status_map": {
+            "pending": "r.status = 'pending'",
+            "paid": "r.status = 'approved'",
+            "failed": "r.status = 'rejected'",
+        },
+        "plan_filter": False,
+        "category_filter": False,
+        "chart_sql": (
+            "SELECT to_char(date_trunc('month', r.created_at), 'YYYY-MM') AS ym, "
+            "       COALESCE(SUM(r.amount), 0) AS total "
+            "FROM refunds r {where} "
+            "GROUP BY ym ORDER BY ym"
+        ),
+        "chart_value": "total",
+    },
+    "Members": {
+        "base": (
+            "SELECT m.join_date, m.status, "
+            "       m.member_code, m.full_name, m.email "
+            "FROM members m "
+            "WHERE 1=1"
+        ),
+        "date_col": "m.join_date",
+        "status_map": {
+            "active": "m.status = 'active'",
+            "expired": "m.status = 'expired'",
+            "suspended": "m.status = 'suspended'",
+        },
+        "plan_filter": False,
+        "category_filter": False,
+        "chart_sql": (
+            "SELECT to_char(date_trunc('month', m.join_date), 'YYYY-MM') AS ym, "
+            "       COUNT(*) AS cnt "
+            "FROM members m {where} "
+            "GROUP BY ym ORDER BY ym"
+        ),
+        "chart_value": "cnt",
+    },
+    "Attendance": {
+        "base": (
+            "SELECT a.date, "
+            "       a.member_id, COALESCE(m.full_name, 'Unknown') AS member_name, "
+            "       a.check_in, a.check_out, a.duration_min "
+            "FROM attendance a "
+            "LEFT JOIN members m ON m.id = a.member_id "
+            "WHERE 1=1"
+        ),
+        "date_col": "a.date",
+        "plan_filter": False,
+        "category_filter": False,
+        "chart_sql": (
+            "SELECT to_char(date_trunc('month', a.date), 'YYYY-MM') AS ym, "
+            "       COUNT(*) AS cnt "
+            "FROM attendance a {where} "
+            "GROUP BY ym ORDER BY ym"
+        ),
+        "chart_value": "cnt",
+    },
+    "Expiring": {
+        "base": (
+            "SELECT s.end_date, "
+            "       s.subscription_code, s.status, "
+            "       COALESCE(m.full_name, 'Unknown') AS member_name, "
+            "       COALESCE(p.name, 'N/A') AS plan_name "
+            "FROM subscriptions s "
+            "LEFT JOIN members m ON m.id = s.member_id "
+            "LEFT JOIN membership_plans p ON p.id = s.plan_id "
+            "WHERE s.status = 'active' "
+            "  AND s.end_date BETWEEN CURRENT_DATE AND CURRENT_DATE + INTERVAL '30 days'"
+        ),
+        "date_col": "s.end_date",
+        "plan_filter": True,
+        "category_filter": False,
+        "chart_sql": (
+            "SELECT to_char(date_trunc('month', s.end_date), 'YYYY-MM') AS ym, "
+            "       COUNT(*) AS cnt "
+            "FROM subscriptions s "
+            "LEFT JOIN membership_plans p ON p.id = s.plan_id {where} "
+            "  AND s.status = 'active' "
+            "  AND s.end_date BETWEEN CURRENT_DATE AND CURRENT_DATE + INTERVAL '30 days' "
+            "GROUP BY ym ORDER BY ym"
+        ),
+        "chart_value": "cnt",
+    },
+    "Expired": {
+        "base": (
+            "SELECT s.end_date, "
+            "       s.subscription_code, s.status, "
+            "       COALESCE(m.full_name, 'Unknown') AS member_name, "
+            "       COALESCE(p.name, 'N/A') AS plan_name "
+            "FROM subscriptions s "
+            "LEFT JOIN members m ON m.id = s.member_id "
+            "LEFT JOIN membership_plans p ON p.id = s.plan_id "
+            "WHERE (s.status = 'expired' OR s.end_date < CURRENT_DATE)"
+        ),
+        "date_col": "s.end_date",
+        "plan_filter": True,
+        "category_filter": False,
+        "chart_sql": (
+            "SELECT to_char(date_trunc('month', s.end_date), 'YYYY-MM') AS ym, "
+            "       COUNT(*) AS cnt "
+            "FROM subscriptions s "
+            "LEFT JOIN membership_plans p ON p.id = s.plan_id {where} "
+            "  AND (s.status = 'expired' OR s.end_date < CURRENT_DATE) "
+            "GROUP BY ym ORDER BY ym"
+        ),
+        "chart_value": "cnt",
+    },
+}
+
 def _build_rows_sql(report_type, date_range, date_from, date_to, status, category, plan):
     cfg = REPORT_TYPES[report_type]
     where_parts = []
