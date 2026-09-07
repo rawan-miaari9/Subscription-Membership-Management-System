@@ -7,10 +7,10 @@
 #sidebar.sidebar-collapsed:hover{width:16rem;}
 #sidebar.sidebar-collapsed:hover .sidebar-text{display:inline;}
 #sidebar.sidebar-collapsed:hover .sidebar-logo{justify-content:flex-start;}
-#sidebar nav{scrollbar-width: none; -ms-overflow-style: none;}
-#sidebar nav::-webkit-scrollbar{display:none;}
-#sidebar:hover nav{scrollbar-width: thin;}
-#sidebar:hover nav::-webkit-scrollbar{display:block; width:6px;}
+#sidebar nav{scrollbar-width: none !important; -ms-overflow-style: none !important; overflow-y: auto; overflow-x: hidden;}
+#sidebar nav::-webkit-scrollbar{display:none !important; width:0 !important; height:0 !important;}
+#sidebar nav::-webkit-scrollbar-thumb{display:none !important;}
+#sidebar nav::-webkit-scrollbar-track{display:none !important;}
 </style>{% endblock %}
 {% block body_class %}text-on-surface antialiased font-body-sm{% endblock %}
 
@@ -29,9 +29,8 @@
 
             <!-- Members -->
             <li class="sidebar-group">
-                <button data-sidebar-group-toggle="members" class="w-full flex items-center justify-between gap-3 text-on-surface-variant hover:bg-surface-container-high hover:text-primary transition-colors duration-150 px-3 py-2.5 font-label-caps text-[11px] border-l-4 border-transparent {% if request.resolver_match.url_name in 'members member-detail' %}!text-primary !border-primary !bg-surface-container-high{% endif %}">
+                <button data-sidebar-group-toggle="members" class="w-full flex items-center gap-3 text-on-surface-variant hover:bg-surface-container-high hover:text-primary transition-colors duration-150 px-3 py-2.5 font-label-caps text-[11px] border-l-4 border-transparent {% if request.resolver_match.url_name in 'members member-detail' %}!text-primary !border-primary !bg-surface-container-high{% endif %}">
                     <span class="flex items-center gap-3"><span class="material-symbols-outlined text-[18px]">group</span> <span class="sidebar-text">Members</span></span>
-                    <span class="material-symbols-outlined text-[16px] sidebar-text transition-transform" data-icon="expand">expand_more</span>
                 </button>
                 <ul data-sidebar-group="members" class="ml-4 mt-1 pl-3 border-l border-outline-variant flex flex-col gap-0.5 {% if request.resolver_match.url_name not in 'members member-detail' %}hidden{% endif %}">
                     <li><a class="{% if request.resolver_match.url_name == 'members' %}text-primary bg-surface-container-high{% else %}text-on-surface-variant hover:text-primary{% endif %} block px-3 py-2 font-label-caps text-[11px] rounded" href="{% url 'members' %}"><span class="sidebar-text">All Members</span></a></li>
@@ -43,7 +42,6 @@
             <li class="sidebar-group">
                 <button data-sidebar-group-toggle="plans" class="w-full flex items-center justify-between gap-3 text-on-surface-variant hover:bg-surface-container-high hover:text-primary transition-colors duration-150 px-3 py-2.5 font-label-caps text-[11px] border-l-4 border-transparent {% if request.resolver_match.url_name in 'plans services' %}!text-primary !border-primary !bg-surface-container-high{% endif %}">
                     <span class="flex items-center gap-3"><span class="material-symbols-outlined text-[18px]">fitness_center</span> <span class="sidebar-text">Membership Plans</span></span>
-                    <span class="material-symbols-outlined text-[16px] sidebar-text transition-transform" data-icon="expand">expand_more</span>
                 </button>
                 <ul data-sidebar-group="plans" class="ml-4 mt-1 pl-3 border-l border-outline-variant flex flex-col gap-0.5 {% if request.resolver_match.url_name not in 'plans services' %}hidden{% endif %}">
                     <li><a class="{% if request.resolver_match.url_name == 'plans' %}text-primary bg-surface-container-high{% else %}text-on-surface-variant hover:text-primary{% endif %} block px-3 py-2 font-label-caps text-[11px] rounded" href="{% url 'plans' %}"><span class="sidebar-text">All Plans</span></a></li>
@@ -55,7 +53,6 @@
             <li class="sidebar-group">
                 <button data-sidebar-group-toggle="subscriptions" class="w-full flex items-center justify-between gap-3 text-on-surface-variant hover:bg-surface-container-high hover:text-primary transition-colors duration-150 px-3 py-2.5 font-label-caps text-[11px] border-l-4 border-transparent {% if request.resolver_match.url_name in 'subscriptions subscription-detail' %}!text-primary !border-primary !bg-surface-container-high{% endif %}">
                     <span class="flex items-center gap-3"><span class="material-symbols-outlined text-[18px]">card_membership</span> <span class="sidebar-text">Subscriptions</span></span>
-                    <span class="material-symbols-outlined text-[16px] sidebar-text transition-transform" data-icon="expand">expand_more</span>
                 </button>
                 <ul data-sidebar-group="subscriptions" class="ml-4 mt-1 pl-3 border-l border-outline-variant flex flex-col gap-0.5 {% if request.resolver_match.url_name not in 'subscriptions subscription-detail' %}hidden{% endif %}">
                     <li><a class="{% if request.resolver_match.url_name == 'subscriptions' %}text-primary bg-surface-container-high{% else %}text-on-surface-variant hover:text-primary{% endif %} block px-3 py-2 font-label-caps text-[11px] rounded" href="{% url 'subscriptions' %}"><span class="sidebar-text">All Subscriptions</span></a></li>
@@ -67,7 +64,6 @@
             <li class="sidebar-group">
                 <button data-sidebar-group-toggle="payments" class="w-full flex items-center justify-between gap-3 text-on-surface-variant hover:bg-surface-container-high hover:text-primary transition-colors duration-150 px-3 py-2.5 font-label-caps text-[11px] border-l-4 border-transparent {% if request.resolver_match.url_name in 'payments payment-detail' %}!text-primary !border-primary !bg-surface-container-high{% endif %}">
                     <span class="flex items-center gap-3"><span class="material-symbols-outlined text-[18px]">payments</span> <span class="sidebar-text">Payments</span></span>
-                    <span class="material-symbols-outlined text-[16px] sidebar-text transition-transform" data-icon="expand">expand_more</span>
                 </button>
                 <ul data-sidebar-group="payments" class="ml-4 mt-1 pl-3 border-l border-outline-variant flex flex-col gap-0.5 {% if request.resolver_match.url_name not in 'payments payment-detail' %}hidden{% endif %}">
                     <li><a class="{% if request.resolver_match.url_name == 'payments' %}text-primary bg-surface-container-high{% else %}text-on-surface-variant hover:text-primary{% endif %} block px-3 py-2 font-label-caps text-[11px] rounded" href="{% url 'payments' %}"><span class="sidebar-text">All Payments</span></a></li>
@@ -78,7 +74,6 @@
             <li class="sidebar-group">
                 <button data-sidebar-group-toggle="invoices" class="w-full flex items-center justify-between gap-3 text-on-surface-variant hover:bg-surface-container-high hover:text-primary transition-colors duration-150 px-3 py-2.5 font-label-caps text-[11px] border-l-4 border-transparent {% if request.resolver_match.url_name in 'invoices receipt-create invoice-create invoice-detail receipts receipt-detail' %}!text-primary !border-primary !bg-surface-container-high{% endif %}">
                     <span class="flex items-center gap-3"><span class="material-symbols-outlined text-[18px]">receipt_long</span> <span class="sidebar-text">Invoices & Receipts</span></span>
-                    <span class="material-symbols-outlined text-[16px] sidebar-text transition-transform" data-icon="expand">expand_more</span>
                 </button>
                 <ul data-sidebar-group="invoices" class="ml-4 mt-1 pl-3 border-l border-outline-variant flex flex-col gap-0.5 {% if request.resolver_match.url_name not in 'invoices receipt-create invoice-create invoice-detail receipts receipt-detail' %}hidden{% endif %}">
                     <li><a class="{% if request.resolver_match.url_name == 'invoices' %}text-primary bg-surface-container-high{% else %}text-on-surface-variant hover:text-primary{% endif %} block px-3 py-2 font-label-caps text-[11px] rounded" href="{% url 'invoices' %}"><span class="sidebar-text">All Invoices</span></a></li>
