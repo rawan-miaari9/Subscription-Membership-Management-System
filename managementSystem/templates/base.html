@@ -234,6 +234,15 @@
         @keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
         .skeleton { background: linear-gradient(90deg, var(--surface-container) 25%, var(--surface-container-high) 50%, var(--surface-container) 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; }
         @media (prefers-reduced-motion: reduce) { * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; } }
+        /* Instant View Transitions (no waiting) */
+        @supports (view-transition-name: none) {
+          ::view-transition-old(root) { animation: 0.15s ease-out both fade-out; }
+          ::view-transition-new(root) { animation: 0.15s ease-out both fade-in; }
+          @keyframes fade-out { from { opacity: 1; } to { opacity: 0; } }
+          @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+        }
+        /* Will-change for smoothness */
+        .bento-card, main { will-change: transform, opacity; contain: layout style; }
     </style>
     {% block extra_head %}{% endblock %}
 </head>
@@ -242,18 +251,44 @@
     {% include "components/confirm_modal.html" %}
     <script src="{% static 'js/app.js' %}" defer></script>
     <script>
-      // Lazy load images and code-split: only load heavy JS when needed
+      // Instant smoothness: prefetch, View Transitions, lazy, debounce - no waiting
       document.addEventListener('DOMContentLoaded', () => {
-        // Lazy load all images
-        document.querySelectorAll('img:not([loading])').forEach(img => img.loading = 'lazy');
+        // Lazy load all images + add will-change for smoothness
+        document.querySelectorAll('img:not([loading])').forEach(img => { img.loading = 'lazy'; img.decoding = 'async'; });
+        // Prefetch all sidebar links on hover for instant navigation (0ms)
+        document.querySelectorAll('#sidebar a[href^="/"]').forEach(a=>{
+          a.addEventListener('mouseenter', ()=>{
+            const link=document.createElement('link'); link.rel='prefetch'; link.href=a.href; document.head.appendChild(link);
+          }, {once:true});
+          // View Transitions API for instant page switch (no flash)
+          a.addEventListener('click', (e)=>{
+            if(document.startViewTransition && !e.ctrlKey && !e.metaKey){
+              e.preventDefault();
+              // Show instant skeleton
+              const main=document.querySelector('main');
+              if(main) main.style.opacity='0.7';
+              document.startViewTransition(()=>{ window.location.href=a.href; });
+            }
+          });
+        });
         // Debounce global search
         const gs = document.querySelector('[data-global-search]');
         if(gs){
           let t; gs.addEventListener('input', () => {
             clearTimeout(t);
-            t=setTimeout(()=> gs.dispatchEvent(new Event('search')), 300);
+            t=setTimeout(()=> gs.dispatchEvent(new Event('search')), 150);
           });
         }
+        // Instant feedback for all buttons (0ms)
+        document.querySelectorAll('button, a').forEach(el=>{
+          el.addEventListener('mousedown', ()=>{ el.style.transform='scale(0.98)'; });
+          el.addEventListener('mouseup', ()=>{ el.style.transform=''; });
+        });
+      });
+      // Instant skeleton on navigation start
+      window.addEventListener('beforeunload', ()=>{
+        const main=document.querySelector('main');
+        if(main){ main.style.opacity='0.7'; main.style.transition='opacity 0.1s'; }
       });
     </script>
     {% block extra_js %}{% endblock %}
