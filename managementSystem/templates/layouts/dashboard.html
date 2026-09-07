@@ -107,13 +107,7 @@ html::-webkit-scrollbar, body::-webkit-scrollbar, main::-webkit-scrollbar { disp
 </aside>
 <div class="flex-1 flex flex-col min-w-0">
 <!-- Header -->
-<header class="sticky top-0 z-30 flex justify-between items-center px-margin-desktop h-16 border-b border-outline-variant bg-background shrink-0">
-    <div class="flex-1 max-w-md">
-        <div class="relative flex items-center group">
-            <span class="material-symbols-outlined absolute left-3 text-on-surface-variant">search</span>
-            <input class="w-full bg-surface-container-highest border border-outline-variant text-on-surface font-body-sm py-2 pl-10 pr-4 focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all placeholder:text-on-surface-variant" data-global-search placeholder="Search data..." type="text"/>
-        </div>
-    </div>
+<header class="sticky top-0 z-30 flex justify-end items-center px-margin-desktop h-16 border-b border-outline-variant bg-background shrink-0">
     <div class="flex items-center gap-6">
         <a href="{% url 'notifications' %}" class="relative text-on-surface-variant hover:text-primary transition-colors duration-200 focus:ring-1 focus:ring-primary outline-none rounded-sm inline-flex items-center justify-center">
             <span class="material-symbols-outlined">notifications</span>
