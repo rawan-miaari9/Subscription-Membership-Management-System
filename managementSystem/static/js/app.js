@@ -140,23 +140,15 @@ document.addEventListener('DOMContentLoaded', () => {
   const addBtn = document.querySelector('[data-add-member]');
   if (addBtn) addBtn.addEventListener('click', () => toast('Add Member modal (frontend demo) - backend later', 'info'));
 
-  // ── Sidebar hover expand (no scrollbar, no arrow) ──
+  // ── Sidebar hover expand (no scrollbar, no arrow) - CSS handles hover, JS for pin memory ──
   const sidebar = document.getElementById('sidebar');
   if (sidebar) {
-    // Start collapsed by default for more content space, hover to expand
+    // Always start collapsed - hover via CSS :hover will expand
+    sidebar.classList.add('sidebar-collapsed');
     const saved = localStorage.getItem('sidebar-collapsed');
-    // Default to collapsed (1) for cleaner look, unless user explicitly expanded before
-    if (saved !== '0') sidebar.classList.add('sidebar-collapsed');
-    // Hover to expand
-    sidebar.addEventListener('mouseenter', () => {
-      if (sidebar.classList.contains('sidebar-collapsed')) {
-        sidebar.classList.remove('sidebar-collapsed');
-      }
-    });
-    sidebar.addEventListener('mouseleave', () => {
-      const shouldCollapse = localStorage.getItem('sidebar-collapsed') !== '0';
-      if (shouldCollapse) sidebar.classList.add('sidebar-collapsed');
-    });
+    if (saved === '0') sidebar.classList.remove('sidebar-collapsed');
+    // No JS hover needed - CSS #sidebar.sidebar-collapsed:hover handles it
+    // Just handle pin/unpin via logo click
     // Click on sidebar logo to toggle pinned state (optional)
     const logo = sidebar.querySelector('.sidebar-logo');
     if (logo) {
