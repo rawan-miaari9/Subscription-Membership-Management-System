@@ -158,18 +158,18 @@
         <tfoot>
           <tr class="bg-surface-container-high border-t-2 border-outline-variant font-bold">
             <td colspan="2" class="p-3 text-right font-label-caps text-[11px] text-on-surface uppercase">Totals</td>
-            <td class="p-3 text-right font-data-md text-on-surface">$650.00</td>
-            <td class="p-3 text-right font-data-md text-tertiary">-$400.00</td>
-            <td class="p-3 text-right font-data-md text-tertiary">-$50.00</td>
-            <td class="p-3 text-right font-data-md text-primary">-$45.00</td>
-            <td class="p-3 text-right font-data-md text-primary">$155.00</td>
+            <td class="p-3 text-right font-data-md text-on-surface">${{ total_charges|floatformat:2 }}</td>
+            <td class="p-3 text-right font-data-md text-tertiary">-${{ total_payments|floatformat:2 }}</td>
+            <td class="p-3 text-right font-data-md text-tertiary">-${{ total_discounts|floatformat:2 }}</td>
+            <td class="p-3 text-right font-data-md text-primary">-${{ total_refunds|floatformat:2 }}</td>
+            <td class="p-3 text-right font-data-md text-primary">${{ current_balance|floatformat:2 }}</td>
           </tr>
         </tfoot>
       </table>
     </div>
     <div class="p-4 border-t border-outline-variant bg-background flex justify-between items-center">
-      <span class="font-body-sm text-[11px] text-on-surface-variant">Generated on Oct 28, 2023 • Iron Core Gym</span>
-      <span class="font-data-md text-[11px] text-on-surface-variant">7 transactions</span>
+      <span class="font-body-sm text-[11px] text-on-surface-variant">Generated on {% now "M d, Y" %} • Iron Core Gym • {{ member.full_name|default:"" }} {{ member.member_code|default:"" }}</span>
+      <span class="font-data-md text-[11px] text-on-surface-variant">{{ ledger|length }} transactions</span>
     </div>
   </div>
 </div>
