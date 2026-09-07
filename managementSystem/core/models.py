@@ -129,7 +129,7 @@ class Subscription(models.Model):
     plan = models.ForeignKey(MembershipPlan, on_delete=models.DO_NOTHING, db_column="plan_id", blank=True, null=True)
     start_date = models.DateField()
     end_date = models.DateField()
-    status = models.CharField(max_length=10, default="active")
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="active")
     auto_renew = models.BooleanField(default=True)
     created_at = models.DateTimeField(blank=True, null=True)
 
