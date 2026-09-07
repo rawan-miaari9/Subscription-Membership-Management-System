@@ -89,7 +89,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const title = drawer.querySelector('[data-drawer-name]');
     if (title && name) title.textContent = name;
     const viewBtn = document.getElementById('drawer-view-details');
-    if(viewBtn && name) viewBtn.href = '/members/detail/?member=' + encodeURIComponent(name);
+    if(viewBtn && name) {
+      // Use new member-detail with search fallback - try to find member id from table row data if available
+      const row = document.querySelector(`[data-open-drawer="${name}"]`);
+      const memberId = row?.dataset?.memberId || row?.getAttribute('data-member-id');
+      if(memberId) viewBtn.href = '/members/' + memberId + '/';
+      else viewBtn.href = '/members/?q=' + encodeURIComponent(name);
+    }
     document.body.style.overflow = 'hidden';
   }
   function closeDrawer() {
@@ -254,34 +260,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // ── Pagination demo ──
-  document.querySelectorAll('[data-page]').forEach(b => b.addEventListener('click', () => toast('Pagination (frontend demo)', 'info')));
-
-  // ── Generic fallback: every remaining static button becomes functional via toast (frontend-only) ──
-  document.querySelectorAll('main button, main a').forEach(el => {
-    if (el.hasAttribute('data-toast') || el.hasAttribute('data-role') || el.hasAttribute('data-close-drawer') || el.hasAttribute('data-add-member') || el.hasAttribute('data-page') || el.hasAttribute('data-action-toggle') || el.hasAttribute('data-action') || el.hasAttribute('data-confirm') || el.hasAttribute('data-sidebar-group-toggle') || el.hasAttribute('data-print-trigger') || el.closest('[data-open-drawer]') || el.closest('[data-action-menu]')) return;
-    if (el.tagName === 'A') {
-      const href = el.getAttribute('href') || '';
-      if (href.startsWith('/') || href.includes('?') || href.startsWith('#') || href.startsWith('javascript:')) return;
-    }
-    if (el.type === 'reset') return;
-    if (el.closest('nav') || el.closest('header')) return;
-    el.addEventListener('click', (e) => {
-      if (el.type === 'submit') return;
-      e.preventDefault();
-      const txt = (el.textContent || '').trim();
-      if (!txt) return;
-      // Filter/Sort get specific messages
-      const lower = txt.toLowerCase();
-      let msg = txt + ' (frontend demo)';
-      if(lower.includes('filter')) msg='Filter applied (frontend demo)';
-      else if(lower.includes('sort')) msg='Sorted (frontend demo)';
-      else if(lower.includes('manual entry')) msg='Manual entry opened (frontend demo)';
-      else if(lower.includes('view full log')) msg='Full log opened (frontend demo)';
-      else if(lower.includes('override')) msg='Override granted (frontend demo)';
-      toast(msg, 'info');
-    });
-  });
+  // ── Pagination (real, via backend) ──
+  // Pagination now handled by backend Paginator, not demo toast
 });
 
 function toast(msg, type='info') {
