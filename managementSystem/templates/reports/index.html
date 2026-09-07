@@ -361,18 +361,38 @@
     if(!barsEl) return;
     let series=chart&&chart.series?chart.series.slice():[];
     let labels=chart&&chart.labels?chart.labels.slice():[];
-    while(series.length && series[0]===0){ series.shift(); labels.shift(); }
-    while(series.length && series[series.length-1]===0){ series.pop(); labels.pop(); }
+    // Keep all 6 months for context - don't trim to single bar (was causing full-width single bar)
+    // Only trim if it would still leave at least 3 bars, otherwise keep all
+    const origSeries=series.slice(), origLabels=labels.slice();
+    while(series.length>3 && series[0]===0){ series.shift(); labels.shift(); }
+    while(series.length>3 && series[series.length-1]===0){ series.pop(); labels.pop(); }
+    // If still single bar after trim, restore original 6 for proper width
+    if(series.length<=1){
+      series=origSeries.slice();
+      labels=origLabels.slice();
+    }
     barsEl.innerHTML='';
     labelsEl.innerHTML='';
     const max=Math.max.apply(null, series.concat([0]));
     const chartH=220;
+    // Professional width: when single data point, bar should be ~16% (1/6) centered, not 100%
+    const isSingle = series.filter(v=>v>0).length===1;
+    if(isSingle){
+      barsEl.className='flex items-end gap-2 px-2 justify-center';
+      barsEl.style.justifyContent='center';
+    } else {
+      barsEl.className='flex items-end gap-2 px-2';
+      barsEl.style.justifyContent='';
+    }
     // Vibrant block-based with Fira Code and GSAP-like stagger
     labels.forEach((lab,i)=>{
       const val=series[i]||0;
       const h= max>0 ? Math.max(8, Math.round((val/max)*chartH)) : 8;
       const barWrap=document.createElement('div');
-      barWrap.className='flex-1 flex flex-col items-center gap-1';
+      barWrap.className= isSingle && val>0 ? 'w-20 flex flex-col items-center gap-1' : 'flex-1 flex flex-col items-center gap-1';
+      if(isSingle && val===0){
+        barWrap.className='flex-1 flex flex-col items-center gap-1 opacity-30';
+      }
       const bar=document.createElement('div');
       // Vibrant orange #F97316 with block shadow and rounded top, Fira Code tooltip
       bar.className='w-full rounded-t-[4px] relative group cursor-pointer transition-all duration-500 hover:brightness-125 hover:shadow-lg hover:shadow-[#F97316]/20 border border-[#F97316]/20';
