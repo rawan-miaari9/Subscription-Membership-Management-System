@@ -844,6 +844,8 @@ def invoice_create_view(request):
             except (Member.DoesNotExist, ValueError):
                 return render(request, "invoices/create.html", {
                     'error': "Selected member no longer exists.",
+                    'next_invoice_no': _next_invoice_no(),
+                    'today': timezone.localdate(),
                 })
 
         if invoice_no and Invoice.objects.filter(invoice_no=invoice_no).exclude(pk=None).exists():
@@ -915,6 +917,8 @@ def invoice_edit_view(request, pk):
                 return render(request, "invoices/create.html", {
                     'invoice': invoice,
                     'error': "Selected member no longer exists.",
+                    'next_invoice_no': _next_invoice_no(),
+                    'today': timezone.localdate(),
                 })
 
         if invoice_no and Invoice.objects.filter(invoice_no=invoice_no).exclude(pk=invoice.pk).exists():
@@ -1169,6 +1173,9 @@ def receipt_edit_view(request, pk):
                 return render(request, "receipts/create.html", {
                     'receipt': receipt,
                     'error': "Selected member no longer exists.",
+                    'methods': Receipt.METHOD_CHOICES,
+                    'next_receipt_no': _next_receipt_no(),
+                    'today': timezone.localdate(),
                 })
 
         try:
@@ -1177,6 +1184,9 @@ def receipt_edit_view(request, pk):
             return render(request, "receipts/create.html", {
                 'receipt': receipt,
                 'error': str(exc),
+                'methods': Receipt.METHOD_CHOICES,
+                'next_receipt_no': _next_receipt_no(),
+                'today': timezone.localdate(),
             })
 
         if receipt_no and Receipt.objects.filter(receipt_no=receipt_no).exclude(pk=receipt.pk).exists():
@@ -2681,12 +2691,54 @@ def payment_detail_view(request):
     return render(request, "payments/detail.html", {"current_user": get_current_user(request), "payment": payment, "receipt": receipt})
 
 @login_required_custom
-def refund_detail_view(request):
-    return render(request, "refunds/detail.html", {"current_user": get_current_user(request)})
+def refund_detail_view(request, pk):
+    refund = get_object_or_404(Refund.objects.select_related('member', 'payment'), pk=pk)
+    return render(request, "refunds/detail.html", {"current_user": get_current_user(request), "refund": refund})
 
 @login_required_custom
 def refund_history_view(request):
-    return render(request, "refunds/history.html", {"current_user": get_current_user(request)})
+    refunds_qs = Refund.objects.select_related('payment', 'member').order_by('-created_at', '-id')
+
+    search = request.GET.get('q', '').strip()
+    status = request.GET.get('status', '').strip()
+
+    if search:
+        refunds_qs = refunds_qs.filter(
+            Q(refund_code__icontains=search)
+            | Q(payment__payment_code__icontains=search)
+            | Q(member__full_name__icontains=search)
+            | Q(reason__icontains=search)
+        )
+    if status:
+        refunds_qs = refunds_qs.filter(status=status)
+
+    pending_count = refunds_qs.filter(status='pending').count()
+    approved_total = refunds_qs.filter(status='approved').aggregate(t=Sum('amount'))['t'] or 0
+    rejected_total = refunds_qs.filter(status='rejected').aggregate(t=Sum('amount'))['t'] or 0
+
+    paginator = Paginator(refunds_qs, 15)
+    page_obj = paginator.get_page(request.GET.get('page'))
+
+    filters_querydict = request.GET.copy()
+    filters_querydict.pop('page', None)
+    filters_querystring = filters_querydict.urlencode()
+
+    context = {
+        'current_user': get_current_user(request),
+        'refunds': page_obj.object_list,
+        'page_obj': page_obj,
+        'filters_querystring': filters_querystring,
+        'filter_search': search,
+        'filter_status': status,
+        'filters_active': bool(search or status),
+        'stat_count': refunds_qs.count(),
+        'stat_pending': pending_count,
+        'stat_approved': approved_total,
+        'stat_rejected': rejected_total,
+        'statuses': Refund.STATUS_CHOICES,
+        'today': timezone.localdate(),
+    }
+    return render(request, "refunds/history.html", context)
 
 @login_required_custom
 def statement_view(request):
@@ -2983,7 +3035,8 @@ def attendance_checkout_save_view(request):
 
 @login_required_custom
 def expense_add_view(request):
-    return render(request, "expenses/add.html", {"current_user": get_current_user(request)})
+    today = date.today()
+    return render(request, "expenses/add.html", {"current_user": get_current_user(request), "today": today})
 
 @login_required_custom
 def subscription_renew_view(request, code):
@@ -3547,9 +3600,6 @@ def reports_api(request):
 
     except Exception as e:
         return JsonResponse({"ok": False, "error": str(e)}, status=500)
-
-@login_required_custom
-
 
 def _expense_form_context(expense=None):
     context = {

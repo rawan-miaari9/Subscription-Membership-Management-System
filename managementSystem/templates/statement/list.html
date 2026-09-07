@@ -183,7 +183,7 @@
     el.className=`px-4 py-3 rounded border text-sm font-label-caps shadow-lg ${bg}`; el.textContent=msg; c.appendChild(el); setTimeout(()=>{el.style.opacity='0'; setTimeout(()=>el.remove(),300);},2500);
   }
   document.querySelector('[data-action="print"]')?.addEventListener('click',()=>{
-    toast('Print statement (demo) — use browser print','info');
+    toast('Print statement — use browser print','info');
     // Uncomment to enable real print: window.print();
   });
   document.querySelector('[data-action="pdf"]')?.addEventListener('click',()=>{

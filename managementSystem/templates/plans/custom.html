@@ -76,54 +76,6 @@
         <p class="{% if not form.price.errors %}hidden{% endif %} text-error text-xs mt-1.5 font-body-sm">{{ form.price.errors.0 }}</p>
       </div>
 
-      <!-- Services / Benefits - checkboxes -->
-      <div class="md:col-span-2">
-        <label class="block font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-3">Services / Benefits</label>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 p-4 rounded border border-outline-variant bg-surface-container-lowest" data-services-group>
-          <label class="flex items-center gap-3 p-3 rounded border border-outline-variant bg-surface-container hover:bg-surface-container-high transition-colors cursor-pointer group">
-            <input type="checkbox" name="services" value="personal_training" class="w-4 h-4 rounded border-outline-variant bg-surface-container-lowest text-primary-container focus:ring-primary focus:ring-1" />
-            <span class="flex items-center gap-2 font-body-sm text-sm text-on-surface"><span class="material-symbols-outlined text-[18px] text-on-surface-variant group-hover:text-primary-container">fitness_center</span> Personal Training</span>
-          </label>
-          <label class="flex items-center gap-3 p-3 rounded border border-outline-variant bg-surface-container hover:bg-surface-container-high transition-colors cursor-pointer group">
-            <input type="checkbox" name="services" value="group_classes" class="w-4 h-4 rounded border-outline-variant bg-surface-container-lowest text-primary-container focus:ring-primary focus:ring-1" />
-            <span class="flex items-center gap-2 font-body-sm text-sm text-on-surface"><span class="material-symbols-outlined text-[18px] text-on-surface-variant group-hover:text-primary-container">groups</span> Group Classes</span>
-          </label>
-          <label class="flex items-center gap-3 p-3 rounded border border-outline-variant bg-surface-container hover:bg-surface-container-high transition-colors cursor-pointer group">
-            <input type="checkbox" name="services" value="locker" class="w-4 h-4 rounded border-outline-variant bg-surface-container-lowest text-primary-container focus:ring-primary focus:ring-1" />
-            <span class="flex items-center gap-2 font-body-sm text-sm text-on-surface"><span class="material-symbols-outlined text-[18px] text-on-surface-variant group-hover:text-primary-container">door_sliding</span> Permanent Locker</span>
-          </label>
-          <label class="flex items-center gap-3 p-3 rounded border border-outline-variant bg-surface-container hover:bg-surface-container-high transition-colors cursor-pointer group">
-            <input type="checkbox" name="services" value="towel_service" class="w-4 h-4 rounded border-outline-variant bg-surface-container-lowest text-primary-container focus:ring-primary focus:ring-1" />
-            <span class="flex items-center gap-2 font-body-sm text-sm text-on-surface"><span class="material-symbols-outlined text-[18px] text-on-surface-variant group-hover:text-primary-container">local_laundry_service</span> Towel Service</span>
-          </label>
-          <label class="flex items-center gap-3 p-3 rounded border border-outline-variant bg-surface-container hover:bg-surface-container-high transition-colors cursor-pointer group">
-            <input type="checkbox" name="services" value="sauna" class="w-4 h-4 rounded border-outline-variant bg-surface-container-lowest text-primary-container focus:ring-primary focus:ring-1" />
-            <span class="flex items-center gap-2 font-body-sm text-sm text-on-surface"><span class="material-symbols-outlined text-[18px] text-on-surface-variant group-hover:text-primary-container">hot_tub</span> Sauna Access</span>
-          </label>
-          <label class="flex items-center gap-3 p-3 rounded border border-outline-variant bg-surface-container hover:bg-surface-container-high transition-colors cursor-pointer group">
-            <input type="checkbox" name="services" value="nutrition" class="w-4 h-4 rounded border-outline-variant bg-surface-container-lowest text-primary-container focus:ring-primary focus:ring-1" />
-            <span class="flex items-center gap-2 font-body-sm text-sm text-on-surface"><span class="material-symbols-outlined text-[18px] text-on-surface-variant group-hover:text-primary-container">restaurant</span> Nutrition Consult</span>
-          </label>
-          <label class="flex items-center gap-3 p-3 rounded border border-outline-variant bg-surface-container hover:bg-surface-container-high transition-colors cursor-pointer group">
-            <input type="checkbox" name="services" value="powerlifting_zone" class="w-4 h-4 rounded border-outline-variant bg-surface-container-lowest text-primary-container focus:ring-primary focus:ring-1" />
-            <span class="flex items-center gap-2 font-body-sm text-sm text-on-surface"><span class="material-symbols-outlined text-[18px] text-on-surface-variant group-hover:text-primary-container">exercise</span> Powerlifting Zone</span>
-          </label>
-          <label class="flex items-center gap-3 p-3 rounded border border-outline-variant bg-surface-container hover:bg-surface-container-high transition-colors cursor-pointer group">
-            <input type="checkbox" name="services" value="guest_passes" class="w-4 h-4 rounded border-outline-variant bg-surface-container-lowest text-primary-container focus:ring-primary focus:ring-1" />
-            <span class="flex items-center gap-2 font-body-sm text-sm text-on-surface"><span class="material-symbols-outlined text-[18px] text-on-surface-variant group-hover:text-primary-container">card_membership</span> Guest Passes</span>
-          </label>
-          <label class="flex items-center gap-3 p-3 rounded border border-outline-variant bg-surface-container hover:bg-surface-container-high transition-colors cursor-pointer group">
-            <input type="checkbox" name="services" value="recovery" class="w-4 h-4 rounded border-outline-variant bg-surface-container-lowest text-primary-container focus:ring-primary focus:ring-1" />
-            <span class="flex items-center gap-2 font-body-sm text-sm text-on-surface"><span class="material-symbols-outlined text-[18px] text-on-surface-variant group-hover:text-primary-container">self_care</span> Recovery Session</span>
-          </label>
-          <label class="flex items-center gap-3 p-3 rounded border border-outline-variant bg-surface-container hover:bg-surface-container-high transition-colors cursor-pointer group">
-            <input type="checkbox" name="services" value="priority_booking" class="w-4 h-4 rounded border-outline-variant bg-surface-container-lowest text-primary-container focus:ring-primary focus:ring-1" />
-            <span class="flex items-center gap-2 font-body-sm text-sm text-on-surface"><span class="material-symbols-outlined text-[18px] text-on-surface-variant group-hover:text-primary-container">event_available</span> Priority Rack Booking</span>
-          </label>
-        </div>
-        <p class="font-body-sm text-[11px] text-on-surface-variant mt-1.5">Not saved yet — service/benefit assignment is a separate upcoming feature. Selections here aren't persisted.</p>
-      </div>
-
       <!-- Status -->
       <div>
         <label class="block font-label-caps text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">Status *</label>
@@ -137,7 +89,7 @@
         <p class="{% if not form.status.errors %}hidden{% endif %} text-error text-xs mt-1.5 font-body-sm">{{ form.status.errors.0 }}</p>
       </div>
 
-      <div class="flex items-start gap-2 p-3 rounded border border-outline-variant bg-surface-container-high">
+      <div class="md:col-span-2 flex items-start gap-2 p-3 rounded border border-outline-variant bg-surface-container-high">
         <span class="material-symbols-outlined text-primary-container text-[18px] mt-0.5 shrink-0">shield</span>
         <p class="font-body-sm text-xs leading-relaxed text-on-surface-variant">Custom plans are isolated from standard tiers and require admin approval if set to Active. Inactive keeps the draft for later mapping.</p>
       </div>
