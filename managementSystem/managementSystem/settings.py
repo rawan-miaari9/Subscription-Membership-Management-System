@@ -152,11 +152,13 @@ LOGOUT_REDIRECT_URL = '/login/'
 SESSION_COOKIE_AGE = 60 * 60 * 8  # 8 hours default
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 
-# Cache (locmem for dev - reduces DB hits for metrics & auto-suspend)
+# Cache (filebased for persistence across reloads + shared, faster than locmem per-process)
 CACHES = {
     'default': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        'LOCATION': 'gymcore-cache',
+        'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+        'LOCATION': '/tmp/django_cache',
+        'TIMEOUT': 900,
+        'OPTIONS': {'MAX_ENTRIES': 1000},
     }
 }
 

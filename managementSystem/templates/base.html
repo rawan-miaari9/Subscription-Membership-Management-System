@@ -240,7 +240,22 @@
 <body class="bg-background {% block body_class %}text-on-background font-body-sm{% endblock %}">
     {% block body %}{% block content %}{% endblock %}{% endblock %}
     {% include "components/confirm_modal.html" %}
-    <script src="{% static 'js/app.js' %}"></script>
+    <script src="{% static 'js/app.js' %}" defer></script>
+    <script>
+      // Lazy load images and code-split: only load heavy JS when needed
+      document.addEventListener('DOMContentLoaded', () => {
+        // Lazy load all images
+        document.querySelectorAll('img:not([loading])').forEach(img => img.loading = 'lazy');
+        // Debounce global search
+        const gs = document.querySelector('[data-global-search]');
+        if(gs){
+          let t; gs.addEventListener('input', () => {
+            clearTimeout(t);
+            t=setTimeout(()=> gs.dispatchEvent(new Event('search')), 300);
+          });
+        }
+      });
+    </script>
     {% block extra_js %}{% endblock %}
 </body>
 </html>

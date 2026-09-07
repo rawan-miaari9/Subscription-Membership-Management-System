@@ -462,13 +462,14 @@ def dashboard_api(request):
 @login_required_custom
 
 @login_required_custom
+@per_user_page_cache(900)
 def members_view(request):
     search_query = request.GET.get('q', '').strip()
     status_filter = request.GET.get('status', '').strip()
 
     # Newest members first — the most useful default for an admin glancing at
     # who just joined; '-id' breaks ties for same-day joins deterministically.
-    members_qs = Member.objects.all().order_by('-join_date', '-id')
+    members_qs = Member.objects.only('id','member_code','full_name','status','phone','email','join_date','initials').order_by('-join_date', '-id')
     if search_query:
         members_qs = members_qs.filter(
             Q(full_name__icontains=search_query)
@@ -498,6 +499,7 @@ def members_view(request):
     return render(request, "members/list.html", context)
 
 @login_required_custom
+@per_user_page_cache(900)
 def plans_view(request):
     plans_qs = MembershipPlan.objects.all().order_by('name')
     paginator = Paginator(plans_qs, 20)
@@ -682,6 +684,7 @@ def promotions_view(request):
     })
 
 @login_required_custom
+@per_user_page_cache(900)
 def payments_view(request):
     # Handle POST: process new payment via PaymentForm
     if request.method == "POST":
@@ -824,6 +827,7 @@ def payments_view(request):
     })
 
 @login_required_custom
+@per_user_page_cache(900)
 def invoices_view(request):
     invoices_qs = Invoice.objects.select_related('member').order_by('-issued_date', '-id')
 
@@ -1077,6 +1081,8 @@ def invoice_status_view(request, pk):
     invoice.save()
     return redirect('invoice-detail', pk=invoice.pk)
 
+@login_required_custom
+@per_user_page_cache(900)
 def receipts_view(request):
     receipts_qs = Receipt.objects.select_related('member').order_by('-paid_date', '-id')
 
@@ -1390,6 +1396,7 @@ def _refund_status_badges():
 @never_cache
 
 @login_required_custom
+@per_user_page_cache(900)
 def refunds_view(request):
     refunds_qs = Refund.objects.select_related('payment', 'member').order_by('-created_at', '-id')
 
@@ -1434,6 +1441,7 @@ def refunds_view(request):
     return render(request, "refunds/list.html", context)
 
 @login_required_custom
+@per_user_page_cache(900)
 def attendance_view(request):
     attendance_qs = Attendance.objects.select_related('member').order_by('-date', '-check_in')
 
@@ -1494,6 +1502,7 @@ def member_attendance_view(request, pk):
     return render(request, "attendance/member_history.html", context)
 
 @login_required_custom
+@per_user_page_cache(900)
 def expenses_view(request):
     expenses_qs = Expense.objects.all()
 
@@ -1559,6 +1568,7 @@ def expenses_view(request):
 @never_cache
 
 @login_required_custom
+@per_user_page_cache(900)
 def notifications_view(request):
     all_notifs = get_notifications()
 
@@ -1618,6 +1628,7 @@ def notification_mark_all_read_view(request):
     return redirect('notifications')
 
 @login_required_custom
+@per_user_page_cache(900)
 def reports_view(request):
     return render(request, "reports/index.html")
 
@@ -2484,8 +2495,8 @@ def subscription_detail_view(request):
 
 @login_required_custom
 def subscription_create_view(request):
-    members = Member.objects.all().order_by("full_name")
-    standard_plans = MembershipPlan.objects.filter(is_active=True).order_by("price")[:6]
+    members = Member.objects.only('id','member_code','full_name','status').order_by("full_name")
+    standard_plans = MembershipPlan.objects.filter(is_active=True).only('id','name','price','duration_days').order_by("price")[:6]
     # for pricing calculation without tax, we just need base - discount
 
     if request.method == "POST":
