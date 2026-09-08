@@ -1,4 +1,5 @@
 {% extends "layouts/dashboard.html" %}
+{% load tz %}
 {% block title %}Attendance - Iron Core{% endblock %}
 
 {% block dashboard_content %}
@@ -86,7 +87,7 @@
 <tbody>
 {% for record in attendance_records %}
 <tr class="border-b border-outline-variant hover:bg-surface-container-highest transition-colors group">
-<td class="p-4 font-data-md text-data-md text-on-surface">{% if record.check_out %}{{ record.check_out|time:"h:i A" }}{% else %}{{ record.check_in|time:"h:i A" }}{% endif %}</td>
+<td class="p-4 font-data-md text-data-md text-on-surface">{{ record.date|date:"Y-m-d" }} {% if record.check_out %}{{ record.check_out|localtime|time:"h:i A" }}{% else %}{{ record.check_in|localtime|time:"h:i A" }}{% endif %}</td>
 <td class="p-4">
 {% if record.member %}
 <a href="{% url 'member-attendance' record.member.id %}" class="flex items-center gap-3 hover:text-primary transition-colors">
