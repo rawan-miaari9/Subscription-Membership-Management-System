@@ -1974,7 +1974,18 @@ def member_detail_view_legacy(request):
         sub = Subscription.objects.select_related("member", "plan").filter(member__full_name__icontains=member_name).first()
     else:
         sub = Subscription.objects.select_related("member", "plan").order_by("-created_at").first()
-    return render(request, "members/detail.html", {"current_user": get_current_user(request), "subscription": sub, "member": None})
+    # Derive member from subscription or query, fallback to first member
+    member = None
+    if sub and sub.member:
+        member = sub.member
+    elif member_name:
+        member = Member.objects.filter(full_name__icontains=member_name).first()
+    if not member:
+        member = Member.objects.order_by('full_name').first()
+    # Also try to get a subscription for this member if sub is None or mismatched
+    if not sub and member:
+        sub = Subscription.objects.filter(member=member).order_by('-created_at').first()
+    return render(request, "members/detail.html", {"current_user": get_current_user(request), "subscription": sub, "member": member})
 
 @login_required_custom
 def member_detail_view(request, pk):

@@ -24,7 +24,11 @@
       </div>
     </div>
     <div class="flex gap-2">
+      {% if member and member.id %}
       <a href="{% url 'member-edit' member.id %}" class="px-4 py-2 border border-outline-variant text-on-surface font-label-caps text-[11px] hover:bg-surface-container-high">Edit</a>
+      {% else %}
+      <span class="px-4 py-2 border border-outline-variant text-on-surface-variant font-label-caps text-[11px] opacity-50">Edit</span>
+      {% endif %}
       <button data-toast="Create subscription (not yet available)" class="px-4 py-2 bg-primary text-surface-dim font-label-caps text-[11px]">New Subscription</button>
     </div>
   </div>
