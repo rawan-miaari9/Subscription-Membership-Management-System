@@ -2,10 +2,15 @@ from .notifications import unread_count
 
 
 def notifications_processor(request):
-    """Expose the unread notification count for the header bell badge."""
+    """Expose unread count + recent 5 for header dropdown (LinkedIn style)."""
     from django.conf import settings
     try:
         count = unread_count()
     except Exception:
         count = 0
-    return {'unread_notifications': count}
+    try:
+        from .notifications import get_notifications
+        recent = get_notifications()[:5]
+    except Exception:
+        recent = []
+    return {'unread_notifications': count, 'header_notifications': recent}

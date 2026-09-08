@@ -109,12 +109,43 @@ html::-webkit-scrollbar, body::-webkit-scrollbar, main::-webkit-scrollbar { disp
 <!-- Header -->
 <header class="sticky top-0 z-30 flex justify-end items-center px-margin-desktop h-16 border-b border-outline-variant bg-background shrink-0">
     <div class="flex items-center gap-6">
-        <a href="{% url 'notifications' %}" class="relative text-on-surface-variant hover:text-primary transition-colors duration-200 focus:ring-1 focus:ring-primary outline-none rounded-sm inline-flex items-center justify-center">
+        <div class="relative">
+          <button id="notif-bell" class="relative text-on-surface-variant hover:text-primary transition-colors duration-200 focus:ring-1 focus:ring-primary outline-none rounded-sm inline-flex items-center justify-center p-1">
             <span class="material-symbols-outlined">notifications</span>
             {% if unread_notifications %}
             <span class="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full bg-error text-on-error flex items-center justify-center font-label-caps text-[9px] leading-none">{{ unread_notifications }}</span>
             {% endif %}
-        </a>
+          </button>
+          <div id="notif-dropdown" class="hidden absolute right-0 top-full mt-2 w-80 md:w-96 bg-surface-container border border-outline-variant rounded-lg shadow-xl z-50 overflow-hidden">
+            <div class="p-4 border-b border-outline-variant flex justify-between items-center bg-surface-container-high">
+              <h3 class="font-label-caps text-[11px] uppercase tracking-widest text-on-surface">Notifications</h3>
+              <a href="{% url 'notifications' %}" class="font-label-caps text-[11px] text-primary hover:underline">View All</a>
+            </div>
+            <div class="max-h-96 overflow-y-auto divide-y divide-outline-variant">
+              {% for n in header_notifications %}
+              <a href="{% url 'notifications' %}" class="block p-4 hover:bg-surface-container-high transition-colors">
+                <div class="flex gap-3">
+                  <span class="w-8 h-8 rounded-full bg-primary-container/20 flex items-center justify-center shrink-0"><span class="material-symbols-outlined text-[18px] text-primary">{{ n.icon|default:"notifications" }}</span></span>
+                  <div class="flex-1 min-w-0">
+                    <p class="font-label-caps text-[11px] uppercase text-on-surface truncate">{{ n.title }}</p>
+                    <p class="font-body-sm text-xs text-on-surface-variant mt-1 line-clamp-2">{{ n.message }}</p>
+                    <p class="font-label-caps text-[10px] text-on-surface-variant mt-1">{{ n.time|default:"" }}</p>
+                  </div>
+                  {% if not n.read %}<span class="w-2 h-2 bg-primary rounded-full shrink-0 mt-2"></span>{% endif %}
+                </div>
+              </a>
+              {% empty %}
+              <div class="p-8 text-center">
+                <span class="material-symbols-outlined text-[32px] text-on-surface-variant mb-2">notifications_off</span>
+                <p class="font-body-sm text-sm text-on-surface-variant">No notifications</p>
+              </div>
+              {% endfor %}
+            </div>
+            <div class="p-3 border-t border-outline-variant bg-surface-container-high text-center">
+              <a href="{% url 'notifications' %}" class="font-label-caps text-[11px] uppercase tracking-widest text-primary hover:underline">View All Notifications</a>
+            </div>
+          </div>
+        </div>
         <div class="flex items-center gap-3 pl-6 border-l border-outline-variant">
             <div class="text-right">
                 <p id="admin-role-display" class="font-data-md text-data-md text-on-surface">Admin Role</p>
@@ -123,6 +154,24 @@ html::-webkit-scrollbar, body::-webkit-scrollbar, main::-webkit-scrollbar { disp
         </div>
     </div>
 </header>
+<script>
+(function(){
+  const bell=document.getElementById('notif-bell');
+  const dd=document.getElementById('notif-dropdown');
+  if(!bell||!dd) return;
+  bell.addEventListener('click', (e)=>{
+    e.preventDefault();
+    e.stopPropagation();
+    dd.classList.toggle('hidden');
+  });
+  document.addEventListener('click', (e)=>{
+    if(!bell.contains(e.target) && !dd.contains(e.target)) dd.classList.add('hidden');
+  });
+  document.addEventListener('keydown', (e)=>{
+    if(e.key==='Escape') dd.classList.add('hidden');
+  });
+})();
+</script>
 
 <!-- Main Content Area -->
 <main class="flex-1 p-margin-desktop bg-background">
