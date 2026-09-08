@@ -585,6 +585,8 @@ def subscriptions_view(request):
         "mrr": mrr,
     })
 
+@login_required_custom
+@per_user_page_cache(900)
 def pricing_view(request):
     user = get_current_user(request)
     if not user:
@@ -1048,10 +1050,19 @@ def invoice_detail_view(request, pk):
 
 def invoice_pdf_view(request, pk):
     invoice = get_object_or_404(Invoice.objects.select_related('member'), pk=pk)
+    # Try weasyprint, fallback to HTML view if not installed
     try:
         from weasyprint import HTML
         html = render_to_string("invoices/pdf.html", {'invoice': invoice})
         pdf_bytes = HTML(string=html, base_url=request.build_absolute_uri("/")).write_pdf()
+    except ModuleNotFoundError:
+        # weasyprint not installed - fallback to HTML: View shows inline, Download triggers download
+        html = render_to_string("invoices/pdf.html", {'invoice': invoice})
+        if request.GET.get('download') == '1':
+            resp = HttpResponse(html, content_type="text/html")
+            resp['Content-Disposition'] = f'attachment; filename="{invoice.invoice_no}.html"'
+            return resp
+        return HttpResponse(html)
     except Exception as exc:
         import traceback
         traceback.print_exc()
@@ -1061,11 +1072,20 @@ def invoice_pdf_view(request, pk):
                 .replace('\n', '<br>'),
                 status=500,
             )
-        return HttpResponse(
-            "PDF rendering failed. The invoice cannot be exported right now; "
-            "try View in browser or contact support.",
-            status=503,
-        )
+        # Fallback to HTML with correct disposition
+        try:
+            html = render_to_string("invoices/pdf.html", {'invoice': invoice})
+            if request.GET.get('download') == '1':
+                resp = HttpResponse(html, content_type="text/html")
+                resp['Content-Disposition'] = f'attachment; filename="{invoice.invoice_no}.html"'
+                return resp
+            return HttpResponse(html)
+        except Exception:
+            return HttpResponse(
+                "PDF rendering failed. The invoice cannot be exported right now; "
+                "try View in browser or contact support.",
+                status=503,
+            )
     response = HttpResponse(pdf_bytes, content_type="application/pdf")
     disposition = "attachment" if request.GET.get('download') == '1' else "inline"
     response['Content-Disposition'] = f'{disposition}; filename="{invoice.invoice_no}.pdf"'
@@ -1325,6 +1345,13 @@ def receipt_pdf_view(request, pk):
         from weasyprint import HTML
         html = render_to_string("receipts/pdf.html", {'receipt': receipt})
         pdf_bytes = HTML(string=html, base_url=request.build_absolute_uri("/")).write_pdf()
+    except ModuleNotFoundError:
+        html = render_to_string("receipts/pdf.html", {'receipt': receipt})
+        if request.GET.get('download') == '1':
+            resp = HttpResponse(html, content_type="text/html")
+            resp['Content-Disposition'] = f'attachment; filename="{receipt.receipt_no}.html"'
+            return resp
+        return HttpResponse(html)
     except Exception as exc:
         import traceback
         traceback.print_exc()
@@ -1334,16 +1361,25 @@ def receipt_pdf_view(request, pk):
                 .replace('\n', '<br>'),
                 status=500,
             )
-        return HttpResponse(
-            "PDF rendering failed. The receipt cannot be exported right now; try again.",
-            status=503,
-        )
+        try:
+            html = render_to_string("receipts/pdf.html", {'receipt': receipt})
+            if request.GET.get('download') == '1':
+                resp = HttpResponse(html, content_type="text/html")
+                resp['Content-Disposition'] = f'attachment; filename="{receipt.receipt_no}.html"'
+                return resp
+            return HttpResponse(html)
+        except Exception:
+            return HttpResponse(
+                "PDF rendering failed. The receipt cannot be exported right now; try again.",
+                status=503,
+            )
     response = HttpResponse(pdf_bytes, content_type="application/pdf")
     disposition = "attachment" if request.GET.get('download') == '1' else "inline"
     response['Content-Disposition'] = f'{disposition}; filename="{receipt.receipt_no}.pdf"'
     return response
 
 @login_required_custom
+@per_user_page_cache(900)
 def renewals_view(request):
     # Real: show subscriptions expiring within 30 days or already expired but active
     today = date.today()
@@ -1646,6 +1682,8 @@ def _safe_user_profiles(*args, **kwargs):
     except Exception:
         return []
 
+@login_required_custom
+@per_user_page_cache(900)
 def users_view(request):
     # Enhanced from users-backend: show counts, but using dev's User model
     # Safe handling if user_profiles table doesn't exist yet
@@ -1745,6 +1783,7 @@ def _avatar_url(user):
 
 
 @login_required_custom
+@per_user_page_cache(900)
 def settings_view(request):
     business = BusinessInformation.get_singleton()
     financial = FinancialSetting.get_singleton()
@@ -1974,7 +2013,18 @@ def member_detail_view_legacy(request):
         sub = Subscription.objects.select_related("member", "plan").filter(member__full_name__icontains=member_name).first()
     else:
         sub = Subscription.objects.select_related("member", "plan").order_by("-created_at").first()
-    return render(request, "members/detail.html", {"current_user": get_current_user(request), "subscription": sub, "member": None})
+    # Derive member from subscription or query, fallback to first member
+    member = None
+    if sub and sub.member:
+        member = sub.member
+    elif member_name:
+        member = Member.objects.filter(full_name__icontains=member_name).first()
+    if not member:
+        member = Member.objects.order_by('full_name').first()
+    # Also try to get a subscription for this member if sub is None or mismatched
+    if not sub and member:
+        sub = Subscription.objects.filter(member=member).order_by('-created_at').first()
+    return render(request, "members/detail.html", {"current_user": get_current_user(request), "subscription": sub, "member": member})
 
 @login_required_custom
 def member_detail_view(request, pk):
@@ -2830,6 +2880,7 @@ def refund_history_view(request):
     return render(request, "refunds/history.html", context)
 
 @login_required_custom
+@per_user_page_cache(900)
 def statement_view(request):
     # Real statement for a member (via ?member_id, ?code, or ?member name)
     member = None
@@ -3663,6 +3714,28 @@ REPORT_TYPES = {
         ),
         "chart_value": "cnt",
     },
+    "AllInOut": {
+        "base": (
+            "SELECT i.issued_date, i.invoice_no, i.status, "
+            "       COALESCE(m.full_name, 'Unknown') AS member_name, "
+            "       i.subtotal, i.tax_amount, i.total, "
+            "       (i.total - i.subtotal) AS tax_diff "
+            "FROM invoices i "
+            "LEFT JOIN members m ON m.id = i.member_id "
+            "WHERE 1=1"
+        ),
+        "date_col": "i.issued_date",
+        "plan_filter": False,
+        "category_filter": False,
+        "chart_sql": (
+            "SELECT to_char(date_trunc('month', i.issued_date), 'YYYY-MM') AS ym, "
+            "       COALESCE(SUM(i.subtotal), 0) AS all_out, "
+            "       COALESCE(SUM(i.total), 0) AS all_in "
+            "FROM invoices i {where} "
+            "GROUP BY ym ORDER BY ym"
+        ),
+        "chart_value": "all_in",
+    },
 }
 
 def _build_rows_sql(report_type, date_range, date_from, date_to, status, category, plan):
@@ -3834,6 +3907,18 @@ def _render_row(report_type, row_dict):
             "value_display": "1",
             "status": ("EXPIRING" if report_type == "Expiring" else "EXPIRED") + days,
         }
+    if report_type == "AllInOut":
+        total = float(d.get("total") or 0)
+        sub = float(d.get("subtotal") or 0)
+        tax = float(d.get("tax_amount") or 0)
+        return {
+            "date": d["issued_date"].strftime("%Y-%m-%d") if d.get("issued_date") else "",
+            "metric_id": d.get("invoice_no") or "",
+            "category": f"OUT ${sub:,.0f} + TAX ${tax:,.0f}",
+            "value": total,
+            "value_display": f"${total:,.2f}",
+            "status": (d.get("status") or "").upper() or "ISSUED",
+        }
     return {
         "date": "",
         "metric_id": "",
@@ -3879,11 +3964,15 @@ def reports_api(request):
         today = localdate()
         chart_labels = []
         chart_series = []
+        chart_series2 = []
         chart_map = {}
+        chart_map2 = {}
         for cr in chart_raw:
             ym = cr.get("ym", "")
             if ym:
                 chart_map[ym] = float(cr.get(REPORT_TYPES[report_type]["chart_value"], 0))
+                if report_type == "AllInOut":
+                    chart_map2[ym] = float(cr.get("all_out", 0))
 
         year, month = today.year, today.month
         for i in range(5, -1, -1):
@@ -3894,18 +3983,24 @@ def reports_api(request):
             ym = "%04d-%02d" % (y, m)
             chart_labels.append(_ma[m].upper())
             chart_series.append(chart_map.get(ym, 0))
+            if report_type == "AllInOut":
+                chart_series2.append(chart_map2.get(ym, 0))
 
         rows = [_render_row(report_type, r) for r in raw_rows]
 
-        if report_type in ("Revenue", "Payments", "Expenses", "Refunds", "Subscriptions"):
+        if report_type in ("Revenue", "Payments", "Expenses", "Refunds", "Subscriptions", "AllInOut"):
             total_value = sum(r["value"] for r in rows)
         else:
             total_value = len(rows)
 
-        if report_type in ("Revenue", "Payments", "Expenses", "Refunds"):
+        if report_type in ("Revenue", "Payments", "Expenses", "Refunds", "AllInOut"):
             value_display = f"${total_value:,.2f}"
         else:
             value_display = str(int(total_value))
+
+        chart_payload = {"labels": chart_labels, "series": chart_series}
+        if report_type == "AllInOut":
+            chart_payload["series2"] = chart_series2
 
         return JsonResponse({
             "ok": True,
@@ -3915,10 +4010,7 @@ def reports_api(request):
                 "record_count": len(rows),
                 "report_type": report_type,
             },
-            "chart": {
-                "labels": chart_labels,
-                "series": chart_series,
-            },
+            "chart": chart_payload,
             "rows": rows,
             "total_rows": len(rows),
         })

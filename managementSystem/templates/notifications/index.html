@@ -11,7 +11,7 @@
     </div>
     <div class="flex items-center gap-3">
       {% if unread_count and unread_count > 0 %}
-      <form method="post" action="{% url 'notification-mark-all-read' %}">{% csrf_token %}
+      <form id="mark-all-form" method="post" action="{% url 'notification-mark-all-read' %}">{% csrf_token %}
         <button type="submit" class="bg-primary-container text-on-primary-container font-label-caps text-label-caps uppercase px-6 h-10 rounded border border-primary hover:bg-primary-fixed-dim transition-colors flex items-center gap-2 inline-flex">
           <span class="material-symbols-outlined text-[18px]">done_all</span>
           Mark all as read
@@ -20,7 +20,6 @@
       {% endif %}
     </div>
   </div>
-
   <!-- Stat Bento -->
   <div class="grid grid-cols-2 md:grid-cols-4 gap-bento-gap">
     <div class="bg-surface-container border border-outline-variant rounded-lg p-6">
@@ -145,4 +144,23 @@
     <a href="{% url 'settings' %}" class="inline-flex items-center gap-2 text-primary font-label-caps text-[11px] uppercase hover:underline">Edit settings</a>
   </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  const form=document.getElementById('mark-all-form');
+  console.log('mark-all form found:', !!form);
+  if(form){
+    form.addEventListener('submit', function(e){
+      console.log('mark-all submit, will POST to', form.action);
+      const btn=form.querySelector('button');
+      if(btn) btn.disabled=true;
+      setTimeout(()=>{ if(window.toast) toast('Marked all as read','success'); else console.log('toast not found'); }, 100);
+    });
+  } else {
+    console.log('mark-all-form not found - unread_count may be 0');
+  }
+});
+</script>
 {% endblock %}
