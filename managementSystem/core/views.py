@@ -3179,12 +3179,16 @@ def attendance_checkout_save_view(request):
         return JsonResponse({"success": False, "error": "Member not found."}, status=404)
 
     today = timezone.localdate()
+    # Find today's attendance first, else most recent open check-in (e.g. checked in yesterday and forgot to checkout)
     attendance = Attendance.objects.filter(member=member, date=today).first()
+    if attendance is None:
+        attendance = Attendance.objects.filter(member=member, check_out__isnull=True).order_by('-date').first()
     if attendance is None:
         return JsonResponse({
             "success": False,
-            "error": f"{member.full_name} hasn't checked in today — check in before checking out.",
+            "error": f"{member.full_name} hasn't checked in yet — check in before checking out.",
         }, status=404)
+    # If we found an older open day, treat checkout as for that day (keep original date)
 
     already_checked_out = attendance.check_out is not None
 
