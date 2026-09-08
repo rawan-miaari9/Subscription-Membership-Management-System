@@ -1048,10 +1048,15 @@ def invoice_detail_view(request, pk):
 
 def invoice_pdf_view(request, pk):
     invoice = get_object_or_404(Invoice.objects.select_related('member'), pk=pk)
+    # Try weasyprint, fallback to HTML view if not installed
     try:
         from weasyprint import HTML
         html = render_to_string("invoices/pdf.html", {'invoice': invoice})
         pdf_bytes = HTML(string=html, base_url=request.build_absolute_uri("/")).write_pdf()
+    except ModuleNotFoundError:
+        # weasyprint not installed - show HTML as fallback (still useful, print via browser)
+        html = render_to_string("invoices/pdf.html", {'invoice': invoice})
+        return HttpResponse(html)
     except Exception as exc:
         import traceback
         traceback.print_exc()
@@ -1061,11 +1066,16 @@ def invoice_pdf_view(request, pk):
                 .replace('\n', '<br>'),
                 status=500,
             )
-        return HttpResponse(
-            "PDF rendering failed. The invoice cannot be exported right now; "
-            "try View in browser or contact support.",
-            status=503,
-        )
+        # Fallback to HTML
+        try:
+            html = render_to_string("invoices/pdf.html", {'invoice': invoice})
+            return HttpResponse(html)
+        except Exception:
+            return HttpResponse(
+                "PDF rendering failed. The invoice cannot be exported right now; "
+                "try View in browser or contact support.",
+                status=503,
+            )
     response = HttpResponse(pdf_bytes, content_type="application/pdf")
     disposition = "attachment" if request.GET.get('download') == '1' else "inline"
     response['Content-Disposition'] = f'{disposition}; filename="{invoice.invoice_no}.pdf"'
@@ -1325,6 +1335,9 @@ def receipt_pdf_view(request, pk):
         from weasyprint import HTML
         html = render_to_string("receipts/pdf.html", {'receipt': receipt})
         pdf_bytes = HTML(string=html, base_url=request.build_absolute_uri("/")).write_pdf()
+    except ModuleNotFoundError:
+        html = render_to_string("receipts/pdf.html", {'receipt': receipt})
+        return HttpResponse(html)
     except Exception as exc:
         import traceback
         traceback.print_exc()
@@ -1334,10 +1347,14 @@ def receipt_pdf_view(request, pk):
                 .replace('\n', '<br>'),
                 status=500,
             )
-        return HttpResponse(
-            "PDF rendering failed. The receipt cannot be exported right now; try again.",
-            status=503,
-        )
+        try:
+            html = render_to_string("receipts/pdf.html", {'receipt': receipt})
+            return HttpResponse(html)
+        except Exception:
+            return HttpResponse(
+                "PDF rendering failed. The receipt cannot be exported right now; try again.",
+                status=503,
+            )
     response = HttpResponse(pdf_bytes, content_type="application/pdf")
     disposition = "attachment" if request.GET.get('download') == '1' else "inline"
     response['Content-Disposition'] = f'{disposition}; filename="{receipt.receipt_no}.pdf"'
