@@ -18,6 +18,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.timezone import localdate
 from django.views.decorators.cache import never_cache
+from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.contrib.auth.hashers import make_password
 
@@ -222,9 +223,23 @@ def login_view(request):
     return render(request, "auth/login.html", context)
 
 
+@csrf_exempt
 def logout_view(request):
     request.session.flush()
     messages.success(request, "You have been logged out.")
+    # Support AJAX fetch from settings page (expects JSON with redirect)
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or 'application/json' in request.headers.get('Accept', ''):
+        return JsonResponse({"ok": True, "redirect": "/login/"})
+    # Also handle fetch that sends JSON but not Accept header (settings JS)
+    if request.method == "POST" and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({"ok": True, "redirect": "/login/"})
+    # Fallback: if POST via fetch with X-CSRFToken but without Accept, still return JSON for .json() caller
+    if request.method == "POST":
+        # Detect fetch caller: if content type is json or caller expects json, return JSON to avoid HTML parse error
+        ct = request.headers.get('Content-Type', '')
+        # settings JS does POST with no body but headers X-Requested-With, so treat any POST with that header as JSON
+        if request.headers.get('X-Requested-With'):
+            return JsonResponse({"ok": True, "redirect": "/login/"})
     return redirect("login")
 
 
