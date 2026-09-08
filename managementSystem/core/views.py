@@ -1054,8 +1054,12 @@ def invoice_pdf_view(request, pk):
         html = render_to_string("invoices/pdf.html", {'invoice': invoice})
         pdf_bytes = HTML(string=html, base_url=request.build_absolute_uri("/")).write_pdf()
     except ModuleNotFoundError:
-        # weasyprint not installed - show HTML as fallback (still useful, print via browser)
+        # weasyprint not installed - fallback to HTML: View shows inline, Download triggers download
         html = render_to_string("invoices/pdf.html", {'invoice': invoice})
+        if request.GET.get('download') == '1':
+            resp = HttpResponse(html, content_type="text/html")
+            resp['Content-Disposition'] = f'attachment; filename="{invoice.invoice_no}.html"'
+            return resp
         return HttpResponse(html)
     except Exception as exc:
         import traceback
@@ -1066,9 +1070,13 @@ def invoice_pdf_view(request, pk):
                 .replace('\n', '<br>'),
                 status=500,
             )
-        # Fallback to HTML
+        # Fallback to HTML with correct disposition
         try:
             html = render_to_string("invoices/pdf.html", {'invoice': invoice})
+            if request.GET.get('download') == '1':
+                resp = HttpResponse(html, content_type="text/html")
+                resp['Content-Disposition'] = f'attachment; filename="{invoice.invoice_no}.html"'
+                return resp
             return HttpResponse(html)
         except Exception:
             return HttpResponse(
@@ -1337,6 +1345,10 @@ def receipt_pdf_view(request, pk):
         pdf_bytes = HTML(string=html, base_url=request.build_absolute_uri("/")).write_pdf()
     except ModuleNotFoundError:
         html = render_to_string("receipts/pdf.html", {'receipt': receipt})
+        if request.GET.get('download') == '1':
+            resp = HttpResponse(html, content_type="text/html")
+            resp['Content-Disposition'] = f'attachment; filename="{receipt.receipt_no}.html"'
+            return resp
         return HttpResponse(html)
     except Exception as exc:
         import traceback
@@ -1349,6 +1361,10 @@ def receipt_pdf_view(request, pk):
             )
         try:
             html = render_to_string("receipts/pdf.html", {'receipt': receipt})
+            if request.GET.get('download') == '1':
+                resp = HttpResponse(html, content_type="text/html")
+                resp['Content-Disposition'] = f'attachment; filename="{receipt.receipt_no}.html"'
+                return resp
             return HttpResponse(html)
         except Exception:
             return HttpResponse(
