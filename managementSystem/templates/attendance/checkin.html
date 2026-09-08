@@ -304,6 +304,7 @@
       checkinIcon.textContent = 'task_alt';
       checkinText.textContent = 'Checked Out';
       toast(data.message, data.already_checked_out ? 'info' : 'success');
+      alert(data.message + (data.duration_min!=null ? ' ('+data.duration_min+' min)' : ''));
     }, (err) => {
       checkinBtn.disabled = false;
       checkinIcon.textContent = 'logout';
