@@ -639,6 +639,7 @@ def pricing_view(request):
     })
 
 @login_required_custom
+@per_user_page_cache(300)
 def promotions_view(request):
     user = get_current_user(request)
     if not user or user.role != 'Admin':
@@ -919,6 +920,7 @@ def _next_invoice_no():
             return candidate
         number += 1
 
+@per_user_page_cache(300)
 def invoice_create_view(request):
     if request.method == "POST":
         member_id = request.POST.get('member_id') or None
@@ -989,6 +991,7 @@ def invoice_create_view(request):
     }
     return render(request, "invoices/create.html", context)
 
+@per_user_page_cache(300)
 def invoice_edit_view(request, pk):
     invoice = get_object_or_404(Invoice, pk=pk)
 
@@ -1059,6 +1062,7 @@ def invoice_edit_view(request, pk):
     }
     return render(request, "invoices/create.html", context)
 
+@per_user_page_cache(300)
 def invoice_detail_view(request, pk):
     invoice = get_object_or_404(Invoice.objects.select_related('member'), pk=pk)
     return render(request, "invoices/detail.html", {'invoice': invoice, 'today': timezone.localdate()})
@@ -1197,6 +1201,7 @@ def _process_logo(request, receipt=None):
         return receipt.logo
     return None
 
+@per_user_page_cache(300)
 def receipt_create_view(request):
     if request.method == "POST":
         member_id = request.POST.get('member_id') or None
@@ -1268,6 +1273,7 @@ def receipt_create_view(request):
     }
     return render(request, "receipts/create.html", context)
 
+@per_user_page_cache(300)
 def receipt_edit_view(request, pk):
     receipt = get_object_or_404(Receipt, pk=pk)
 
@@ -1342,6 +1348,7 @@ def receipt_edit_view(request, pk):
     }
     return render(request, "receipts/create.html", context)
 
+@per_user_page_cache(300)
 def receipt_detail_view(request, pk):
     receipt = get_object_or_404(Receipt.objects.select_related('member'), pk=pk)
     return render(request, "receipts/detail.html", {'receipt': receipt, 'today': timezone.localdate()})
@@ -1545,6 +1552,7 @@ def attendance_view(request):
     return render(request, "attendance/index.html", context)
 
 @login_required_custom
+@per_user_page_cache(300)
 def member_attendance_view(request, pk):
     member = get_object_or_404(Member, pk=pk)
     attendance_qs = Attendance.objects.filter(member=member).order_by('-date')
@@ -2007,6 +2015,7 @@ def admin_profile_settings_api(request):
 
 
 @login_required_custom
+@per_user_page_cache(300)
 def member_detail_view_legacy(request):
     today = date.today()
     Subscription.objects.filter(status__in=["active", "expiring"], end_date__lt=today).update(status="suspended")
@@ -2042,6 +2051,7 @@ def member_detail_view_legacy(request):
     return render(request, "members/detail.html", {"current_user": get_current_user(request), "subscription": sub, "member": member})
 
 @login_required_custom
+@per_user_page_cache(300)
 def member_detail_view(request, pk):
     member = get_object_or_404(Member, pk=pk)
     subscriptions = Subscription.objects.filter(member=member).order_by('-start_date')
@@ -2136,6 +2146,7 @@ def _update_member(member, data):
     return Member.objects.get(pk=member.pk)
 
 @login_required_custom
+@per_user_page_cache(300)
 def member_add_view(request, pk=None):
     member = None
     if pk is not None:
@@ -2228,6 +2239,7 @@ def member_delete_view(request, pk):
     return redirect('members')
 
 @login_required_custom
+@per_user_page_cache(300)
 def services_view(request):
     services_qs = Service.objects.all().order_by('name')
     paginator = Paginator(services_qs, 20)
@@ -2263,6 +2275,7 @@ def _create_service(data, attempt=1):
             return None
         return _create_service(data, attempt=attempt + 1)
 
+@per_user_page_cache(300)
 def service_add_view(request):
     if request.method == "POST":
         form = ServiceForm(request.POST)
@@ -2308,6 +2321,7 @@ def _plan_service_context(plan):
         'available_services': available_services,
     }
 
+@per_user_page_cache(300)
 def plan_assign_service_view(request, pk):
     if request.method != "POST":
         return HttpResponseNotAllowed(["POST"])
@@ -2352,6 +2366,7 @@ def plan_unassign_service_view(request, pk, service_pk):
     return redirect('plan-edit', pk=plan.pk)
 
 @login_required_custom
+@per_user_page_cache(300)
 def plan_create_view(request, pk=None):
     plan = None
     if pk is not None:
@@ -2480,6 +2495,7 @@ def plan_create_view(request, pk=None):
     })
 
 @login_required_custom
+@per_user_page_cache(300)
 def plan_custom_view(request):
     if request.method == "POST":
         duration_bucket = request.POST.get('duration', '')
@@ -2539,6 +2555,7 @@ def plan_custom_view(request):
     return render(request, "plans/custom.html", {"form": form, "submitted_duration": ""})
 
 @login_required_custom
+@per_user_page_cache(300)
 def subscription_detail_view(request):
     # auto-suspend expired before fetching detail too
     today = date.today()
@@ -2566,6 +2583,7 @@ def subscription_detail_view(request):
     return render(request, "subscriptions/detail.html", {"current_user": get_current_user(request), "subscription": sub})
 
 @login_required_custom
+@per_user_page_cache(300)
 def subscription_create_view(request):
     members = Member.objects.only('id','member_code','full_name','status').order_by("full_name")
     standard_plans = MembershipPlan.objects.filter(is_active=True).only('id','name','price','duration_days').order_by("price")[:6]
@@ -2795,6 +2813,7 @@ def subscription_create_view(request):
 
 @login_required_custom
 @login_required_custom
+@per_user_page_cache(300)
 def payment_detail_view(request):
     # Support /payments/detail/?id=1 or ?code=PAY-0001 or ?receipt=RCPT-0001
     pk = request.GET.get('id') or request.GET.get('pk') or request.POST.get('id')
@@ -2845,11 +2864,13 @@ def payment_detail_view(request):
     return render(request, "payments/detail.html", {"current_user": get_current_user(request), "payment": payment, "receipt": receipt})
 
 @login_required_custom
+@per_user_page_cache(300)
 def refund_detail_view(request, pk):
     refund = get_object_or_404(Refund.objects.select_related('member', 'payment'), pk=pk)
     return render(request, "refunds/detail.html", {"current_user": get_current_user(request), "refund": refund})
 
 @login_required_custom
+@per_user_page_cache(300)
 def refund_history_view(request):
     refunds_qs = Refund.objects.select_related('payment', 'member').order_by('-created_at', '-id')
 
@@ -3044,6 +3065,7 @@ def statement_view(request):
     })
 
 @login_required_custom
+@per_user_page_cache(300)
 def attendance_checkin_view(request):
     return render(request, "attendance/checkin.html")
 
@@ -3197,11 +3219,13 @@ def attendance_checkout_save_view(request):
     })
 
 @login_required_custom
+@per_user_page_cache(300)
 def expense_add_view(request):
     today = date.today()
     return render(request, "expenses/add.html", {"current_user": get_current_user(request), "today": today})
 
 @login_required_custom
+@per_user_page_cache(300)
 def subscription_renew_view(request, code):
     sub = get_object_or_404(Subscription.objects.select_related('member','plan'), subscription_code=code)
     plans = MembershipPlan.objects.filter(is_active=True).order_by('price')
@@ -3339,6 +3363,7 @@ def subscription_renew_view(request, code):
     return redirect(next_url)
 
 @login_required_custom
+@per_user_page_cache(300)
 def user_add_view(request, pk=None):
     # Adapted from users-backend to use dev's User model
     profile = None
