@@ -155,14 +155,20 @@ html::-webkit-scrollbar, body::-webkit-scrollbar, main::-webkit-scrollbar { disp
     </div>
 </header>
 <script>
-(function(){
+document.addEventListener('DOMContentLoaded', function(){
   const bell=document.getElementById('notif-bell');
   const dd=document.getElementById('notif-dropdown');
-  if(!bell||!dd) return;
+  if(!bell||!dd){
+    console.log('notif bell/dd not found', bell, dd);
+    return;
+  }
+  console.log('notif bell ready');
   bell.addEventListener('click', (e)=>{
     e.preventDefault();
     e.stopPropagation();
+    console.log('bell click, toggling hidden', dd.classList.contains('hidden'));
     dd.classList.toggle('hidden');
+    console.log('after toggle hidden?', dd.classList.contains('hidden'));
   });
   document.addEventListener('click', (e)=>{
     if(!bell.contains(e.target) && !dd.contains(e.target)) dd.classList.add('hidden');
@@ -170,7 +176,7 @@ html::-webkit-scrollbar, body::-webkit-scrollbar, main::-webkit-scrollbar { disp
   document.addEventListener('keydown', (e)=>{
     if(e.key==='Escape') dd.classList.add('hidden');
   });
-})();
+});
 </script>
 
 <!-- Main Content Area -->
