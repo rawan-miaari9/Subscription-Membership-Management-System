@@ -85,7 +85,7 @@
 
     <!-- Actions -->
     <div class="px-6 py-4 border-t border-outline-variant bg-background flex justify-end">
-      <button data-checkin-btn class="inline-flex items-center justify-center gap-2 px-8 py-3 bg-primary-container text-on-primary-container font-label-caps text-[11px] font-bold uppercase hover:bg-primary transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-primary-container">
+      <button type="button" data-checkin-btn class="inline-flex items-center justify-center gap-2 px-8 py-3 bg-primary-container text-on-primary-container font-label-caps text-[11px] font-bold uppercase hover:bg-primary transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-primary-container">
         <span data-checkin-icon class="material-symbols-outlined text-[16px]">login</span> <span data-checkin-text>Check In</span>
       </button>
     </div>
@@ -312,7 +312,9 @@
     });
   }
 
-  checkinBtn.addEventListener('click',()=>{
+  checkinBtn.addEventListener('click',(e)=>{
+    e.preventDefault();
+    e.stopPropagation();
     if(!selected || !realMemberId || checkinBtn.disabled) return;
     if(mode === 'checkin') doCheckin();
     else if(mode === 'checkout') doCheckout();

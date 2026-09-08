@@ -3107,27 +3107,37 @@ def attendance_checkin_save_view(request):
     if request.method != "POST":
         return HttpResponseNotAllowed(["POST"])
 
+    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
     member_id = request.POST.get('member_id')
     if not member_id:
-        return JsonResponse({"success": False, "error": "member_id is required."}, status=400)
+        if is_ajax:
+            return JsonResponse({"success": False, "error": "member_id is required."}, status=400)
+        messages.error(request, "Please select a member first.")
+        return redirect('attendance-checkin')
 
     try:
         member = Member.objects.get(pk=member_id)
     except (Member.DoesNotExist, ValueError):
-        return JsonResponse({"success": False, "error": "Member not found."}, status=404)
+        if is_ajax:
+            return JsonResponse({"success": False, "error": "Member not found."}, status=404)
+        messages.error(request, "Member not found.")
+        return redirect('attendance-checkin')
 
     today = timezone.localdate()
 
     block_reason, subscription_status = _checkin_block_reason(member, today)
     if block_reason:
-        return JsonResponse({
-            "success": False,
-            "blocked": True,
-            "reason": block_reason,
-            "subscription_status": subscription_status,
-            "member_id": member.pk,
-            "member_name": member.full_name,
-        })
+        if is_ajax:
+            return JsonResponse({
+                "success": False,
+                "blocked": True,
+                "reason": block_reason,
+                "subscription_status": subscription_status,
+                "member_id": member.pk,
+                "member_name": member.full_name,
+            })
+        messages.error(request, block_reason)
+        return redirect('attendance-checkin')
 
     attendance = Attendance.objects.filter(member=member, date=today).first()
     already_checked_in = attendance is not None
@@ -3156,27 +3166,37 @@ def attendance_checkin_save_view(request):
     else:
         message = f"{member.full_name} checked in at {check_in_display}."
 
-    return JsonResponse({
-        "success": True,
-        "already_checked_in": already_checked_in,
-        "member_id": member.pk,
-        "member_name": member.full_name,
-        "check_in": check_in_display,
-        "message": message,
-    })
+    if is_ajax:
+        return JsonResponse({
+            "success": True,
+            "already_checked_in": already_checked_in,
+            "member_id": member.pk,
+            "member_name": member.full_name,
+            "check_in": check_in_display,
+            "message": message,
+        })
+    messages.success(request, message)
+    return redirect('attendance-checkin')
 
 def attendance_checkout_save_view(request):
     if request.method != "POST":
         return HttpResponseNotAllowed(["POST"])
 
+    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
     member_id = request.POST.get('member_id')
     if not member_id:
-        return JsonResponse({"success": False, "error": "member_id is required."}, status=400)
+        if is_ajax:
+            return JsonResponse({"success": False, "error": "member_id is required."}, status=400)
+        messages.error(request, "Please select a member first.")
+        return redirect('attendance-checkin')
 
     try:
         member = Member.objects.get(pk=member_id)
     except (Member.DoesNotExist, ValueError):
-        return JsonResponse({"success": False, "error": "Member not found."}, status=404)
+        if is_ajax:
+            return JsonResponse({"success": False, "error": "Member not found."}, status=404)
+        messages.error(request, "Member not found.")
+        return redirect('attendance-checkin')
 
     today = timezone.localdate()
     # Find today's attendance first, else most recent open check-in (e.g. checked in yesterday and forgot to checkout)
@@ -3184,10 +3204,13 @@ def attendance_checkout_save_view(request):
     if attendance is None:
         attendance = Attendance.objects.filter(member=member, check_out__isnull=True).order_by('-date').first()
     if attendance is None:
-        return JsonResponse({
-            "success": False,
-            "error": f"{member.full_name} hasn't checked in yet — check in before checking out.",
-        }, status=404)
+        if is_ajax:
+            return JsonResponse({
+                "success": False,
+                "error": f"{member.full_name} hasn't checked in yet — check in before checking out.",
+            }, status=404)
+        messages.error(request, f"{member.full_name} hasn't checked in yet — check in before checking out.")
+        return redirect('attendance-checkin')
     # If we found an older open day, treat checkout as for that day (keep original date)
 
     already_checked_out = attendance.check_out is not None
@@ -3212,15 +3235,18 @@ def attendance_checkout_save_view(request):
     else:
         message = f"{member.full_name} checked out at {check_out_display}."
 
-    return JsonResponse({
-        "success": True,
-        "already_checked_out": already_checked_out,
-        "member_id": member.pk,
-        "member_name": member.full_name,
-        "check_out": check_out_display,
-        "duration_min": attendance.duration_min,
-        "message": message,
-    })
+    if is_ajax:
+        return JsonResponse({
+            "success": True,
+            "already_checked_out": already_checked_out,
+            "member_id": member.pk,
+            "member_name": member.full_name,
+            "check_out": check_out_display,
+            "duration_min": attendance.duration_min,
+            "message": message,
+        })
+    messages.success(request, message)
+    return redirect('attendance-checkin')
 
 @login_required_custom
 @per_user_page_cache(300)
