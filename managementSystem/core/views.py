@@ -585,6 +585,8 @@ def subscriptions_view(request):
         "mrr": mrr,
     })
 
+@login_required_custom
+@per_user_page_cache(900)
 def pricing_view(request):
     user = get_current_user(request)
     if not user:
@@ -1377,6 +1379,7 @@ def receipt_pdf_view(request, pk):
     return response
 
 @login_required_custom
+@per_user_page_cache(900)
 def renewals_view(request):
     # Real: show subscriptions expiring within 30 days or already expired but active
     today = date.today()
@@ -1679,6 +1682,8 @@ def _safe_user_profiles(*args, **kwargs):
     except Exception:
         return []
 
+@login_required_custom
+@per_user_page_cache(900)
 def users_view(request):
     # Enhanced from users-backend: show counts, but using dev's User model
     # Safe handling if user_profiles table doesn't exist yet
@@ -1778,6 +1783,7 @@ def _avatar_url(user):
 
 
 @login_required_custom
+@per_user_page_cache(900)
 def settings_view(request):
     business = BusinessInformation.get_singleton()
     financial = FinancialSetting.get_singleton()
@@ -2874,6 +2880,7 @@ def refund_history_view(request):
     return render(request, "refunds/history.html", context)
 
 @login_required_custom
+@per_user_page_cache(900)
 def statement_view(request):
     # Real statement for a member (via ?member_id, ?code, or ?member name)
     member = None
