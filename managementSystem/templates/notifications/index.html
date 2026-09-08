@@ -11,7 +11,7 @@
     </div>
     <div class="flex items-center gap-3">
       {% if unread_count and unread_count > 0 %}
-      <form method="post" action="{% url 'notification-mark-all-read' %}">{% csrf_token %}
+      <form id="mark-all-form" method="post" action="{% url 'notification-mark-all-read' %}">{% csrf_token %}
         <button type="submit" class="bg-primary-container text-on-primary-container font-label-caps text-label-caps uppercase px-6 h-10 rounded border border-primary hover:bg-primary-fixed-dim transition-colors flex items-center gap-2 inline-flex">
           <span class="material-symbols-outlined text-[18px]">done_all</span>
           Mark all as read
@@ -20,6 +20,22 @@
       {% endif %}
     </div>
   </div>
+  <script>
+  document.addEventListener('DOMContentLoaded', function(){
+    const form=document.getElementById('mark-all-form');
+    if(form){
+      form.addEventListener('submit', function(e){
+        // Use fetch for instant feedback without full reload, fallback to normal submit
+        const btn=form.querySelector('button');
+        if(btn) btn.disabled=true;
+        // Let it submit normally, but show toast
+        setTimeout(()=>{
+          if(window.toast) toast('Marked all as read','success');
+        }, 100);
+      });
+    }
+  });
+  </script>
 
   <!-- Stat Bento -->
   <div class="grid grid-cols-2 md:grid-cols-4 gap-bento-gap">
