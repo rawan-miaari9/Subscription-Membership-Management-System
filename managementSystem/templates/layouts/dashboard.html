@@ -29,7 +29,7 @@ html::-webkit-scrollbar, body::-webkit-scrollbar, main::-webkit-scrollbar { disp
         <span class="font-display text-[18px] font-bold tracking-widest text-primary sidebar-text">IRON CORE</span>
         <span class="font-display text-[18px] font-bold tracking-widest text-primary hidden sidebar-text-collapsed">IC</span>
     </div>
-    <nav class="flex-1 overflow-y-auto py-3">
+    <nav class="flex-1 overflow-y-auto py-3 bg-background">
         <ul class="flex flex-col gap-0.5 px-2">
             <!-- Dashboard -->
             <li><a class="{% if request.resolver_match.url_name == 'dashboard' %}flex items-center gap-3 text-primary border-l-4 border-primary bg-surface-container-high px-3 py-2.5 font-label-caps text-[11px]{% else %}flex items-center gap-3 text-on-surface-variant hover:bg-surface-container-high hover:text-primary transition-colors duration-150 px-3 py-2.5 font-label-caps text-[11px] border-l-4 border-transparent{% endif %}" href="{% url 'dashboard' %}"><span class="material-symbols-outlined text-[18px]">dashboard</span> <span class="sidebar-text">Dashboard</span></a></li>
