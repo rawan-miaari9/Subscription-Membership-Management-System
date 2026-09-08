@@ -198,8 +198,8 @@
         <h2 class="font-label-caps text-[11px] uppercase tracking-widest text-on-surface">ADMIN PROFILE</h2>
       </div>
       <div class="flex items-start gap-6">
-        <div class="w-24 h-24 rounded-full border-2 border-outline-variant bg-surface-container-lowest flex items-center justify-center overflow-hidden shrink-0">
-          <img id="admin-preview" src="{% if admin_user.avatar %}{{ admin_user.avatar.url }}{% endif %}" alt="admin preview" class="w-full h-full object-cover{% if not admin_user.avatar %} hidden{% endif %}">
+        <div class="w-24 h-24 rounded-full border-2 border-outline-variant bg-surface-container-lowest flex items-center justify-center overflow-hidden shrink-0 will-change-transform">
+          <img id="admin-preview" src="{% if admin_user.avatar %}{{ admin_user.avatar }}{% endif %}" alt="admin preview" class="w-full h-full object-cover{% if not admin_user.avatar %} hidden{% endif %}" loading="eager" decoding="async" fetchpriority="high">
           <span id="admin-placeholder" class="material-symbols-outlined text-on-surface-variant text-[40px]{% if admin_user.avatar %} hidden{% endif %}">person</span>
         </div>
         <div class="flex-1">
