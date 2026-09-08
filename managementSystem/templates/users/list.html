@@ -85,16 +85,40 @@
 <div class="p-4 border-b border-[#334155] flex justify-between items-center bg-[#0F172A]">
 <h2 class="font-label-caps text-on-surface-variant">SYSTEM USERS DIRECTORY</h2>
 <div class="flex gap-2">
-<button class="p-1 border border-[#334155] text-on-surface-variant hover:text-[#F59E0B] hover:border-[#F59E0B] rounded-sm transition-colors">
+<button data-users-filter-toggle class="p-1 border border-[#334155] text-on-surface-variant hover:text-[#F59E0B] hover:border-[#F59E0B] rounded-sm transition-colors" title="Filter users">
 <span class="material-symbols-outlined text-[16px]">filter_list</span>
 </button>
-<button class="p-1 border border-[#334155] text-on-surface-variant hover:text-[#F59E0B] hover:border-[#F59E0B] rounded-sm transition-colors">
+<button data-users-download class="p-1 border border-[#334155] text-on-surface-variant hover:text-[#F59E0B] hover:border-[#F59E0B] rounded-sm transition-colors" title="Download CSV">
 <span class="material-symbols-outlined text-[16px]">download</span>
 </button>
 </div>
 </div>
+<div data-users-filter-bar class="hidden p-4 bg-[#0F172A] border-b border-[#334155] flex flex-wrap gap-3 items-end">
+<div class="flex flex-col gap-1">
+<label class="font-label-caps text-[10px] text-on-surface-variant uppercase">Search</label>
+<input data-users-search type="text" placeholder="Name or email..." class="bg-[#1E293B] border border-[#334155] rounded px-3 py-1.5 text-sm text-on-surface w-48 focus:border-[#F59E0B] outline-none" />
+</div>
+<div class="flex flex-col gap-1">
+<label class="font-label-caps text-[10px] text-on-surface-variant uppercase">Role</label>
+<select data-users-role class="bg-[#1E293B] border border-[#334155] rounded px-3 py-1.5 text-sm text-on-surface focus:border-[#F59E0B] outline-none">
+<option value="">All Roles</option>
+<option value="admin">Admin</option>
+<option value="accountant">Accountant</option>
+</select>
+</div>
+<div class="flex flex-col gap-1">
+<label class="font-label-caps text-[10px] text-on-surface-variant uppercase">Status</label>
+<select data-users-status class="bg-[#1E293B] border border-[#334155] rounded px-3 py-1.5 text-sm text-on-surface focus:border-[#F59E0B] outline-none">
+<option value="">All Status</option>
+<option value="active">Active</option>
+<option value="disabled">Disabled</option>
+</select>
+</div>
+<button data-users-clear class="px-4 py-1.5 border border-[#334155] text-on-surface-variant font-label-caps text-xs uppercase hover:bg-[#1E293B]">Clear</button>
+<span data-users-count class="ml-auto font-label-caps text-[11px] text-on-surface-variant"></span>
+</div>
 <div class="overflow-x-auto">
-<table class="w-full text-left border-collapse">
+<table data-users-table class="w-full text-left border-collapse">
 <thead>
 <tr class="border-b border-[#334155] bg-[#1E293B]">
 <th class="p-4 font-label-caps text-on-surface-variant font-normal">USER</th>
@@ -166,4 +190,76 @@
 </div>
 </div>
 </div>
+<script>
+(function(){
+  const toggle = document.querySelector('[data-users-filter-toggle]');
+  const bar = document.querySelector('[data-users-filter-bar]');
+  const search = document.querySelector('[data-users-search]');
+  const roleSel = document.querySelector('[data-users-role]');
+  const statusSel = document.querySelector('[data-users-status]');
+  const clear = document.querySelector('[data-users-clear]');
+  const count = document.querySelector('[data-users-count]');
+  const table = document.querySelector('[data-users-table]');
+  if(!toggle || !bar || !table) return;
+  toggle.addEventListener('click', ()=> bar.classList.toggle('hidden'));
+  function toast(msg, type='info'){
+    if(window.toast) return window.toast(msg,type);
+    let c=document.getElementById('toast-container'); if(!c){c=document.createElement('div'); c.id='toast-container'; c.className='fixed bottom-4 right-4 z-50 flex flex-col gap-2'; document.body.appendChild(c);}
+    const el=document.createElement('div'); el.className='px-4 py-3 rounded border text-sm font-label-caps shadow-lg '+(type==='error'?'bg-error text-on-error border-error':type==='success'?'bg-tertiary-container text-on-tertiary-container border-tertiary':'bg-surface-container-high border-outline-variant text-on-surface'); el.textContent=msg; c.appendChild(el); setTimeout(()=>{el.style.opacity='0'; setTimeout(()=>el.remove(),300);},2000);
+  }
+  function apply(){
+    const q = (search.value||'').toLowerCase().trim();
+    const role = (roleSel.value||'').toLowerCase();
+    const stat = (statusSel.value||'').toLowerCase();
+    let visible=0, total=0;
+    table.querySelectorAll('tbody tr').forEach(tr=>{
+      if(tr.querySelector('td[colspan]')) return;
+      total++;
+      const userTxt = (tr.querySelector('td:nth-child(1)')?.textContent||'').toLowerCase();
+      const roleTxt = (tr.querySelector('td:nth-child(2) select')?.value|| tr.querySelector('td:nth-child(2)')?.textContent||'').toLowerCase();
+      const statusTxt = (tr.querySelector('td:nth-child(3)')?.textContent||'').toLowerCase();
+      let show = true;
+      if(q && !userTxt.includes(q)) show=false;
+      if(role && !roleTxt.includes(role)) show=false;
+      if(stat){
+        if(stat==='active' && !statusTxt.includes('active')) show=false;
+        if(stat==='disabled' && !statusTxt.includes('disabled')) show=false;
+      }
+      tr.style.display = show ? '' : 'none';
+      if(show) visible++;
+    });
+    if(count) count.textContent = visible + ' / ' + total + ' shown';
+  }
+  search.addEventListener('input', apply);
+  roleSel.addEventListener('change', apply);
+  statusSel.addEventListener('change', apply);
+  clear.addEventListener('click', ()=>{
+    search.value=''; roleSel.value=''; statusSel.value=''; apply(); toast('Filters cleared','info');
+  });
+  // download CSV
+  const dl = document.querySelector('[data-users-download]');
+  if(dl){
+    dl.addEventListener('click', ()=>{
+      const rows = Array.from(table.querySelectorAll('tbody tr')).filter(tr=> tr.style.display!=='none' && !tr.querySelector('td[colspan]'));
+      if(!rows.length){ toast('No rows to download','error'); return; }
+      const header = ['User','Email','Role','Status','Last Login'];
+      const csvRows = [header.map(h=>'"'+h+'"').join(',')];
+      rows.forEach(tr=>{
+        const ps = tr.querySelectorAll('td:nth-child(1) p');
+        const user = (ps[0]?.textContent||'').trim().replace(/"/g,'""');
+        const email = (ps[1]?.textContent||'').trim().replace(/"/g,'""');
+        const role = (tr.querySelector('td:nth-child(2) select')?.value||'').trim();
+        const status = (tr.querySelector('td:nth-child(3)')?.textContent||'').trim().replace(/\s+/g,' ');
+        const login = (tr.querySelector('td:nth-child(4)')?.textContent||'').trim();
+        csvRows.push(['"'+user+'"','"'+email+'"', '"'+role+'"', '"'+status+'"', '"'+login+'"'].join(','));
+      });
+      const blob = new Blob([csvRows.join('\n')], {type:'text/csv'});
+      const url = URL.createObjectURL(blob);
+      const a=document.createElement('a'); a.href=url; a.download='users_'+new Date().toISOString().slice(0,10)+'.csv'; a.click(); URL.revokeObjectURL(url);
+      toast('CSV downloaded ('+rows.length+' rows)','success');
+    });
+  }
+  apply();
+})();
+</script>
 {% endblock %}
