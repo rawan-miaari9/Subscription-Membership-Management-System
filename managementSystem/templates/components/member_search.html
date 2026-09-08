@@ -18,8 +18,11 @@
 </div>
 <script>
 (function(){
-  const root = document.currentScript.parentElement.querySelector('[data-member-search]');
-  if (!root) return;
+  // Robust: handle multiple pickers on same page (old document.currentScript.parentElement was fragile)
+  const roots = document.querySelectorAll('[data-member-search]');
+  roots.forEach(root => {
+  if (root.dataset.bound === '1') return;
+  root.dataset.bound = '1';
   const input = root.querySelector('[data-member-search-input]');
   const hidden = root.querySelector('[data-field-member]');
   const results = root.querySelector('[data-member-search-results]');
@@ -102,5 +105,6 @@
     if (!root.contains(e.target)) { results.classList.add('hidden'); }
   });
   sync();
+  });
 })();
 </script>

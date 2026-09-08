@@ -3039,6 +3039,13 @@ def member_search_api_view(request):
     query = request.GET.get('q', '').strip()
     if not query:
         return JsonResponse([], safe=False)
+    if len(query) < 1:
+        return JsonResponse([], safe=False)
+    # cache per query 60s to avoid pool exhaustion on fast typing
+    cache_key = f"member_search:{query.lower()}"
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return JsonResponse(cached, safe=False)
 
     members = Member.objects.filter(
         Q(full_name__icontains=query) | Q(member_code__icontains=query) | Q(phone__icontains=query)
@@ -3056,6 +3063,7 @@ def member_search_api_view(request):
         }
         for m in members
     ]
+    cache.set(cache_key, results, 60)
     return JsonResponse(results, safe=False)
 
 def attendance_checkin_save_view(request):
